@@ -1,6 +1,7 @@
 mod camera;
 mod graphics_engine;
 mod graphics_system;
+mod gui;
 mod model;
 mod skiier;
 mod utils;
@@ -12,6 +13,7 @@ mod events;
 use camera::Camera;
 use events::Event;
 use graphics_system::insert_mesh;
+use gui::GuiModel;
 use legion::*;
 use wasm_bindgen::prelude::*;
 mod prelude {
@@ -20,6 +22,9 @@ mod prelude {
         ErrorType, Framebuffer, RenderTransform, RuntimeMesh, RuntimeTexture, WebGl,
     };
     pub use super::graphics_engine::{Mesh, RGBATexture as Texture};
+    pub use super::graphics_system::RuntimeModel;
+    pub use super::gui::{GuiModel, GuiRuntimeModel, GuiTransform};
+    #[derive(Clone)]
     pub struct Model {
         pub mesh: super::graphics_engine::Mesh,
         pub texture: super::graphics_engine::RGBATexture,
@@ -36,6 +41,8 @@ impl Game {
         let mut world = World::default();
         let mut webgl = WebGl::new()?;
         let transform = RenderTransform::no_transform();
+        GuiModel::simple_box(RenderTransform::new_scale(&Vector3::new(0.1, 0.1, 0.1)))
+            .insert(&mut world, &mut webgl)?;
         insert_mesh(model::get_cube(transform.clone()), &mut world, &mut webgl)?;
         insert_mesh(
             model::get_terrain_model(Vector2::new(20, 20), transform),
