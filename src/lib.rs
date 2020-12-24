@@ -1,100 +1,65 @@
-use js_sys::{Array as JsArray, Map as JsMap};
-use nalgebra::{Matrix4, Vector2, Vector3};
+mod camera;
+mod graphics_engine;
+mod graphics_system;
+mod model;
+mod skiier;
+mod utils;
+use graphics_engine::{RenderTransform, WebGl};
+use js_sys::Array as JsArray;
+use log::debug;
+use nalgebra::{Vector2, Vector3, Vector4};
 mod events;
-use events::MouseButton;
+use camera::Camera;
+use events::Event;
+use graphics_system::insert_mesh;
+use legion::*;
 use wasm_bindgen::prelude::*;
-#[derive(Clone, Debug)]
-pub struct RenderTransform {
-    matrix: Matrix4<f32>,
-}
-impl RenderTransform {
-    pub fn new_scale(scale: &Vector3<f32>) -> Self {
-        Self {
-            matrix: Matrix4::new_nonuniform_scaling(scale),
-        }
+mod prelude {
+    pub use super::camera::Camera;
+    pub use super::graphics_engine::{
+        ErrorType, Framebuffer, RenderTransform, RuntimeMesh, RuntimeTexture, WebGl,
+    };
+    pub use super::graphics_engine::{Mesh, RGBATexture as Texture};
+    pub struct Model {
+        pub mesh: super::graphics_engine::Mesh,
+        pub texture: super::graphics_engine::RGBATexture,
+        pub transform: RenderTransform,
     }
 }
-#[derive(Clone)]
-pub struct MouseClick {
-    position: Vector2<f32>,
-    button_pressed: MouseButton,
+struct Game {
+    world: World,
+    resources: Resources,
 }
-#[derive(Clone)]
-pub enum Event {
-    MouseMove {
-        delta_x: f32,
-        delta_y: f32,
-        delta_time_ms: f32,
-        buttons_pressed: Vec<MouseButton>,
-    },
-    Scroll {
-        delta_y: f32,
-        delta_time_ms: f32,
-    },
-    MouseClick(MouseClick),
-}
-impl Event {
-    pub fn from_map(map: JsMap) -> Self {
-        let name: String = map.get(&JsValue::from_str("name")).as_string().unwrap();
-        match name.as_str() {
-            "mouse_move" => Self::from_mouse_move_map(map),
-            "wheel" => Self::from_wheel_map(map),
-            _ => panic!("invalid name"),
-        }
-    }
-    pub fn from_wheel_map(map: JsMap) -> Self {
-        let delta_y = map.get(&JsValue::from_str("delta_y")).as_f64().unwrap() as f32;
-        let delta_time_ms = map
-            .get(&JsValue::from_str("delta_time_ms"))
-            .as_f64()
-            .unwrap() as f32;
-        Event::Scroll {
-            delta_y,
-            delta_time_ms,
-        }
-    }
-    pub fn from_mouse_move_map(map: JsMap) -> Self {
-        let buttons_pressed_number: i32 =
-            map.get(&JsValue::from_str("buttons")).as_f64().unwrap() as i32;
-        let buttons_pressed = match buttons_pressed_number {
-            0 => vec![],
-            1 => vec![MouseButton::LeftClick],
-            2 => vec![MouseButton::RightClick],
-            3 => vec![MouseButton::LeftClick, MouseButton::RightClick],
-            4 => vec![MouseButton::MiddleClick],
-            5 => vec![MouseButton::LeftClick, MouseButton::MiddleClick],
-            6 => vec![MouseButton::MiddleClick, MouseButton::RightClick],
-            7 => vec![
-                MouseButton::LeftClick,
-                MouseButton::MiddleClick,
-                MouseButton::RightClick,
-            ],
-            _ => panic!("invalid button number"),
-        };
-        let delta_x = map.get(&JsValue::from_str("delta_x")).as_f64().unwrap() as f32;
-        let delta_y = map.get(&JsValue::from_str("delta_y")).as_f64().unwrap() as f32;
-        let delta_time_ms = map
-            .get(&JsValue::from_str("delta_time_ms"))
-            .as_f64()
-            .unwrap() as f32;
-        Event::MouseMove {
-            delta_x,
-            delta_y,
-            buttons_pressed,
-            delta_time_ms,
-        }
-    }
-}
-pub fn log(s: &str) {
-    web_sys::console::log(&JsArray::from(&JsValue::from(s)));
-}
-pub fn log_js_value(s: &JsValue) {
-    web_sys::console::log(&JsArray::from(s));
-}
-struct Game {}
 impl Game {
     pub fn new() -> Result<Game, JsValue> {
-        Ok(Game {})
+        let mut resources = Resources::default();
+        let mut world = World::default();
+        let mut webgl = WebGl::new()?;
+        let transform = RenderTransform::no_transform();
+        insert_mesh(model::get_cube(transform.clone()), &mut world, &mut webgl)?;
+        insert_mesh(
+            model::get_terrain_model(Vector2::new(20, 20), transform),
+            &mut world,
+            &mut webgl,
+        )?;
+
+        resources.insert(webgl);
+        resources.insert(Camera::new(Vector3::new(0.0, 0.0, 0.0), 20.0, 1.0, 1.0));
+
+        Ok(Game { world, resources })
+    }
+    pub fn run_frame(&mut self, _events: Vec<Event>) {
+        {
+            let gl: &mut WebGl = &mut self.resources.get_mut().unwrap();
+            debug!("got gl");
+            gl.clear_screen(Vector4::new(0.2, 0.2, 0.2, 1.0));
+        }
+        debug!("built scedule");
+        let mut schedule = Schedule::builder()
+            .add_system(graphics_system::render_object_system())
+            .build();
+        schedule.execute(&mut self.world, &mut self.resources);
+        debug!("executed schedule");
     }
 }
 #[wasm_bindgen]
@@ -104,8 +69,10 @@ pub struct WebGame {
 #[wasm_bindgen]
 impl WebGame {
     #[wasm_bindgen]
-    pub fn render_frame(&mut self, event_state: JsMap, events: JsArray) {
+    pub fn render_frame(&mut self, events: JsArray) {
         let events: Vec<Event> = events.iter().map(|v| Event::from_map(v.into())).collect();
+        debug!("got events");
+        self.game.run_frame(events);
 
         //    self.engine
         //        .render_frame(to_event_state(&event_state), events)
@@ -118,13 +85,17 @@ impl WebGame {
 #[cfg(feature = "wee_alloc")]
 #[global_allocator]
 static ALLOC: wee_alloc::WeeAlloc = wee_alloc::WeeAlloc::INIT;
+use log::Level;
 #[wasm_bindgen]
 pub fn init_game() -> WebGame {
+    console_log::init_with_level(Level::Debug).expect("filed to init console_log");
     let r = Game::new();
     if r.is_ok() {
-        WebGame { game: Game {} }
+        WebGame {
+            game: Game::new().ok().unwrap(),
+        }
     } else {
-        log(&format!("{:?}", r.err().unwrap()));
+        debug!("create failed");
         panic!()
     }
 }

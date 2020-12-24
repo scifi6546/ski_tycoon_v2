@@ -24,6 +24,7 @@ pub enum Event {
         delta_y: f32,
         delta_time_ms: f32,
     },
+    #[allow(dead_code)]
     MouseClick(MouseClick),
 }
 impl Event {
