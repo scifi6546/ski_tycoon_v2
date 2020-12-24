@@ -5,8 +5,8 @@ use super::prelude::{
 use legion::*;
 use log::debug;
 pub struct RuntimeModel {
-    mesh: RuntimeMesh,
-    texture: RuntimeTexture,
+    pub mesh: RuntimeMesh,
+    pub texture: RuntimeTexture,
 }
 impl RuntimeModel {
     pub fn new(model: Model, graphics: &mut WebGl) -> Result<Self, ErrorType> {
@@ -38,11 +38,9 @@ pub fn render_gui(
     transform: &GuiTransform,
     model: &GuiRuntimeModel,
     #[resource] webgl: &mut WebGl,
-    #[resource] camera: &Camera,
 ) {
     debug!("running render object");
     webgl.bind_texture(&model.model.texture);
-    webgl.send_view_matrix(camera.get_matrix());
     webgl.send_model_matrix(transform.transform.get_matrix().clone());
     webgl.draw_mesh(&model.model.mesh);
 }

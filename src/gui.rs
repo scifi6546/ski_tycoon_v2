@@ -17,17 +17,17 @@ impl GuiModel {
             model: Model {
                 mesh: Mesh {
                     vertices: vec![
-                        (Vector3::new(1.0, 1.0, 0.0), Vector2::new(1.0, 1.0)),
-                        (Vector3::new(-1.0, -1.0, 0.0), Vector2::new(0.0, 0.0)),
-                        (Vector3::new(1.0, -1.0, 0.0), Vector2::new(1.0, 0.0)),
+                        (Vector3::new(1.0, 1.0, -0.5), Vector2::new(1.0, 1.0)),
+                        (Vector3::new(-1.0, -1.0, -0.5), Vector2::new(0.0, 0.0)),
+                        (Vector3::new(1.0, -1.0, -0.5), Vector2::new(1.0, 0.0)),
                         //Second Triangle
-                        (Vector3::new(1.0, 1.0, 0.0), Vector2::new(1.0, 1.0)),
-                        (Vector3::new(-1.0, -1.0, 0.0), Vector2::new(0.0, 0.0)),
-                        (Vector3::new(-1.0, -1.0, 0.0), Vector2::new(0.0, 1.0)),
+                        (Vector3::new(1.0, 1.0, -0.5), Vector2::new(1.0, 1.0)),
+                        (Vector3::new(-1.0, -1.0, -0.5), Vector2::new(0.0, 0.0)),
+                        (Vector3::new(-1.0, 1.0, -0.5), Vector2::new(0.0, 1.0)),
                     ],
                 },
                 texture: Texture::constant_color(
-                    Vector4::new(255 / 2, 255 / 2, 255 / 2, 255),
+                    Vector4::new(255 / 10, 255 / 2, 255 / 2, 255),
                     Vector2::new(100, 100),
                 ),
                 transform,

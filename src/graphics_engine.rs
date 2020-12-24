@@ -1,13 +1,11 @@
+mod mesh;
+pub use mesh::Mesh;
 use nalgebra::{Matrix4, Vector2, Vector3, Vector4};
 use wasm_bindgen::{JsCast, JsValue};
 use web_sys::{
     WebGl2RenderingContext, WebGlBuffer, WebGlFramebuffer, WebGlProgram, WebGlShader, WebGlTexture,
     WebGlUniformLocation, WebGlVertexArrayObject,
 };
-#[derive(Clone)]
-pub struct Mesh {
-    pub vertices: Vec<(Vector3<f32>, Vector2<f32>)>,
-}
 #[derive(Clone, Debug)]
 pub struct RenderTransform {
     matrix: Matrix4<f32>,
@@ -241,7 +239,10 @@ impl WebGl {
         })
     }
     #[allow(dead_code)]
-    pub fn build_framebuffer(&mut self, texture_attachment: &mut RuntimeTexture) -> Framebuffer {
+    pub fn build_framebuffer(
+        &mut self,
+        texture_attachment: &mut RuntimeTexture,
+    ) -> Result<Framebuffer, ErrorType> {
         let framebuffer = self.context.create_framebuffer();
         self.context
             .bind_framebuffer(WebGl2RenderingContext::FRAMEBUFFER, framebuffer.as_ref());
@@ -254,7 +255,7 @@ impl WebGl {
         );
         // rebinding to default framebuffer to prevent side effects
         self.bind_default_framebuffer();
-        WebFramebuffer { framebuffer }
+        Ok(WebFramebuffer { framebuffer })
     }
     #[allow(dead_code)]
     pub fn bind_default_framebuffer(&mut self) {

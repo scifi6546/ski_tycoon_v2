@@ -5,14 +5,15 @@ mod gui;
 mod model;
 mod skiier;
 mod utils;
-use graphics_engine::{RenderTransform, WebGl};
+
+use graphics_engine::{Framebuffer, Mesh, RGBATexture, RenderTransform, RuntimeTexture, WebGl};
 use js_sys::Array as JsArray;
 use log::debug;
-use nalgebra::{Vector2, Vector3, Vector4};
+use nalgebra::{Matrix4, Vector2, Vector3, Vector4};
 mod events;
 use camera::Camera;
 use events::Event;
-use graphics_system::insert_mesh;
+use graphics_system::{insert_mesh, RuntimeModel};
 use gui::GuiModel;
 use legion::*;
 use wasm_bindgen::prelude::*;
@@ -34,6 +35,8 @@ mod prelude {
 struct Game {
     world: World,
     resources: Resources,
+    world_framebuffer: Framebuffer,
+    world_render_surface: RuntimeModel,
 }
 impl Game {
     pub fn new() -> Result<Game, JsValue> {
@@ -50,15 +53,32 @@ impl Game {
             &mut webgl,
         )?;
 
+        let mut fb_texture = webgl.build_texture(RGBATexture::constant_color(
+            Vector4::new(0, 0, 0, 0),
+            Vector2::new(800, 800),
+        ))?;
+        let fb_mesh = webgl.build_mesh(Mesh::plane())?;
+        let world_framebuffer = webgl.build_framebuffer(&mut fb_texture)?;
+        let world_render_surface = RuntimeModel {
+            mesh: fb_mesh,
+            texture: fb_texture,
+        };
         resources.insert(webgl);
         resources.insert(Camera::new(Vector3::new(0.0, 0.0, 0.0), 20.0, 1.0, 1.0));
 
-        Ok(Game { world, resources })
+        Ok(Game {
+            world,
+            resources,
+            world_framebuffer,
+            world_render_surface,
+        })
     }
     pub fn run_frame(&mut self, _events: Vec<Event>) {
         {
+            //binding to world framebuffer and rendering to it
+
             let gl: &mut WebGl = &mut self.resources.get_mut().unwrap();
-            debug!("got gl");
+            gl.bind_framebuffer(&self.world_framebuffer);
             gl.clear_screen(Vector4::new(0.2, 0.2, 0.2, 1.0));
         }
         debug!("built scedule");
@@ -67,6 +87,21 @@ impl Game {
             .build();
         schedule.execute(&mut self.world, &mut self.resources);
         debug!("executed schedule");
+        {
+            //binding to world framebuffer and rendering to it
+
+            let gl: &mut WebGl = &mut self.resources.get_mut().unwrap();
+            gl.bind_default_framebuffer();
+            gl.send_view_matrix(Matrix4::identity());
+            gl.send_model_matrix(Matrix4::identity());
+            gl.clear_screen(Vector4::new(0.2, 0.2, 0.2, 1.0));
+            gl.bind_texture(&self.world_render_surface.texture);
+            gl.draw_mesh(&self.world_render_surface.mesh);
+        }
+        let mut gui_schedule = Schedule::builder()
+            .add_system(graphics_system::render_gui_system())
+            .build();
+        gui_schedule.execute(&mut self.world, &mut self.resources);
     }
 }
 #[wasm_bindgen]
