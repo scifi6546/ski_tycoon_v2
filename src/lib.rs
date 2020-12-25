@@ -6,7 +6,7 @@ mod model;
 mod skiier;
 mod utils;
 
-use graphics_engine::{Framebuffer, Mesh, RGBATexture, RenderTransform, WebGl};
+use graphics_engine::{Framebuffer, Mesh, RGBATexture, Transform, WebGl};
 use js_sys::Array as JsArray;
 use log::debug;
 use nalgebra::{Matrix4, Vector2, Vector3, Vector4};
@@ -20,7 +20,7 @@ use wasm_bindgen::prelude::*;
 mod prelude {
     pub use super::camera::Camera;
     pub use super::graphics_engine::{
-        ErrorType, Framebuffer, RenderTransform, RuntimeMesh, RuntimeTexture, WebGl,
+        ErrorType, Framebuffer, RuntimeMesh, RuntimeTexture, Transform, WebGl,
     };
     pub use super::graphics_engine::{Mesh, RGBATexture as Texture};
     pub use super::graphics_system::RuntimeModel;
@@ -29,7 +29,7 @@ mod prelude {
     pub struct Model {
         pub mesh: super::graphics_engine::Mesh,
         pub texture: super::graphics_engine::RGBATexture,
-        pub transform: RenderTransform,
+        pub transform: Transform,
     }
 }
 struct Game {
@@ -43,9 +43,11 @@ impl Game {
         let mut resources = Resources::default();
         let mut world = World::default();
         let mut webgl = WebGl::new()?;
-        let transform = RenderTransform::no_transform();
-        GuiModel::simple_box(RenderTransform::new_scale(&Vector3::new(0.1, 0.1, 0.1)))
-            .insert(&mut world, &mut webgl)?;
+        let transform = Transform::default();
+        let mut box_transform = Transform::default();
+        box_transform.set_scale(Vector3::new(0.1, 0.1, 0.1));
+        box_transform.translate(Vector3::new(-0.5, -0.5, 0.0));
+        GuiModel::simple_box(box_transform).insert(&mut world, &mut webgl)?;
         insert_mesh(model::get_cube(transform.clone()), &mut world, &mut webgl)?;
         insert_mesh(
             model::get_terrain_model(Vector2::new(20, 20), transform),

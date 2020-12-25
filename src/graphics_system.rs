@@ -1,6 +1,6 @@
 use super::prelude::{
-    Camera, ErrorType, GuiRuntimeModel, GuiTransform, Model, RenderTransform, RuntimeMesh,
-    RuntimeTexture, WebGl,
+    Camera, ErrorType, GuiRuntimeModel, GuiTransform, Model, RuntimeMesh, RuntimeTexture,
+    Transform, WebGl,
 };
 use legion::*;
 use log::debug;
@@ -21,7 +21,7 @@ pub fn insert_mesh(model: Model, world: &mut World, graphics: &mut WebGl) -> Res
 }
 #[system(for_each)]
 pub fn render_object(
-    transform: &RenderTransform,
+    transform: &Transform,
     model: &RuntimeModel,
     #[resource] webgl: &mut WebGl,
     #[resource] camera: &Camera,
@@ -29,7 +29,7 @@ pub fn render_object(
     debug!("running render object");
     webgl.bind_texture(&model.texture);
     webgl.send_view_matrix(camera.get_matrix());
-    webgl.send_model_matrix(transform.get_matrix().clone());
+    webgl.send_model_matrix(transform.build().clone());
     webgl.draw_mesh(&model.mesh);
 }
 
@@ -41,6 +41,6 @@ pub fn render_gui(
 ) {
     debug!("running render object");
     webgl.bind_texture(&model.model.texture);
-    webgl.send_model_matrix(transform.transform.get_matrix().clone());
+    webgl.send_model_matrix(transform.transform.build().clone());
     webgl.draw_mesh(&model.model.mesh);
 }

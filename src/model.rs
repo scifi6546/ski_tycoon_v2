@@ -1,6 +1,6 @@
-use super::prelude::{Mesh, Model, RenderTransform, Texture};
+use super::prelude::{Mesh, Model, Texture, Transform};
 use nalgebra::{Vector2, Vector3, Vector4};
-pub fn get_terrain_model(dimensions: Vector2<u32>, transform: RenderTransform) -> Model {
+pub fn get_terrain_model(dimensions: Vector2<u32>, transform: Transform) -> Model {
     let mut vertices = vec![];
     let scale = 1.0;
     for x in 0..dimensions.x {
@@ -40,7 +40,7 @@ pub fn get_terrain_model(dimensions: Vector2<u32>, transform: RenderTransform) -
         transform,
     }
 }
-pub fn get_cube(transform: RenderTransform) -> Model {
+pub fn get_cube(transform: Transform) -> Model {
     let vertices = vec![
         (Vector3::new(-1.0, -1.0, 1.0), Vector2::new(0.0, 0.0)),
         (Vector3::new(1.0, 1.0, 1.0), Vector2::new(1.0, 1.0)),

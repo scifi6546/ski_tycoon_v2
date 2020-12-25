@@ -1,18 +1,18 @@
-use super::prelude::{ErrorType, Mesh, Model, RenderTransform, RuntimeModel, Texture, WebGl};
+use super::prelude::{ErrorType, Mesh, Model, RuntimeModel, Texture, Transform, WebGl};
 use legion::*;
 use nalgebra::{Vector2, Vector3, Vector4};
 pub struct GuiRuntimeModel {
     pub model: RuntimeModel,
 }
 pub struct GuiTransform {
-    pub transform: RenderTransform,
+    pub transform: Transform,
 }
 #[derive(Clone)]
 pub struct GuiModel {
     model: Model,
 }
 impl GuiModel {
-    pub fn simple_box(transform: RenderTransform) -> Self {
+    pub fn simple_box(transform: Transform) -> Self {
         Self {
             model: Model {
                 mesh: Mesh {
