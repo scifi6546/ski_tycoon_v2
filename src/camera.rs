@@ -17,18 +17,18 @@ impl Camera {
             theta,
         }
     }
-    #[allow(dead_code)]
     pub fn rotate_phi(&mut self, delta_phi: f32) {
         self.phi += delta_phi;
     }
-    #[allow(dead_code)]
     pub fn rotate_theta(&mut self, delta_theta: f32) {
         self.theta += delta_theta;
     }
     /// Increases by value proportional to delta radius
-    #[allow(dead_code)]
     pub fn update_radius(&mut self, delta_radius: f32) {
         self.radius += delta_radius * self.radius;
+        if self.radius < 0.1 {
+            self.radius = 0.1;
+        }
     }
     pub fn get_matrix(&self) -> Matrix4<f32> {
         let delta_position = self.radius

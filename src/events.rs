@@ -20,11 +20,10 @@ pub enum Event {
         delta_time_ms: f32,
         buttons_pressed: Vec<MouseButton>,
     },
-    Scroll {
+    CameraZoom {
         delta_y: f32,
         delta_time_ms: f32,
     },
-    #[allow(dead_code)]
     MouseClick(MouseClick),
 }
 impl Event {
@@ -42,7 +41,7 @@ impl Event {
             .get(&JsValue::from_str("delta_time_ms"))
             .as_f64()
             .unwrap() as f32;
-        Event::Scroll {
+        Event::CameraZoom {
             delta_y,
             delta_time_ms,
         }
