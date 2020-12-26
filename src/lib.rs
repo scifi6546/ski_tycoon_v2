@@ -91,6 +91,7 @@ impl Game {
                             camera.rotate_theta(delta_y * 0.001 * delta_time_ms);
                         }
                     }
+                    Event::CameraMove { direction } => camera.translate(&(0.1 * direction)),
                     Event::CameraZoom {
                         delta_y,
                         delta_time_ms,
@@ -137,7 +138,12 @@ pub struct WebGame {
 impl WebGame {
     #[wasm_bindgen]
     pub fn render_frame(&mut self, events: JsArray) {
-        let events: Vec<Event> = events.iter().map(|v| Event::from_map(v.into())).collect();
+        let events: Vec<Event> = events
+            .iter()
+            .map(|v| Event::from_map(v.into()))
+            .filter(|v| v.is_some())
+            .map(|v| v.unwrap())
+            .collect();
         self.game.run_frame(events);
 
         //    self.engine

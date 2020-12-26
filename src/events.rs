@@ -1,5 +1,5 @@
 use js_sys::Map as JsMap;
-use nalgebra::Vector2;
+use nalgebra::{Vector2, Vector3};
 use wasm_bindgen::prelude::*;
 #[derive(Clone, PartialEq)]
 pub enum MouseButton {
@@ -24,15 +24,37 @@ pub enum Event {
         delta_y: f32,
         delta_time_ms: f32,
     },
+    CameraMove {
+        direction: Vector3<f32>,
+    },
     MouseClick(MouseClick),
 }
 impl Event {
-    pub fn from_map(map: JsMap) -> Self {
+    pub fn from_map(map: JsMap) -> Option<Self> {
         let name: String = map.get(&JsValue::from_str("name")).as_string().unwrap();
         match name.as_str() {
-            "mouse_move" => Self::from_mouse_move_map(map),
-            "wheel" => Self::from_wheel_map(map),
+            "mouse_move" => Some(Self::from_mouse_move_map(map)),
+            "wheel" => Some(Self::from_wheel_map(map)),
+            "keypress" => Self::from_keypress(map),
             _ => panic!("invalid name"),
+        }
+    }
+    pub fn from_keypress(map: JsMap) -> Option<Self> {
+        let key: String = map.get(&JsValue::from_str("key")).as_string().unwrap();
+        match key.as_str() {
+            "w" => Some(Self::CameraMove {
+                direction: Vector3::new(0.0, 0.0, -1.0),
+            }),
+            "a" => Some(Self::CameraMove {
+                direction: Vector3::new(-1.0, 0.0, 0.0),
+            }),
+            "s" => Some(Self::CameraMove {
+                direction: Vector3::new(0.0, 0.0, 1.0),
+            }),
+            "d" => Some(Self::CameraMove {
+                direction: Vector3::new(1.0, 0.0, 0.0),
+            }),
+            _ => None,
         }
     }
     pub fn from_wheel_map(map: JsMap) -> Self {

@@ -30,6 +30,9 @@ impl Camera {
             self.radius = 0.1;
         }
     }
+    pub fn translate(&mut self, translation: &Vector3<f32>) {
+        self.origin += translation;
+    }
     pub fn get_matrix(&self) -> Matrix4<f32> {
         let delta_position = self.radius
             * Vector3::new(
@@ -38,7 +41,7 @@ impl Camera {
                 (self.phi).sin() * self.theta.cos(),
             );
         let face = Matrix4::look_at_rh(
-            &Point::from(delta_position),
+            &Point::from(delta_position + self.origin),
             &Point::from(self.origin),
             &Vector3::new(0.0, 1.0, 0.0),
         );

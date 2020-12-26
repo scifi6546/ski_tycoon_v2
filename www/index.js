@@ -41,9 +41,17 @@ function onwheel(event) {
     events.push(wheel_event);
     last_time = now;
 }
+function press_putton(event) {
+    console.log(event);
+    let button_event = new Map();
+    button_event.set("name", "keypress");
+    button_event.set("key", event.key)
+    events.push(button_event)
+}
 document.getElementById("canvas").onclick = canvas_click;
 document.getElementById("canvas").onmousemove = mouse_move
 document.getElementById("canvas").onwheel = onwheel;
+document.onkeypress = press_putton;
 let game = rust.init_game();
 function render() {
     let event_state = new Map();
