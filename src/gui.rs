@@ -18,8 +18,8 @@ impl GuiModel {
                 mesh: Mesh {
                     vertices: vec![
                         (Vector3::new(1.0, 1.0, -0.5), Vector2::new(1.0, 1.0)),
-                        (Vector3::new(-1.0, -1.0, -0.5), Vector2::new(0.0, 0.0)),
                         (Vector3::new(1.0, -1.0, -0.5), Vector2::new(1.0, 0.0)),
+                        (Vector3::new(-1.0, -1.0, -0.5), Vector2::new(0.0, 0.0)),
                         //Second Triangle
                         (Vector3::new(1.0, 1.0, -0.5), Vector2::new(1.0, 1.0)),
                         (Vector3::new(-1.0, -1.0, -0.5), Vector2::new(0.0, 0.0)),

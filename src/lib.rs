@@ -85,8 +85,8 @@ impl Game {
                         buttons_pressed,
                     } => {
                         if buttons_pressed.contains(&MouseButton::RightClick) {
-                            camera.rotate_phi(delta_x * delta_time_ms);
-                            camera.rotate_theta(delta_y * delta_time_ms);
+                            camera.rotate_phi(delta_x * 0.001 * delta_time_ms);
+                            camera.rotate_theta(delta_y * 0.001 * delta_time_ms);
                         }
                     }
                     Event::CameraZoom {
