@@ -7,7 +7,7 @@ mod skiier;
 mod terrain;
 mod utils;
 
-use graphics_engine::{Framebuffer, Mesh, RGBATexture, Transform, WebGl};
+use graphics_engine::{Framebuffer, Mesh, RGBATexture, RGBTexture, Transform, WebGl};
 use js_sys::Array as JsArray;
 use log::debug;
 use nalgebra::{Matrix4, Vector2, Vector3, Vector4};
@@ -24,7 +24,7 @@ mod prelude {
     pub use super::graphics_engine::{
         ErrorType, Framebuffer, RuntimeMesh, RuntimeTexture, Transform, WebGl,
     };
-    pub use super::graphics_engine::{Mesh, RGBATexture as Texture};
+    pub use super::graphics_engine::{Mesh, RGBATexture as Texture, RGBTexture};
     pub use super::graphics_system::RuntimeModel;
     pub use super::gui::{GuiModel, GuiRuntimeModel, GuiTransform};
     pub use super::model::Model;
@@ -57,8 +57,9 @@ impl Game {
             Vector4::new(0, 0, 0, 0),
             Vector2::new(800, 800),
         ))?;
+        let mut fb_depth = webgl.build_depth_texture(Vector2::new(800, 800))?;
         let fb_mesh = webgl.build_mesh(Mesh::plane())?;
-        let world_framebuffer = webgl.build_framebuffer(&mut fb_texture)?;
+        let world_framebuffer = webgl.build_framebuffer(&mut fb_texture, &mut fb_depth)?;
         let world_render_surface = RuntimeModel {
             mesh: fb_mesh,
             texture: fb_texture,
@@ -109,7 +110,7 @@ impl Game {
         }
         let mut schedule = Schedule::builder()
             .add_system(graphics_system::render_object_system())
-            .add_system(graphics_system::render_debug_system())
+            // .add_system(graphics_system::render_debug_system())
             .build();
         schedule.execute(&mut self.world, &mut self.resources);
         {
@@ -159,7 +160,7 @@ static ALLOC: wee_alloc::WeeAlloc = wee_alloc::WeeAlloc::INIT;
 use log::Level;
 #[wasm_bindgen]
 pub fn init_game() -> WebGame {
-    console_log::init_with_level(Level::Debug).expect("filed to init console_log");
+    console_log::init_with_level(Level::Info).expect("filed to init console_log");
     let r = Game::new();
     if r.is_ok() {
         WebGame {

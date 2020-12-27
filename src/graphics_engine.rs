@@ -1,4 +1,5 @@
 mod mesh;
+use log::{debug, error, info};
 pub use mesh::Mesh;
 use nalgebra::{Matrix4, Vector2, Vector3, Vector4};
 use wasm_bindgen::{JsCast, JsValue};
@@ -37,6 +38,12 @@ pub type RuntimeMesh = WebGlMesh;
 pub type RuntimeTexture = WebGlRenderTexture;
 pub type ErrorType = JsValue;
 pub type Framebuffer = WebFramebuffer;
+pub struct RuntimeRGBTexture {
+    texture: RuntimeTexture,
+}
+pub struct RuntimeDepthTexture {
+    texture: RuntimeTexture,
+}
 ///sync can be impemented because threads do not exist in webgl
 unsafe impl Sync for RuntimeMesh {}
 unsafe impl Sync for RuntimeTexture {}
@@ -66,6 +73,28 @@ impl RGBATexture {
         Self { dimensions, pixels }
     }
 }
+pub struct RGBTexture {
+    dimensions: Vector2<u32>,
+    pixels: Vec<Vector3<u8>>,
+}
+impl RGBTexture {
+    pub fn get_raw_vector(&self) -> Vec<u8> {
+        let mut v = vec![];
+        v.reserve((self.dimensions.x * self.dimensions.y * 4) as usize);
+        for pixel in self.pixels.iter() {
+            v.push(pixel.x);
+            v.push(pixel.y);
+            v.push(pixel.z);
+        }
+        return v;
+    }
+    pub fn constant_color(color: Vector3<u8>, dimensions: Vector2<u32>) -> Self {
+        let pixels = (0..(dimensions.x * dimensions.y))
+            .map(|_| color.clone())
+            .collect();
+        Self { dimensions, pixels }
+    }
+}
 pub struct WebGl {
     context: WebGl2RenderingContext,
     position_attribute_location: i32,
@@ -88,6 +117,7 @@ pub struct WebFramebuffer {
 }
 impl WebGl {
     pub fn new() -> Result<Self, ErrorType> {
+        debug!("creating webgl2 instance");
         let window = web_sys::window().unwrap();
         let document = window.document().unwrap();
         let canvas = document.get_element_by_id("canvas").unwrap();
@@ -139,6 +169,7 @@ impl WebGl {
         })
     }
     pub fn build_mesh(&mut self, mesh: Mesh) -> Result<RuntimeMesh, ErrorType> {
+        debug!("building mesh");
         let position_buffer = self.context.create_buffer();
         let mut array: Vec<f32> = vec![];
 
@@ -195,7 +226,64 @@ impl WebGl {
             count: mesh.vertices.len() as i32,
         })
     }
+    pub fn build_depth_texture(
+        &mut self,
+        dimensions: Vector2<u32>,
+    ) -> Result<RuntimeDepthTexture, ErrorType> {
+        debug!("building texture");
+        let gl_texture = self.context.create_texture();
+        assert!(gl_texture.is_some());
+        self.context
+            .bind_texture(WebGl2RenderingContext::TEXTURE_2D, gl_texture.as_ref());
+        let texture_unit = 0;
+        self.context
+            .active_texture(WebGl2RenderingContext::TEXTURE0 + texture_unit);
+        let level = 0;
+        self.context
+            .tex_image_2d_with_i32_and_i32_and_i32_and_format_and_type_and_opt_u8_array(
+                WebGl2RenderingContext::TEXTURE_2D,
+                level,
+                //  Use RGBA Format
+                WebGl2RenderingContext::DEPTH_COMPONENT24 as i32,
+                //width
+                dimensions.x as i32,
+                //height
+                dimensions.y as i32,
+                //must be 0 specifies the border
+                0,
+                //  Use RGB Format
+                WebGl2RenderingContext::DEPTH_COMPONENT,
+                WebGl2RenderingContext::UNSIGNED_INT,
+                None,
+            )?;
+        //self.gl_context.generate_mipmap(WebGl2RenderingContext::TEXTURE_2D);
+        //getting location of sampler
+
+        self.context
+            .uniform1i(self.texture_sampler_location.as_ref(), texture_unit as i32);
+        self.context.tex_parameteri(
+            WebGl2RenderingContext::TEXTURE_2D,
+            WebGl2RenderingContext::TEXTURE_MIN_FILTER,
+            WebGl2RenderingContext::LINEAR as i32,
+        );
+        self.context.tex_parameteri(
+            WebGl2RenderingContext::TEXTURE_2D,
+            WebGl2RenderingContext::TEXTURE_WRAP_S,
+            WebGl2RenderingContext::CLAMP_TO_EDGE as i32,
+        );
+        self.context.tex_parameteri(
+            WebGl2RenderingContext::TEXTURE_2D,
+            WebGl2RenderingContext::TEXTURE_WRAP_T,
+            WebGl2RenderingContext::CLAMP_TO_EDGE as i32,
+        );
+        Ok(RuntimeDepthTexture {
+            texture: WebGlRenderTexture {
+                texture: gl_texture,
+            },
+        })
+    }
     pub fn build_texture(&mut self, texture: RGBATexture) -> Result<RuntimeTexture, ErrorType> {
+        debug!("building texture");
         let gl_texture = self.context.create_texture();
         assert!(gl_texture.is_some());
         self.context
@@ -246,11 +334,12 @@ impl WebGl {
             texture: gl_texture,
         })
     }
-    #[allow(dead_code)]
     pub fn build_framebuffer(
         &mut self,
         texture_attachment: &mut RuntimeTexture,
+        depth_attachment: &mut RuntimeDepthTexture,
     ) -> Result<Framebuffer, ErrorType> {
+        debug!("building framebuffer");
         let framebuffer = self.context.create_framebuffer();
         self.context
             .bind_framebuffer(WebGl2RenderingContext::FRAMEBUFFER, framebuffer.as_ref());
@@ -261,22 +350,41 @@ impl WebGl {
             texture_attachment.texture.as_ref(),
             0,
         );
+        self.context.framebuffer_texture_2d(
+            WebGl2RenderingContext::FRAMEBUFFER,
+            WebGl2RenderingContext::DEPTH_ATTACHMENT,
+            WebGl2RenderingContext::TEXTURE_2D,
+            depth_attachment.texture.texture.as_ref(),
+            0,
+        );
+        if self
+            .context
+            .check_framebuffer_status(WebGl2RenderingContext::FRAMEBUFFER)
+            != WebGl2RenderingContext::FRAMEBUFFER_COMPLETE
+        {
+            error!("Framebuffer not complete");
+            panic!();
+        }
         // rebinding to default framebuffer to prevent side effects
         self.bind_default_framebuffer();
         Ok(WebFramebuffer { framebuffer })
     }
-    #[allow(dead_code)]
     pub fn bind_default_framebuffer(&mut self) {
+        debug!("binding default framebuffer");
         self.context
             .bind_framebuffer(WebGl2RenderingContext::FRAMEBUFFER, None);
     }
     pub fn clear_screen(&mut self, color: Vector4<f32>) {
+        info!("clearing screen, color: {}", color);
+        self.context.clear_depth(1.0);
+        self.context.depth_func(WebGl2RenderingContext::LESS);
         self.context.clear_color(color.x, color.y, color.z, color.w);
         self.context.clear(
             WebGl2RenderingContext::COLOR_BUFFER_BIT | WebGl2RenderingContext::DEPTH_BUFFER_BIT,
         );
     }
     pub fn bind_texture(&mut self, texture: &RuntimeTexture) {
+        debug!("binding texture");
         self.context
             .active_texture(WebGl2RenderingContext::TEXTURE0);
         self.context
@@ -286,24 +394,28 @@ impl WebGl {
     }
     #[allow(dead_code)]
     pub fn bind_framebuffer(&mut self, framebuffer: &Framebuffer) {
+        debug!("binding framebuffer");
         self.context.bind_framebuffer(
             WebGl2RenderingContext::FRAMEBUFFER,
             framebuffer.framebuffer.as_ref(),
         );
     }
     pub fn draw_mesh(&mut self, mesh: &RuntimeMesh) {
+        debug!("drawing mesh");
         self.context
             .bind_vertex_array(mesh.vertex_array_object.as_ref());
         self.context
             .draw_arrays(WebGl2RenderingContext::TRIANGLES, 0, mesh.count);
     }
     pub fn draw_lines(&mut self, mesh: &RuntimeMesh) {
+        debug!("drawing lines");
         self.context
             .bind_vertex_array(mesh.vertex_array_object.as_ref());
         self.context
             .draw_arrays(WebGl2RenderingContext::LINES, 0, mesh.count);
     }
     pub fn send_model_matrix(&mut self, matrix: Matrix4<f32>) {
+        debug!("sending model matrix");
         let model_uniform = self.context.get_uniform_location(&self.program, "model");
         self.context.uniform_matrix4fv_with_f32_array(
             model_uniform.as_ref(),
@@ -312,6 +424,7 @@ impl WebGl {
         );
     }
     pub fn send_view_matrix(&mut self, matrix: Matrix4<f32>) {
+        debug!("sending view matrix");
         let model_uniform = self.context.get_uniform_location(&self.program, "camera");
         self.context.uniform_matrix4fv_with_f32_array(
             model_uniform.as_ref(),

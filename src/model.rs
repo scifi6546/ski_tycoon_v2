@@ -65,7 +65,7 @@ impl Model {
         }
         Model {
             mesh: Mesh { vertices },
-            texture: Texture::constant_color(Vector4::new(255, 255, 255, 255), Vector2::new(8, 8)),
+            texture: Texture::constant_color(Vector4::new(200, 200, 200, 255), Vector2::new(8, 8)),
             transform,
         }
     }
