@@ -96,6 +96,7 @@ impl WebGl {
             .get_context("webgl2")?
             .unwrap()
             .dyn_into::<WebGl2RenderingContext>()?;
+        context.enable(WebGl2RenderingContext::DEPTH_TEST);
         let vert_shader = Self::compile_shader(
             &context,
             WebGl2RenderingContext::VERTEX_SHADER,
@@ -271,7 +272,9 @@ impl WebGl {
     }
     pub fn clear_screen(&mut self, color: Vector4<f32>) {
         self.context.clear_color(color.x, color.y, color.z, color.w);
-        self.context.clear(WebGl2RenderingContext::COLOR_BUFFER_BIT);
+        self.context.clear(
+            WebGl2RenderingContext::COLOR_BUFFER_BIT | WebGl2RenderingContext::DEPTH_BUFFER_BIT,
+        );
     }
     pub fn bind_texture(&mut self, texture: &RuntimeTexture) {
         self.context
@@ -293,6 +296,12 @@ impl WebGl {
             .bind_vertex_array(mesh.vertex_array_object.as_ref());
         self.context
             .draw_arrays(WebGl2RenderingContext::TRIANGLES, 0, mesh.count);
+    }
+    pub fn draw_lines(&mut self, mesh: &RuntimeMesh) {
+        self.context
+            .bind_vertex_array(mesh.vertex_array_object.as_ref());
+        self.context
+            .draw_arrays(WebGl2RenderingContext::LINES, 0, mesh.count);
     }
     pub fn send_model_matrix(&mut self, matrix: Matrix4<f32>) {
         let model_uniform = self.context.get_uniform_location(&self.program, "model");

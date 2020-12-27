@@ -1,5 +1,5 @@
 use super::prelude::{
-    Camera, ErrorType, GuiRuntimeModel, GuiTransform, Model, RuntimeMesh, RuntimeTexture,
+    Camera, ErrorType, GuiRuntimeModel, GuiTransform, Mesh, Model, RuntimeMesh, RuntimeTexture,
     Transform, WebGl,
 };
 use legion::*;
@@ -8,6 +8,10 @@ pub struct RuntimeModel {
     pub mesh: RuntimeMesh,
     pub texture: RuntimeTexture,
 }
+/// Used for printing debug info
+pub struct RuntimeDebugMesh {
+    mesh: RuntimeMesh,
+}
 impl RuntimeModel {
     pub fn new(model: Model, graphics: &mut WebGl) -> Result<Self, ErrorType> {
         let mesh = graphics.build_mesh(model.mesh)?;
@@ -15,10 +19,21 @@ impl RuntimeModel {
         Ok(Self { mesh, texture })
     }
 }
+impl RuntimeDebugMesh {
+    pub fn new(mesh: Mesh, graphics: &mut WebGl) -> Result<Self, ErrorType> {
+        let mesh = graphics.build_mesh(mesh)?;
+        Ok(Self { mesh })
+    }
+}
 pub fn insert_mesh(model: Model, world: &mut World, graphics: &mut WebGl) -> Result<(), ErrorType> {
-    world.push((model.transform.clone(), RuntimeModel::new(model, graphics)?));
+    world.push((
+        model.transform.clone(),
+        RuntimeDebugMesh::new(model.mesh.clone(), graphics)?,
+        RuntimeModel::new(model, graphics)?,
+    ));
     Ok(())
 }
+
 #[system(for_each)]
 pub fn render_object(
     transform: &Transform,
@@ -32,7 +47,17 @@ pub fn render_object(
     webgl.send_model_matrix(transform.build().clone());
     webgl.draw_mesh(&model.mesh);
 }
-
+#[system(for_each)]
+pub fn render_debug(
+    transform: &Transform,
+    model: &RuntimeDebugMesh,
+    #[resource] webgl: &mut WebGl,
+    #[resource] camera: &Camera,
+) {
+    webgl.send_model_matrix(transform.build().clone());
+    webgl.send_view_matrix(camera.get_matrix());
+    webgl.draw_lines(&model.mesh);
+}
 #[system(for_each)]
 pub fn render_gui(
     transform: &GuiTransform,
