@@ -38,9 +38,6 @@ pub type RuntimeMesh = WebGlMesh;
 pub type RuntimeTexture = WebGlRenderTexture;
 pub type ErrorType = JsValue;
 pub type Framebuffer = WebFramebuffer;
-pub struct RuntimeRGBTexture {
-    texture: RuntimeTexture,
-}
 pub struct RuntimeDepthTexture {
     texture: RuntimeTexture,
 }
@@ -67,28 +64,6 @@ impl RGBATexture {
         return v;
     }
     pub fn constant_color(color: Vector4<u8>, dimensions: Vector2<u32>) -> Self {
-        let pixels = (0..(dimensions.x * dimensions.y))
-            .map(|_| color.clone())
-            .collect();
-        Self { dimensions, pixels }
-    }
-}
-pub struct RGBTexture {
-    dimensions: Vector2<u32>,
-    pixels: Vec<Vector3<u8>>,
-}
-impl RGBTexture {
-    pub fn get_raw_vector(&self) -> Vec<u8> {
-        let mut v = vec![];
-        v.reserve((self.dimensions.x * self.dimensions.y * 4) as usize);
-        for pixel in self.pixels.iter() {
-            v.push(pixel.x);
-            v.push(pixel.y);
-            v.push(pixel.z);
-        }
-        return v;
-    }
-    pub fn constant_color(color: Vector3<u8>, dimensions: Vector2<u32>) -> Self {
         let pixels = (0..(dimensions.x * dimensions.y))
             .map(|_| color.clone())
             .collect();

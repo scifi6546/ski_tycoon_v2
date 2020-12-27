@@ -7,7 +7,7 @@ mod skiier;
 mod terrain;
 mod utils;
 
-use graphics_engine::{Framebuffer, Mesh, RGBATexture, RGBTexture, Transform, WebGl};
+use graphics_engine::{Framebuffer, Mesh, RGBATexture, Transform, WebGl};
 use js_sys::Array as JsArray;
 use log::debug;
 use nalgebra::{Matrix4, Vector2, Vector3, Vector4};
@@ -24,7 +24,7 @@ mod prelude {
     pub use super::graphics_engine::{
         ErrorType, Framebuffer, RuntimeMesh, RuntimeTexture, Transform, WebGl,
     };
-    pub use super::graphics_engine::{Mesh, RGBATexture as Texture, RGBTexture};
+    pub use super::graphics_engine::{Mesh, RGBATexture as Texture};
     pub use super::graphics_system::RuntimeModel;
     pub use super::gui::{GuiModel, GuiRuntimeModel, GuiTransform};
     pub use super::model::Model;
