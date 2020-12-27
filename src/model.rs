@@ -70,46 +70,6 @@ impl Model {
         }
     }
 }
-pub fn DEP_get_terrain_model(dimensions: Vector2<u32>, transform: Transform) -> Model {
-    let mut vertices = vec![];
-    let scale = 1.0;
-    for x in 0..dimensions.x {
-        for y in 0..dimensions.y {
-            let pos = Vector3::new(x as f32, 0.0, y as f32);
-            //first traigne
-            vertices.push((
-                scale * (Vector3::new(0.0, 0.0, 0.0) + pos),
-                Vector2::new(0.0, 0.0),
-            ));
-            vertices.push((
-                scale * (Vector3::new(1.0, 0.0, 1.0) + pos),
-                Vector2::new(1.0, 1.0),
-            ));
-            vertices.push((
-                scale * (Vector3::new(1.0, 0.0, 0.0) + pos),
-                Vector2::new(1.0, 0.0),
-            ));
-            //second triangle
-            vertices.push((
-                scale * (Vector3::new(0.0, 0.0, 0.0) + pos),
-                Vector2::new(0.0, 0.0),
-            ));
-            vertices.push((
-                scale * (Vector3::new(0.0, 0.0, 1.0) + pos),
-                Vector2::new(0.0, 1.0),
-            ));
-            vertices.push((
-                scale * (Vector3::new(1.0, 0.0, 1.0) + pos),
-                Vector2::new(1.0, 1.0),
-            ));
-        }
-    }
-    Model {
-        mesh: Mesh { vertices },
-        texture: Texture::constant_color(Vector4::new(0, 255, 255, 255), Vector2::new(8, 8)),
-        transform,
-    }
-}
 pub fn get_cube(transform: Transform) -> Model {
     let vertices = vec![
         (Vector3::new(-1.0, -1.0, 1.0), Vector2::new(0.0, 0.0)),
