@@ -4,6 +4,7 @@ mod graphics_system;
 mod gui;
 mod model;
 mod skiier;
+mod terrain;
 mod utils;
 
 use graphics_engine::{Framebuffer, Mesh, RGBATexture, Transform, WebGl};
@@ -13,9 +14,10 @@ use nalgebra::{Matrix4, Vector2, Vector3, Vector4};
 mod events;
 use camera::Camera;
 use events::{Event, MouseButton};
-use graphics_system::{insert_mesh, RuntimeModel};
+use graphics_system::{insert_mesh, insert_terrain, RuntimeModel};
 use gui::GuiModel;
 use legion::*;
+use terrain::Terrain;
 use wasm_bindgen::prelude::*;
 mod prelude {
     pub use super::camera::Camera;
@@ -25,12 +27,8 @@ mod prelude {
     pub use super::graphics_engine::{Mesh, RGBATexture as Texture};
     pub use super::graphics_system::RuntimeModel;
     pub use super::gui::{GuiModel, GuiRuntimeModel, GuiTransform};
-    #[derive(Clone)]
-    pub struct Model {
-        pub mesh: super::graphics_engine::Mesh,
-        pub texture: super::graphics_engine::RGBATexture,
-        pub transform: Transform,
-    }
+    pub use super::model::Model;
+    pub use super::terrain::Terrain;
 }
 struct Game {
     world: World,
@@ -49,8 +47,8 @@ impl Game {
         box_transform.translate(Vector3::new(-0.5, -0.5, 0.0));
         GuiModel::simple_box(box_transform).insert(&mut world, &mut webgl)?;
         insert_mesh(model::get_cube(transform.clone()), &mut world, &mut webgl)?;
-        insert_mesh(
-            model::get_terrain_model(Vector2::new(20, 20), transform),
+        insert_terrain(
+            Terrain::new_cone(Vector2::new(10, 10), Vector2::new(5.0, 5.0), 5.0, -1.0),
             &mut world,
             &mut webgl,
         )?;

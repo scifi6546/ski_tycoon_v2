@@ -52,7 +52,9 @@ document.getElementById("canvas").onclick = canvas_click;
 document.getElementById("canvas").onmousemove = mouse_move
 document.getElementById("canvas").onwheel = onwheel;
 document.onkeypress = press_putton;
+console.log("loading game")
 let game = rust.init_game();
+console.log("loaded game")
 function render() {
     let event_state = new Map();
     if (last_x === null) {

@@ -1,6 +1,6 @@
 use super::prelude::{
     Camera, ErrorType, GuiRuntimeModel, GuiTransform, Mesh, Model, RuntimeMesh, RuntimeTexture,
-    Transform, WebGl,
+    Terrain, Transform, WebGl,
 };
 use legion::*;
 use log::debug;
@@ -27,6 +27,20 @@ impl RuntimeDebugMesh {
 }
 pub fn insert_mesh(model: Model, world: &mut World, graphics: &mut WebGl) -> Result<(), ErrorType> {
     world.push((
+        model.transform.clone(),
+        RuntimeDebugMesh::new(model.mesh.clone(), graphics)?,
+        RuntimeModel::new(model, graphics)?,
+    ));
+    Ok(())
+}
+pub fn insert_terrain(
+    terrain: Terrain,
+    world: &mut World,
+    graphics: &mut WebGl,
+) -> Result<(), ErrorType> {
+    let model = terrain.model();
+    world.push((
+        terrain,
         model.transform.clone(),
         RuntimeDebugMesh::new(model.mesh.clone(), graphics)?,
         RuntimeModel::new(model, graphics)?,
