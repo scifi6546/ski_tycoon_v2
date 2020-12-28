@@ -1,14 +1,13 @@
-#![feature(map_first_last)]
 mod camera;
 mod graph;
 mod graphics_engine;
 mod graphics_system;
+mod grid;
 mod gui;
 mod model;
 mod skiier;
 mod terrain;
 mod utils;
-
 use graphics_engine::{Framebuffer, Mesh, RGBATexture, Transform, WebGl};
 use js_sys::Array as JsArray;
 use log::debug;
@@ -21,13 +20,14 @@ use gui::GuiModel;
 use legion::*;
 use terrain::Terrain;
 use wasm_bindgen::prelude::*;
-mod prelude {
+pub mod prelude {
     pub use super::camera::Camera;
     pub use super::graphics_engine::{
         ErrorType, Framebuffer, RuntimeMesh, RuntimeTexture, Transform, WebGl,
     };
     pub use super::graphics_engine::{Mesh, RGBATexture as Texture};
     pub use super::graphics_system::RuntimeModel;
+    pub use super::grid::Grid;
     pub use super::gui::{GuiModel, GuiRuntimeModel, GuiTransform};
     pub use super::model::Model;
     pub use super::terrain::Terrain;
@@ -50,7 +50,7 @@ impl Game {
         GuiModel::simple_box(box_transform).insert(&mut world, &mut webgl)?;
         insert_mesh(model::get_cube(transform.clone()), &mut world, &mut webgl)?;
         insert_terrain(
-            Terrain::new_cone(Vector2::new(10, 10), Vector2::new(5.0, 5.0), 5.0, -1.0),
+            Terrain::new_cone(Vector2::new(100, 100), Vector2::new(5.0, 5.0), 5.0, -1.0),
             &mut world,
             &mut webgl,
         )?;

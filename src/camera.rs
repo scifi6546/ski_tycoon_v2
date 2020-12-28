@@ -45,7 +45,7 @@ impl Camera {
             &Point::from(self.origin),
             &Vector3::new(0.0, 1.0, 0.0),
         );
-        let cam = Matrix4::new_perspective(1.0, 3.14 / 3.0, 0.1, 100.0);
+        let cam = Matrix4::new_perspective(1.0, 3.14 / 3.0, 0.1, 1000.0);
         let mat = cam * face;
         mat
     }
