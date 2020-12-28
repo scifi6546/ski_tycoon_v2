@@ -1,4 +1,6 @@
+#![feature(map_first_last)]
 mod camera;
+mod graph;
 mod graphics_engine;
 mod graphics_system;
 mod gui;
