@@ -40,10 +40,10 @@ impl std::cmp::Ord for GraphWeight {
     }
 }
 pub struct GridNode {
-    x_plus: GraphWeight,
-    x_minus: GraphWeight,
-    z_plus: GraphWeight,
-    z_minus: GraphWeight,
+    pub x_plus: GraphWeight,
+    pub x_minus: GraphWeight,
+    pub z_plus: GraphWeight,
+    pub z_minus: GraphWeight,
 }
 //layer of graph system
 pub enum GraphLayer {

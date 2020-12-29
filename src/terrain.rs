@@ -1,4 +1,4 @@
-use super::prelude::{Model, Transform};
+use super::prelude::{GraphLayer, GraphWeight, Grid, GridNode, Model, Transform};
 use nalgebra::Vector2;
 #[derive(Clone, Debug, PartialEq)]
 enum TileType {
@@ -38,5 +38,41 @@ impl Terrain {
     pub fn model(&self) -> Model {
         let heights = self.tiles.iter().map(|t| t.height).collect();
         Model::from_heights(heights, self.dimensions, Transform::default())
+    }
+    pub fn build_graph(&self) -> GraphLayer {
+        let mut data = vec![];
+        data.reserve(self.dimensions.x * self.dimensions.y);
+        for x in 0..self.dimensions.x {
+            for y in 0..self.dimensions.y {
+                let x_plus = if x + 1 < self.dimensions.x {
+                    GraphWeight::Some(1)
+                } else {
+                    GraphWeight::Infinity
+                };
+                let x_minus = if x == 0 {
+                    GraphWeight::Some(1)
+                } else {
+                    GraphWeight::Infinity
+                };
+                let z_plus = if y + 1 < self.dimensions.y {
+                    GraphWeight::Some(1)
+                } else {
+                    GraphWeight::Infinity
+                };
+                let z_minus = if y == 0 {
+                    GraphWeight::Some(1)
+                } else {
+                    GraphWeight::Infinity
+                };
+                data.push(GridNode {
+                    x_plus,
+                    x_minus,
+                    z_plus,
+                    z_minus,
+                });
+            }
+        }
+        let grid = Grid::from_vec(data, self.dimensions);
+        GraphLayer::Grid { grid }
     }
 }

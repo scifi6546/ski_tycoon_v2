@@ -22,6 +22,7 @@ use terrain::Terrain;
 use wasm_bindgen::prelude::*;
 pub mod prelude {
     pub use super::camera::Camera;
+    pub use super::graph::{GraphLayer, GraphWeight, GridNode};
     pub use super::graphics_engine::{
         ErrorType, Framebuffer, RuntimeMesh, RuntimeTexture, Transform, WebGl,
     };
