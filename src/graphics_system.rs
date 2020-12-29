@@ -25,6 +25,7 @@ impl RuntimeDebugMesh {
         Ok(Self { mesh })
     }
 }
+
 pub fn insert_mesh(model: Model, world: &mut World, graphics: &mut WebGl) -> Result<(), ErrorType> {
     world.push((
         model.transform.clone(),

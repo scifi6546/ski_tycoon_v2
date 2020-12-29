@@ -18,20 +18,22 @@ use events::{Event, MouseButton};
 use graphics_system::{insert_mesh, insert_terrain, RuntimeModel};
 use gui::GuiModel;
 use legion::*;
+use model::Model;
 use terrain::Terrain;
 use wasm_bindgen::prelude::*;
 pub mod prelude {
     pub use super::camera::Camera;
-    pub use super::graph::{GraphLayer, GraphWeight, GridNode};
+    pub use super::graph::{dijkstra, GraphLayer, GraphLayerList, GraphWeight, GridNode};
     pub use super::graphics_engine::{
         ErrorType, Framebuffer, RuntimeMesh, RuntimeTexture, Transform, WebGl,
     };
     pub use super::graphics_engine::{Mesh, RGBATexture as Texture};
-    pub use super::graphics_system::RuntimeModel;
+    pub use super::graphics_system::{RuntimeDebugMesh, RuntimeModel};
     pub use super::grid::Grid;
     pub use super::gui::{GuiModel, GuiRuntimeModel, GuiTransform};
     pub use super::model::Model;
     pub use super::terrain::Terrain;
+    pub use wasm_bindgen::prelude::JsValue;
 }
 struct Game {
     world: World,
@@ -49,7 +51,7 @@ impl Game {
         box_transform.set_scale(Vector3::new(0.1, 0.1, 0.1));
         box_transform.translate(Vector3::new(-0.5, -0.5, 0.0));
         GuiModel::simple_box(box_transform).insert(&mut world, &mut webgl)?;
-        insert_mesh(model::get_cube(transform.clone()), &mut world, &mut webgl)?;
+        insert_mesh(Model::cube(transform.clone()), &mut world, &mut webgl)?;
         insert_terrain(
             Terrain::new_cone(Vector2::new(100, 100), Vector2::new(5.0, 5.0), 5.0, -1.0),
             &mut world,
@@ -67,6 +69,7 @@ impl Game {
             mesh: fb_mesh,
             texture: fb_texture,
         };
+        skiier::build_skiier(&mut world, &mut webgl, Vector2::new(0, 0))?;
         resources.insert(webgl);
         resources.insert(Camera::new(Vector3::new(0.0, 0.0, 0.0), 20.0, 1.0, 1.0));
 
@@ -113,7 +116,7 @@ impl Game {
         }
         let mut schedule = Schedule::builder()
             .add_system(graphics_system::render_object_system())
-            // .add_system(graphics_system::render_debug_system())
+            .add_system(graphics_system::render_debug_system())
             .build();
         schedule.execute(&mut self.world, &mut self.resources);
         {

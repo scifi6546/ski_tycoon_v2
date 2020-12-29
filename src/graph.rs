@@ -91,6 +91,11 @@ impl GraphLayer {
 pub struct GraphLayerList<'a> {
     layers: Vec<&'a GraphLayer>,
 }
+impl<'a> GraphLayerList<'a> {
+    pub fn new(layers: Vec<&'a GraphLayer>) -> Self {
+        Self { layers }
+    }
+}
 impl<'a> Graph for GraphLayerList<'a> {
     type Node = Vector2<i64>;
     fn get_children(&self, node: &Self::Node) -> Vec<(Self::Node, GraphWeight)> {
@@ -107,8 +112,9 @@ pub trait Graph {
     fn get_children(&self, node: &Self::Node) -> Vec<(Self::Node, GraphWeight)>;
 }
 pub struct Path<G: Graph> {
-    path: Vec<G::Node>,
+    pub path: Vec<G::Node>,
 }
+
 struct Tree {
     children: Vec<(Tree, f32)>,
 }
