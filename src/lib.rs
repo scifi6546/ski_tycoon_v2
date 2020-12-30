@@ -118,6 +118,10 @@ impl Game {
             .add_system(graphics_system::render_object_system())
             .build();
         schedule.execute(&mut self.world, &mut self.resources);
+        {
+            let gl: &mut WebGl = &mut self.resources.get_mut().unwrap();
+            gl.clear_depth();
+        }
         let mut schedule = Schedule::builder()
             .add_system(graphics_system::render_debug_system())
             .build();
