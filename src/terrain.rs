@@ -50,7 +50,7 @@ impl Terrain {
                 } else {
                     GraphWeight::Infinity
                 };
-                let x_minus = if x == 0 {
+                let x_minus = if x > 0 {
                     GraphWeight::Some(1)
                 } else {
                     GraphWeight::Infinity
@@ -60,7 +60,7 @@ impl Terrain {
                 } else {
                     GraphWeight::Infinity
                 };
-                let z_minus = if y == 0 {
+                let z_minus = if y > 0 {
                     GraphWeight::Some(1)
                 } else {
                     GraphWeight::Infinity

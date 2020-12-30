@@ -1,4 +1,5 @@
 use super::prelude::Grid;
+use log::info;
 use nalgebra::Vector2;
 use priority_queue::PriorityQueue;
 use std::cmp::Reverse;
@@ -30,15 +31,16 @@ impl std::cmp::Ord for GraphWeight {
         match self {
             Self::Infinity => match other {
                 Self::Infinity => std::cmp::Ordering::Equal,
-                Self::Some(_) => std::cmp::Ordering::Less,
+                Self::Some(_) => std::cmp::Ordering::Greater,
             },
             Self::Some(s) => match other {
-                Self::Infinity => std::cmp::Ordering::Greater,
+                Self::Infinity => std::cmp::Ordering::Less,
                 Self::Some(o) => s.cmp(o),
             },
         }
     }
 }
+#[derive(Debug)]
 pub struct GridNode {
     pub x_plus: GraphWeight,
     pub x_minus: GraphWeight,
@@ -51,9 +53,11 @@ pub enum GraphLayer {
 }
 impl GraphLayer {
     pub fn get_children(&self, source: &Vector2<i64>) -> Vec<(Vector2<i64>, GraphWeight)> {
+        info!("get children grid??");
         match self {
             Self::Grid { grid } => {
                 if let Some(node) = grid.get(source.clone()) {
+                    info!("getting node: {:?} from grid at {}", node, source);
                     vec![
                         (source + Vector2::new(1, 0), node.x_plus.clone()),
                         (source + Vector2::new(-1, 0), node.x_minus.clone()),
@@ -61,12 +65,14 @@ impl GraphLayer {
                         (source + Vector2::new(0, -1), node.z_minus.clone()),
                     ]
                 } else {
+                    info!("source: {} does not exist", source);
                     vec![]
                 }
             }
         }
     }
     pub fn get(&self, source: Vector2<i64>, destination: Vector2<i64>) -> GraphWeight {
+        info!("source: {} destination: {}", source, destination);
         match self {
             Self::Grid { grid } => {
                 if let Some(node) = grid.get(source) {
@@ -74,12 +80,18 @@ impl GraphLayer {
                     let x_minus = Vector2::new(-1, 0);
                     let z_plus = Vector2::new(0, 1);
                     let z_minus = Vector2::new(0, -1);
-                    match destination - source {
-                        x_plus => node.x_plus.clone(),
-                        x_minus => node.x_minus.clone(),
-                        z_plus => node.z_plus.clone(),
-                        z_minus => node.z_minus.clone(),
-                        _ => GraphWeight::Infinity,
+                    let delta = destination - source;
+                    info!("delta: {}", delta);
+                    if delta == x_plus {
+                        node.x_plus.clone()
+                    } else if delta == x_minus {
+                        node.x_minus.clone()
+                    } else if delta == z_plus {
+                        node.z_plus.clone()
+                    } else if delta == z_minus {
+                        node.z_minus.clone()
+                    } else {
+                        GraphWeight::Infinity
                     }
                 } else {
                     GraphWeight::Infinity
@@ -99,26 +111,25 @@ impl<'a> GraphLayerList<'a> {
 impl<'a> Graph for GraphLayerList<'a> {
     type Node = Vector2<i64>;
     fn get_children(&self, node: &Self::Node) -> Vec<(Self::Node, GraphWeight)> {
+        info!("getting children of {}", node);
         let mut out = vec![];
         for layer in self.layers.iter() {
             out.append(&mut layer.get_children(node));
+        }
+        for (node, weight) in out.iter() {
+            info!("child node: {} weight: {:?}", node, weight);
         }
         return out;
     }
 }
 pub trait Graph {
-    type Node: PartialEq + Eq + std::hash::Hash + Clone;
+    type Node: PartialEq + Eq + std::hash::Hash + Clone + std::fmt::Debug + std::fmt::Display;
     /// Gets children of a given node
     fn get_children(&self, node: &Self::Node) -> Vec<(Self::Node, GraphWeight)>;
 }
 pub struct Path<G: Graph> {
     pub path: Vec<G::Node>,
 }
-
-struct Tree {
-    children: Vec<(Tree, f32)>,
-}
-
 /// Implements Dijkstra's algorythm on a generic graph.
 /// used [wikipedia](https://en.wikipedia.org/wiki/Dijkstra%27s_algorithm) as a refrence
 pub fn dijkstra<'a, G: Graph>(source: G::Node, destination: G::Node, graph: G) -> Path<G> {
@@ -133,14 +144,18 @@ pub fn dijkstra<'a, G: Graph>(source: G::Node, destination: G::Node, graph: G) -
     distance.insert(source, GraphWeight::Some(0));
     while queue.is_empty() == false {
         let (best_vertex, parent_distance) = queue.pop().unwrap();
+        info!("examining parent {} ", best_vertex);
         //getting neighbors
         for (child, child_distance) in graph.get_children(&best_vertex).iter() {
+            info!("child: {:?}", child);
             let total_distance = child_distance.clone() + parent_distance.0.clone();
+            info!("total distance: {:?}", total_distance);
             let is_shortest_path = {
                 if let Some(best_known_distance) = distance.get(child) {
+                    info!("best distance: {:?}", best_known_distance);
                     &total_distance < best_known_distance
                 } else {
-                    false
+                    true
                 }
             };
             if is_shortest_path {
@@ -151,10 +166,14 @@ pub fn dijkstra<'a, G: Graph>(source: G::Node, destination: G::Node, graph: G) -
             }
         }
     }
-
+    info!("queue is empty");
     let mut path: Vec<G::Node> = vec![];
     let mut current = &destination;
     path.push(current.clone());
+    info!("previous path: ");
+    for (k, v) in previous.iter() {
+        info!("k: {:?} v: {:?}", k, v);
+    }
     loop {
         if let Some(p) = previous.get(current) {
             path.push(p.clone());
@@ -164,5 +183,19 @@ pub fn dijkstra<'a, G: Graph>(source: G::Node, destination: G::Node, graph: G) -
                 path: path.iter().rev().map(|p| p.clone()).collect(),
             };
         }
+    }
+}
+#[cfg(test)]
+mod test {
+    use super::*;
+    #[test]
+    fn graph_ord() {
+        let inf = GraphWeight::Infinity;
+        let zero = GraphWeight::Some(0);
+        assert!(inf > zero);
+        assert!(inf >= inf);
+        assert!(inf == inf);
+        assert!(zero < inf);
+        assert!(zero <= inf);
     }
 }

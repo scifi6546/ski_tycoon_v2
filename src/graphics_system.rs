@@ -41,6 +41,7 @@ pub fn insert_terrain(
 ) -> Result<(), ErrorType> {
     let model = terrain.model();
     world.push((
+        terrain.build_graph(),
         terrain,
         model.transform.clone(),
         RuntimeDebugMesh::new(model.mesh.clone(), graphics)?,

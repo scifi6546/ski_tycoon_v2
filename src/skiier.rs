@@ -11,7 +11,7 @@ pub fn build_skiier(
     position: Vector2<i64>,
 ) -> Result<(), JsValue> {
     let layers: Vec<&GraphLayer> = <&GraphLayer>::query().iter(world).collect();
-    let path = dijkstra(position, Vector2::new(10, 10), GraphLayerList::new(layers));
+    let path = dijkstra(position, Vector2::new(3, 3), GraphLayerList::new(layers));
     let model = Model::cube(Transform::default());
     let runtime_model = RuntimeModel::new(model, graphics)?;
     let vertices: Vec<(Vector3<f32>, Vector2<f32>)> = path

@@ -53,7 +53,7 @@ impl Game {
         GuiModel::simple_box(box_transform).insert(&mut world, &mut webgl)?;
         insert_mesh(Model::cube(transform.clone()), &mut world, &mut webgl)?;
         insert_terrain(
-            Terrain::new_cone(Vector2::new(100, 100), Vector2::new(5.0, 5.0), 5.0, -1.0),
+            Terrain::new_cone(Vector2::new(10, 10), Vector2::new(5.0, 5.0), 5.0, -1.0),
             &mut world,
             &mut webgl,
         )?;
