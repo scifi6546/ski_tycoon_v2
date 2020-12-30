@@ -358,6 +358,11 @@ impl WebGl {
             WebGl2RenderingContext::COLOR_BUFFER_BIT | WebGl2RenderingContext::DEPTH_BUFFER_BIT,
         );
     }
+    pub fn clear_depth(&mut self) {
+        self.context.clear_depth(1.0);
+        self.context.depth_func(WebGl2RenderingContext::LESS);
+        self.context.clear(WebGl2RenderingContext::DEPTH_BUFFER_BIT);
+    }
     pub fn bind_texture(&mut self, texture: &RuntimeTexture) {
         debug!("binding texture");
         self.context
@@ -367,7 +372,6 @@ impl WebGl {
         self.context
             .uniform1i(self.texture_sampler_location.as_ref(), 0);
     }
-    #[allow(dead_code)]
     pub fn bind_framebuffer(&mut self, framebuffer: &Framebuffer) {
         debug!("binding framebuffer");
         self.context.bind_framebuffer(
