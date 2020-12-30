@@ -144,15 +144,11 @@ pub fn dijkstra<'a, G: Graph>(source: G::Node, destination: G::Node, graph: G) -
     distance.insert(source, GraphWeight::Some(0));
     while queue.is_empty() == false {
         let (best_vertex, parent_distance) = queue.pop().unwrap();
-        info!("examining parent {} ", best_vertex);
         //getting neighbors
         for (child, child_distance) in graph.get_children(&best_vertex).iter() {
-            info!("child: {:?}", child);
             let total_distance = child_distance.clone() + parent_distance.0.clone();
-            info!("total distance: {:?}", total_distance);
             let is_shortest_path = {
                 if let Some(best_known_distance) = distance.get(child) {
-                    info!("best distance: {:?}", best_known_distance);
                     &total_distance < best_known_distance
                 } else {
                     true
@@ -166,7 +162,6 @@ pub fn dijkstra<'a, G: Graph>(source: G::Node, destination: G::Node, graph: G) -
             }
         }
     }
-    info!("queue is empty");
     let mut path: Vec<G::Node> = vec![];
     let mut current = &destination;
     path.push(current.clone());
