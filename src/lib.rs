@@ -15,10 +15,9 @@ use nalgebra::{Matrix4, Vector2, Vector3, Vector4};
 mod events;
 use camera::Camera;
 use events::{Event, MouseButton};
-use graphics_system::{insert_mesh, insert_terrain, RuntimeModel};
+use graphics_system::{insert_terrain, RuntimeModel};
 use gui::GuiModel;
 use legion::*;
-use model::Model;
 use terrain::Terrain;
 use wasm_bindgen::prelude::*;
 pub mod prelude {
