@@ -126,13 +126,9 @@ impl Graph for GraphLayerList {
         Vector2::new(node.x as f64, node.y as f64)
     }
     fn get_children(&self, node: &Self::Node) -> Vec<(Self::Node, GraphWeight)> {
-        info!("getting children of {}", node);
         let mut out = vec![];
         for layer in self.layers.iter() {
             out.append(&mut layer.get_children(node));
-        }
-        for (node, weight) in out.iter() {
-            info!("child node: {} weight: {:?}", node, weight);
         }
         return out;
     }
@@ -196,10 +192,6 @@ pub fn dijkstra<'a, G: Graph>(source: G::Node, destination: G::Node, graph: G) -
     let mut path: Vec<G::Node> = vec![];
     let mut current = &destination;
     path.push(current.clone());
-    info!("previous path: ");
-    for (k, v) in previous.iter() {
-        info!("k: {:?} v: {:?}", k, v);
-    }
     loop {
         if let Some(p) = previous.get(current) {
             path.push(p.clone());

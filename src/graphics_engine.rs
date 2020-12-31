@@ -354,7 +354,6 @@ impl WebGl {
             .bind_framebuffer(WebGl2RenderingContext::FRAMEBUFFER, None);
     }
     pub fn clear_screen(&mut self, color: Vector4<f32>) {
-        info!("clearing screen, color: {}", color);
         self.context.clear_depth(1.0);
         self.context.depth_func(WebGl2RenderingContext::LESS);
         self.context.clear_color(color.x, color.y, color.z, color.w);
