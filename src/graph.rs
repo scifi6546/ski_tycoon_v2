@@ -9,6 +9,14 @@ pub enum GraphWeight {
     Some(u32),
     Infinity,
 }
+impl GraphWeight {
+    pub fn is_finite(&self) -> bool {
+        match self {
+            GraphWeight::Some(_) => true,
+            GraphWeight::Infinity => false,
+        }
+    }
+}
 impl std::ops::Add for GraphWeight {
     type Output = Self;
     fn add(self, other: Self) -> Self {
@@ -54,17 +62,19 @@ pub enum GraphLayer {
 }
 impl GraphLayer {
     pub fn get_children(&self, source: &Vector2<i64>) -> Vec<(Vector2<i64>, GraphWeight)> {
-        info!("get children grid??");
         match self {
             Self::Grid { grid } => {
                 if let Some(node) = grid.get(source.clone()) {
-                    info!("getting node: {:?} from grid at {}", node, source);
                     vec![
                         (source + Vector2::new(1, 0), node.x_plus.clone()),
                         (source + Vector2::new(-1, 0), node.x_minus.clone()),
                         (source + Vector2::new(0, 1), node.z_plus.clone()),
                         (source + Vector2::new(0, -1), node.z_minus.clone()),
                     ]
+                    .iter()
+                    .filter(|(_, weight)| weight.is_finite())
+                    .map(|v| v.clone())
+                    .collect()
                 } else {
                     info!("source: {} does not exist", source);
                     vec![]

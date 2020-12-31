@@ -24,7 +24,7 @@ use wasm_bindgen::prelude::*;
 pub mod prelude {
     pub use super::camera::Camera;
     pub use super::graph::{
-        dijkstra, FollowPath, GraphLayer, GraphLayerList, GraphWeight, GridNode,
+        dijkstra, FollowPath, GraphLayer, GraphLayerList, GraphWeight, GridNode, Path,
     };
     pub use super::graphics_engine::{
         ErrorType, Framebuffer, RuntimeMesh, RuntimeTexture, Transform, WebGl,
@@ -48,14 +48,12 @@ impl Game {
         let mut resources = Resources::default();
         let mut world = World::default();
         let mut webgl = WebGl::new()?;
-        let transform = Transform::default();
         let mut box_transform = Transform::default();
         box_transform.set_scale(Vector3::new(0.1, 0.1, 0.1));
         box_transform.translate(Vector3::new(-0.5, -0.5, 0.0));
         GuiModel::simple_box(box_transform).insert(&mut world, &mut webgl)?;
-        insert_mesh(Model::cube(transform.clone()), &mut world, &mut webgl)?;
         insert_terrain(
-            Terrain::new_cone(Vector2::new(10, 10), Vector2::new(5.0, 5.0), 5.0, -1.0),
+            Terrain::new_cone(Vector2::new(20, 20), Vector2::new(5.0, 5.0), 5.0, -1.0),
             &mut world,
             &mut webgl,
         )?;
@@ -71,7 +69,14 @@ impl Game {
             mesh: fb_mesh,
             texture: fb_texture,
         };
-        skiier::build_skiier(&mut world, &mut webgl, Vector2::new(0, 0))?;
+        for i in 0..10 {
+            skiier::build_skiier(
+                &mut world,
+                &mut webgl,
+                Vector2::new(i, 0),
+                Vector2::new(10, i),
+            )?;
+        }
         resources.insert(webgl);
         resources.insert(Camera::new(Vector3::new(0.0, 0.0, 0.0), 20.0, 1.0, 1.0));
 

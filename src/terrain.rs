@@ -40,6 +40,27 @@ impl Terrain {
         let heights = self.tiles.iter().map(|t| t.height).collect();
         Model::from_heights(heights, self.dimensions, Transform::default())
     }
+    fn get_weight(&self, start: Vector2<i64>, end: Vector2<i64>) -> GraphWeight {
+        if end.x >= self.dimensions.x as i64
+            || end.x < 0
+            || end.y >= self.dimensions.y as i64
+            || end.y < 0
+        {
+            GraphWeight::Infinity
+        } else if start.x >= self.dimensions.x as i64
+            || start.x < 0
+            || start.y >= self.dimensions.y as i64
+            || start.y < 0
+        {
+            GraphWeight::Infinity
+        } else {
+            let start_tile = &self.tiles[start.x as usize * self.dimensions.y + start.y as usize];
+            let end_tile = &self.tiles[end.x as usize * self.dimensions.y + end.y as usize];
+            let delta_height = end_tile.height - start_tile.height;
+
+            GraphWeight::Some(delta_height.abs() as u32)
+        }
+    }
     pub fn build_graph(&self) -> GraphLayer {
         let mut data = vec![];
         data.reserve(self.dimensions.x * self.dimensions.y);
