@@ -40,7 +40,7 @@ impl std::cmp::Ord for GraphWeight {
         }
     }
 }
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 pub struct GridNode {
     pub x_plus: GraphWeight,
     pub x_minus: GraphWeight,
@@ -48,6 +48,7 @@ pub struct GridNode {
     pub z_minus: GraphWeight,
 }
 //layer of graph system
+#[derive(Clone, Debug)]
 pub enum GraphLayer {
     Grid { grid: Grid<GridNode> },
 }
@@ -100,16 +101,20 @@ impl GraphLayer {
         }
     }
 }
-pub struct GraphLayerList<'a> {
-    layers: Vec<&'a GraphLayer>,
+pub struct GraphLayerList {
+    layers: Vec<GraphLayer>,
 }
-impl<'a> GraphLayerList<'a> {
-    pub fn new(layers: Vec<&'a GraphLayer>) -> Self {
+impl GraphLayerList {
+    pub fn new(layers: Vec<GraphLayer>) -> Self {
         Self { layers }
     }
 }
-impl<'a> Graph for GraphLayerList<'a> {
+impl Graph for GraphLayerList {
     type Node = Vector2<i64>;
+    type NodeFloat = Vector2<f64>;
+    fn to_node_float(node: Self::Node) -> Self::NodeFloat {
+        Vector2::new(node.x as f64, node.y as f64)
+    }
     fn get_children(&self, node: &Self::Node) -> Vec<(Self::Node, GraphWeight)> {
         info!("getting children of {}", node);
         let mut out = vec![];
@@ -123,10 +128,26 @@ impl<'a> Graph for GraphLayerList<'a> {
     }
 }
 pub trait Graph {
-    type Node: PartialEq + Eq + std::hash::Hash + Clone + std::fmt::Debug + std::fmt::Display;
+    type Node: PartialEq
+        + Eq
+        + std::hash::Hash
+        + Clone
+        + std::fmt::Debug
+        + std::fmt::Display
+        + std::ops::Sub<Output = Self::Node>;
+    type NodeFloat: PartialEq
+        + Clone
+        + std::fmt::Debug
+        + std::fmt::Display
+        + std::ops::Add<Output = Self::NodeFloat>
+        + std::ops::Sub<Output = Self::NodeFloat>
+        + std::ops::Div<f64, Output = Self::NodeFloat>
+        + std::ops::Mul<f64, Output = Self::NodeFloat>;
+    fn to_node_float(node: Self::Node) -> Self::NodeFloat;
     /// Gets children of a given node
     fn get_children(&self, node: &Self::Node) -> Vec<(Self::Node, GraphWeight)>;
 }
+#[derive(Clone, Debug)]
 pub struct Path<G: Graph> {
     pub path: Vec<G::Node>,
 }
@@ -177,6 +198,36 @@ pub fn dijkstra<'a, G: Graph>(source: G::Node, destination: G::Node, graph: G) -
             return Path {
                 path: path.iter().rev().map(|p| p.clone()).collect(),
             };
+        }
+    }
+}
+/// Path used to follow
+#[derive(Clone, Debug)]
+pub struct FollowPath<G: Graph> {
+    path: Path<G>,
+    t: f64,
+}
+impl<G: Graph> FollowPath<G> {
+    pub fn new(path: Path<G>) -> Self {
+        Self { path, t: 0.0 }
+    }
+    pub fn incr(&mut self, incr: f64) {
+        self.t += incr
+    }
+    pub fn get(&self) -> G::NodeFloat {
+        let t0: usize = self.t.floor() as usize;
+        if t0 >= self.path.path.len() {
+            G::to_node_float(self.path.path[self.path.path.len() - 1].clone())
+        } else {
+            if t0 + 1 < self.path.path.len() {
+                let x0 = self.path.path[t0].clone();
+                let x1 = self.path.path[t0 + 1].clone();
+                let t1 = t0 as f64 + 1.0;
+                (G::to_node_float(x1 - x0.clone()) / (t1 - t0 as f64)) * (self.t - t0 as f64)
+                    + G::to_node_float(x0.clone())
+            } else {
+                G::to_node_float(self.path.path[t0].clone())
+            }
         }
     }
 }

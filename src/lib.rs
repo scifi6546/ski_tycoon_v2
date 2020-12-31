@@ -23,7 +23,9 @@ use terrain::Terrain;
 use wasm_bindgen::prelude::*;
 pub mod prelude {
     pub use super::camera::Camera;
-    pub use super::graph::{dijkstra, GraphLayer, GraphLayerList, GraphWeight, GridNode};
+    pub use super::graph::{
+        dijkstra, FollowPath, GraphLayer, GraphLayerList, GraphWeight, GridNode,
+    };
     pub use super::graphics_engine::{
         ErrorType, Framebuffer, RuntimeMesh, RuntimeTexture, Transform, WebGl,
     };
@@ -114,6 +116,11 @@ impl Game {
             gl.bind_framebuffer(&self.world_framebuffer);
             gl.clear_screen(Vector4::new(0.2, 0.2, 0.2, 1.0));
         }
+        //game logic
+        let mut schedule = Schedule::builder()
+            .add_system(skiier::follow_path_system())
+            .build();
+        schedule.execute(&mut self.world, &mut self.resources);
         let mut schedule = Schedule::builder()
             .add_system(graphics_system::render_object_system())
             .build();

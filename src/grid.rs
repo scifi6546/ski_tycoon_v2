@@ -7,6 +7,7 @@ use std::vec::Vec;
 /// let g = Grid::from_vec(vec![0u8],Vector2::new(1,1));
 /// assert_eq!(g[Vector2::new(0,0)],0);
 /// ```
+#[derive(Clone, Debug)]
 pub struct Grid<T> {
     data: Vec<T>,
     dimensions: Vector2<usize>,

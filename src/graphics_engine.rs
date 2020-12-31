@@ -13,8 +13,12 @@ pub struct Transform {
     translation: Vector3<f32>,
 }
 impl Transform {
+    ///Adds a delta translation
     pub fn translate(&mut self, delta: Vector3<f32>) {
         self.translation += delta;
+    }
+    pub fn set_translation(&mut self, translation: Vector3<f32>) {
+        self.translation = translation;
     }
     pub fn scale(&mut self, delta: Vector3<f32>) {
         self.scaling += delta;
