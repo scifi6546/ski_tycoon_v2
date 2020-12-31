@@ -28,7 +28,7 @@ pub mod prelude {
     pub use super::graphics_engine::{
         ErrorType, Framebuffer, RuntimeMesh, RuntimeTexture, Transform, WebGl,
     };
-    pub use super::graphics_engine::{Mesh, RGBATexture as Texture};
+    pub use super::graphics_engine::{Mesh, RGBATexture as Texture, Vertex};
     pub use super::graphics_system::{RuntimeDebugMesh, RuntimeModel};
     pub use super::grid::Grid;
     pub use super::gui::{GuiModel, GuiRuntimeModel, GuiTransform};

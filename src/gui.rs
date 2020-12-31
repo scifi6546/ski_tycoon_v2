@@ -1,4 +1,4 @@
-use super::prelude::{ErrorType, Mesh, Model, RuntimeModel, Texture, Transform, WebGl};
+use super::prelude::{ErrorType, Mesh, Model, RuntimeModel, Texture, Transform, Vertex, WebGl};
 use legion::*;
 use nalgebra::{Vector2, Vector3, Vector4};
 pub struct GuiRuntimeModel {
@@ -17,13 +17,31 @@ impl GuiModel {
             model: Model {
                 mesh: Mesh {
                     vertices: vec![
-                        (Vector3::new(1.0, 1.0, -0.5), Vector2::new(1.0, 1.0)),
-                        (Vector3::new(1.0, -1.0, -0.5), Vector2::new(1.0, 0.0)),
-                        (Vector3::new(-1.0, -1.0, -0.5), Vector2::new(0.0, 0.0)),
+                        Vertex {
+                            position: Vector3::new(1.0, 1.0, -0.5),
+                            uv: Vector2::new(1.0, 1.0),
+                        },
+                        Vertex {
+                            position: Vector3::new(1.0, -1.0, -0.5),
+                            uv: Vector2::new(1.0, 0.0),
+                        },
+                        Vertex {
+                            position: Vector3::new(-1.0, -1.0, -0.5),
+                            uv: Vector2::new(0.0, 0.0),
+                        },
                         //Second Triangle
-                        (Vector3::new(1.0, 1.0, -0.5), Vector2::new(1.0, 1.0)),
-                        (Vector3::new(-1.0, -1.0, -0.5), Vector2::new(0.0, 0.0)),
-                        (Vector3::new(-1.0, 1.0, -0.5), Vector2::new(0.0, 1.0)),
+                        Vertex {
+                            position: Vector3::new(1.0, 1.0, -0.5),
+                            uv: Vector2::new(1.0, 1.0),
+                        },
+                        Vertex {
+                            position: Vector3::new(-1.0, -1.0, -0.5),
+                            uv: Vector2::new(0.0, 0.0),
+                        },
+                        Vertex {
+                            position: Vector3::new(-1.0, 1.0, -0.5),
+                            uv: Vector2::new(0.0, 1.0),
+                        },
                     ],
                 },
                 texture: Texture::constant_color(

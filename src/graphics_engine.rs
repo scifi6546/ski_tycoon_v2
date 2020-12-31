@@ -1,6 +1,6 @@
 mod mesh;
 use log::{debug, error};
-pub use mesh::Mesh;
+pub use mesh::{Mesh, Vertex};
 use nalgebra::{Matrix4, Vector2, Vector3, Vector4};
 use wasm_bindgen::{JsCast, JsValue};
 use web_sys::{
@@ -156,12 +156,12 @@ impl WebGl {
             WebGl2RenderingContext::ARRAY_BUFFER,
             (&position_buffer).as_ref(),
         );
-        for (vertex, uv) in mesh.vertices.iter() {
-            array.push(vertex.x);
-            array.push(vertex.y);
-            array.push(vertex.z);
-            array.push(uv.x);
-            array.push(uv.y);
+        for (vertex) in mesh.vertices.iter() {
+            array.push(vertex.position.x);
+            array.push(vertex.position.y);
+            array.push(vertex.position.z);
+            array.push(vertex.uv.x);
+            array.push(vertex.uv.y);
         }
         //  Note that `Float32Array::view` is somewhat dangerous (hence the
         // `unsafe`!). This is creating a raw view into our module's
