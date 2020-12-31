@@ -66,26 +66,22 @@ impl Terrain {
         data.reserve(self.dimensions.x * self.dimensions.y);
         for x in 0..self.dimensions.x {
             for y in 0..self.dimensions.y {
-                let x_plus = if x + 1 < self.dimensions.x {
-                    GraphWeight::Some(1)
-                } else {
-                    GraphWeight::Infinity
-                };
-                let x_minus = if x > 0 {
-                    GraphWeight::Some(1)
-                } else {
-                    GraphWeight::Infinity
-                };
-                let z_plus = if y + 1 < self.dimensions.y {
-                    GraphWeight::Some(1)
-                } else {
-                    GraphWeight::Infinity
-                };
-                let z_minus = if y > 0 {
-                    GraphWeight::Some(1)
-                } else {
-                    GraphWeight::Infinity
-                };
+                let x_plus = self.get_weight(
+                    Vector2::new(x as i64, y as i64),
+                    Vector2::new(x as i64 + 1, y as i64),
+                );
+                let x_minus = self.get_weight(
+                    Vector2::new(x as i64, y as i64),
+                    Vector2::new(x as i64 - 1, y as i64),
+                );
+                let z_plus = self.get_weight(
+                    Vector2::new(x as i64, y as i64),
+                    Vector2::new(x as i64, y as i64 + 1),
+                );
+                let z_minus = self.get_weight(
+                    Vector2::new(x as i64, y as i64),
+                    Vector2::new(x as i64, y as i64 + 1),
+                );
                 data.push(GridNode {
                     x_plus,
                     x_minus,

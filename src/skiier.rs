@@ -1,6 +1,6 @@
 use super::prelude::{
-    dijkstra, FollowPath, GraphLayer, GraphLayerList, JsValue, Mesh, Model, RuntimeDebugMesh,
-    RuntimeModel, Transform, WebGl,
+    dijkstra, FollowPath, GraphLayer, GraphLayerList, JsValue, Model, RuntimeModel, Transform,
+    WebGl,
 };
 use legion::*;
 use log::info;

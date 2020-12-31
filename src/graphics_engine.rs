@@ -1,5 +1,5 @@
 mod mesh;
-use log::{debug, error, info};
+use log::{debug, error};
 pub use mesh::Mesh;
 use nalgebra::{Matrix4, Vector2, Vector3, Vector4};
 use wasm_bindgen::{JsCast, JsValue};
