@@ -76,7 +76,6 @@ impl GraphLayer {
                     .map(|v| v.clone())
                     .collect()
                 } else {
-                    info!("source: {} does not exist", source);
                     vec![]
                 }
             }

@@ -15,35 +15,7 @@ impl GuiModel {
     pub fn simple_box(transform: Transform) -> Self {
         Self {
             model: Model {
-                mesh: Mesh {
-                    vertices: vec![
-                        Vertex {
-                            position: Vector3::new(1.0, 1.0, -0.5),
-                            uv: Vector2::new(1.0, 1.0),
-                        },
-                        Vertex {
-                            position: Vector3::new(1.0, -1.0, -0.5),
-                            uv: Vector2::new(1.0, 0.0),
-                        },
-                        Vertex {
-                            position: Vector3::new(-1.0, -1.0, -0.5),
-                            uv: Vector2::new(0.0, 0.0),
-                        },
-                        //Second Triangle
-                        Vertex {
-                            position: Vector3::new(1.0, 1.0, -0.5),
-                            uv: Vector2::new(1.0, 1.0),
-                        },
-                        Vertex {
-                            position: Vector3::new(-1.0, -1.0, -0.5),
-                            uv: Vector2::new(0.0, 0.0),
-                        },
-                        Vertex {
-                            position: Vector3::new(-1.0, 1.0, -0.5),
-                            uv: Vector2::new(0.0, 1.0),
-                        },
-                    ],
-                },
+                mesh: Mesh::plane(),
                 texture: Texture::constant_color(
                     Vector4::new(255 / 10, 255 / 2, 255 / 2, 255),
                     Vector2::new(100, 100),

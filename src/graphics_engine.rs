@@ -78,6 +78,7 @@ pub struct WebGl {
     context: WebGl2RenderingContext,
     position_attribute_location: i32,
     uv_attribute_location: i32,
+    normal_attribute_location: i32,
     texture_sampler_location: Option<WebGlUniformLocation>,
     program: WebGlProgram,
 }
@@ -112,11 +113,14 @@ impl WebGl {
             r#"#version 300 es
         in vec3 position;
         in vec2 uv;
+        in vec3 normal;
         out vec2 o_uv;
+        out vec3 o_normal;
         uniform mat4 camera;
         uniform mat4 model;
         void main() {
             gl_Position = camera*model*vec4(position,1.0);
+            o_normal = normal;
             o_uv = uv;
         }
     "#,
@@ -128,9 +132,10 @@ impl WebGl {
         precision highp float;
         out vec4 color;
         in vec2 o_uv;
+        in vec3 o_normal;
         uniform sampler2D u_texture;
         void main() {
-            color = texture(u_texture,o_uv);
+            color = texture(u_texture,o_uv)+vec4(o_normal,1.0);
         }
     "#,
         )?;
@@ -138,6 +143,7 @@ impl WebGl {
         context.use_program(Some(&program));
         let position_attribute_location = context.get_attrib_location(&program, "position");
         let uv_attribute_location = context.get_attrib_location(&program, "uv");
+        let normal_attribute_location = context.get_attrib_location(&program, "normal");
         let texture_sampler_location = context.get_uniform_location(&program, "u_texture");
         Ok(Self {
             context,
@@ -145,6 +151,7 @@ impl WebGl {
             uv_attribute_location,
             texture_sampler_location,
             program,
+            normal_attribute_location,
         })
     }
     pub fn build_mesh(&mut self, mesh: Mesh) -> Result<RuntimeMesh, ErrorType> {
@@ -156,12 +163,15 @@ impl WebGl {
             WebGl2RenderingContext::ARRAY_BUFFER,
             (&position_buffer).as_ref(),
         );
-        for (vertex) in mesh.vertices.iter() {
+        for vertex in mesh.vertices.iter() {
             array.push(vertex.position.x);
             array.push(vertex.position.y);
             array.push(vertex.position.z);
             array.push(vertex.uv.x);
             array.push(vertex.uv.y);
+            array.push(vertex.normal.x);
+            array.push(vertex.normal.y);
+            array.push(vertex.normal.z);
         }
         //  Note that `Float32Array::view` is somewhat dangerous (hence the
         // `unsafe`!). This is creating a raw view into our module's
@@ -183,12 +193,14 @@ impl WebGl {
             .enable_vertex_attrib_array(self.position_attribute_location as u32);
         self.context
             .enable_vertex_attrib_array(self.uv_attribute_location as u32);
+        self.context
+            .enable_vertex_attrib_array(self.normal_attribute_location as u32);
         self.context.vertex_attrib_pointer_with_f64(
             self.position_attribute_location as u32,
             3,
             WebGl2RenderingContext::FLOAT,
             false,
-            5 * std::mem::size_of::<f32>() as i32,
+            (3 + 2 + 3) * std::mem::size_of::<f32>() as i32,
             0.0,
         );
         self.context.vertex_attrib_pointer_with_i32(
@@ -196,8 +208,16 @@ impl WebGl {
             2,
             WebGl2RenderingContext::FLOAT,
             false,
-            5 * std::mem::size_of::<f32>() as i32,
+            (3 + 2 + 3) * std::mem::size_of::<f32>() as i32,
             3 * std::mem::size_of::<f32>() as i32,
+        );
+        self.context.vertex_attrib_pointer_with_i32(
+            self.normal_attribute_location as u32,
+            3,
+            WebGl2RenderingContext::FLOAT,
+            false,
+            (3 + 2 + 3) * std::mem::size_of::<f32>() as i32,
+            5 * std::mem::size_of::<f32>() as i32,
         );
         Ok(WebGlMesh {
             vertex_array_object: vao,
