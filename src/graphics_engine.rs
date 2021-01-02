@@ -3,13 +3,13 @@ mod shader;
 use log::{debug, error};
 pub use mesh::{Mesh, Vertex};
 use nalgebra::{Matrix4, Vector2, Vector3, Vector4};
+use shader::shader_library;
 pub use shader::Shader;
-use shader::ShaderLibrary;
 use std::collections::HashMap;
 use wasm_bindgen::{JsCast, JsValue};
 use web_sys::{
     WebGl2RenderingContext, WebGlBuffer, WebGlFramebuffer, WebGlProgram, WebGlShader, WebGlTexture,
-    WebGlUniformLocation, WebGlVertexArrayObject,
+    WebGlVertexArrayObject,
 };
 #[derive(Debug, Clone)]
 pub struct Transform {
@@ -140,14 +140,10 @@ impl WebGl {
         )?;
         let program = Self::link_program(&context, &vert_shader, &frag_shader)?;
         context.use_program(Some(&program));
-        let position_attribute_location = context.get_attrib_location(&program, "position");
-        let uv_attribute_location = context.get_attrib_location(&program, "uv");
-        let normal_attribute_location = context.get_attrib_location(&program, "normal");
-        let texture_sampler_location = context.get_uniform_location(&program, "u_texture");
         Ok(Self { context })
     }
     pub fn build_world_shader(&mut self) -> Result<Shader, ErrorType> {
-        let text = ShaderLibrary::WORLD_SHADER;
+        let text = shader_library::WORLD_SHADER;
         let vertex_shader = Self::compile_shader(
             &self.context,
             WebGl2RenderingContext::VERTEX_SHADER,

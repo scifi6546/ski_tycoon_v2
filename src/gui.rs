@@ -1,8 +1,6 @@
-use super::prelude::{
-    ErrorType, Mesh, Model, RuntimeModel, Shader, Texture, Transform, Vertex, WebGl,
-};
+use super::prelude::{ErrorType, Mesh, Model, RuntimeModel, Shader, Texture, Transform, WebGl};
 use legion::*;
-use nalgebra::{Vector2, Vector3, Vector4};
+use nalgebra::{Vector2, Vector4};
 pub struct GuiRuntimeModel {
     pub model: RuntimeModel,
 }

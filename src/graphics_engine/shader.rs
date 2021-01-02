@@ -4,7 +4,7 @@ pub struct ShaderText {
     pub fragment_shader: &'static str,
     pub vertex_shader: &'static str,
 }
-pub mod ShaderLibrary {
+pub mod shader_library {
     use super::ShaderText;
     pub const WORLD_SHADER: ShaderText = ShaderText {
         vertex_shader: r#"#version 300 es
