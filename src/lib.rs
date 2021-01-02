@@ -26,8 +26,9 @@ pub mod prelude {
         dijkstra, FollowPath, GraphLayer, GraphLayerList, GraphWeight, GridNode, Path,
     };
     pub use super::graphics_engine::{
-        ErrorType, Framebuffer, RuntimeMesh, RuntimeTexture, Transform, WebGl,
+        ErrorType, Framebuffer, RuntimeMesh, RuntimeTexture, Shader, Transform, WebGl,
     };
+
     pub use super::graphics_engine::{Mesh, RGBATexture as Texture, Vertex};
     pub use super::graphics_system::{RuntimeDebugMesh, RuntimeModel};
     pub use super::grid::Grid;
@@ -47,22 +48,24 @@ impl Game {
         let mut resources = Resources::default();
         let mut world = World::default();
         let mut webgl = WebGl::new()?;
+        let shader = webgl.build_world_shader()?;
         let mut box_transform = Transform::default();
         box_transform.set_scale(Vector3::new(0.1, 0.1, 0.1));
         box_transform.translate(Vector3::new(-0.5, -0.5, 0.0));
-        GuiModel::simple_box(box_transform).insert(&mut world, &mut webgl)?;
+        GuiModel::simple_box(box_transform).insert(&mut world, &mut webgl, &shader)?;
         insert_terrain(
             Terrain::new_cone(Vector2::new(20, 20), Vector2::new(5.0, 5.0), 5.0, -1.0),
             &mut world,
             &mut webgl,
+            &shader,
         )?;
 
-        let mut fb_texture = webgl.build_texture(RGBATexture::constant_color(
-            Vector4::new(0, 0, 0, 0),
-            Vector2::new(800, 800),
-        ))?;
-        let mut fb_depth = webgl.build_depth_texture(Vector2::new(800, 800))?;
-        let fb_mesh = webgl.build_mesh(Mesh::plane())?;
+        let mut fb_texture = webgl.build_texture(
+            RGBATexture::constant_color(Vector4::new(0, 0, 0, 0), Vector2::new(800, 800)),
+            &shader,
+        )?;
+        let mut fb_depth = webgl.build_depth_texture(Vector2::new(800, 800), &shader)?;
+        let fb_mesh = webgl.build_mesh(Mesh::plane(), &shader)?;
         let world_framebuffer = webgl.build_framebuffer(&mut fb_texture, &mut fb_depth)?;
         let world_render_surface = RuntimeModel {
             mesh: fb_mesh,
@@ -72,11 +75,13 @@ impl Game {
             skiier::build_skiier(
                 &mut world,
                 &mut webgl,
+                &shader,
                 Vector2::new(i, 0),
                 Vector2::new(10, i),
             )?;
         }
         resources.insert(webgl);
+        resources.insert(shader);
         resources.insert(Camera::new(Vector3::new(0.0, 0.0, 0.0), 20.0, 1.0, 1.0));
 
         Ok(Game {
@@ -141,11 +146,12 @@ impl Game {
             //binding to world framebuffer and rendering to it
 
             let gl: &mut WebGl = &mut self.resources.get_mut().unwrap();
+            let shader = &mut self.resources.get_mut().unwrap();
             gl.bind_default_framebuffer();
-            gl.send_view_matrix(Matrix4::identity());
-            gl.send_model_matrix(Matrix4::identity());
+            gl.send_view_matrix(Matrix4::identity(), shader);
+            gl.send_model_matrix(Matrix4::identity(), shader);
             gl.clear_screen(Vector4::new(0.2, 0.2, 0.2, 1.0));
-            gl.bind_texture(&self.world_render_surface.texture);
+            gl.bind_texture(&self.world_render_surface.texture, shader);
             gl.draw_mesh(&self.world_render_surface.mesh);
         }
         let mut gui_schedule = Schedule::builder()

@@ -1,7 +1,11 @@
 mod mesh;
+mod shader;
 use log::{debug, error};
 pub use mesh::{Mesh, Vertex};
 use nalgebra::{Matrix4, Vector2, Vector3, Vector4};
+pub use shader::Shader;
+use shader::ShaderLibrary;
+use std::collections::HashMap;
 use wasm_bindgen::{JsCast, JsValue};
 use web_sys::{
     WebGl2RenderingContext, WebGlBuffer, WebGlFramebuffer, WebGlProgram, WebGlShader, WebGlTexture,
@@ -76,11 +80,6 @@ impl RGBATexture {
 }
 pub struct WebGl {
     context: WebGl2RenderingContext,
-    position_attribute_location: i32,
-    uv_attribute_location: i32,
-    normal_attribute_location: i32,
-    texture_sampler_location: Option<WebGlUniformLocation>,
-    program: WebGlProgram,
 }
 #[derive(Clone)]
 pub struct WebGlMesh {
@@ -145,16 +144,46 @@ impl WebGl {
         let uv_attribute_location = context.get_attrib_location(&program, "uv");
         let normal_attribute_location = context.get_attrib_location(&program, "normal");
         let texture_sampler_location = context.get_uniform_location(&program, "u_texture");
-        Ok(Self {
-            context,
+        Ok(Self { context })
+    }
+    pub fn build_world_shader(&mut self) -> Result<Shader, ErrorType> {
+        let text = ShaderLibrary::WORLD_SHADER;
+        let vertex_shader = Self::compile_shader(
+            &self.context,
+            WebGl2RenderingContext::VERTEX_SHADER,
+            text.vertex_shader,
+        )?;
+        let frag_shader = Self::compile_shader(
+            &self.context,
+            WebGl2RenderingContext::FRAGMENT_SHADER,
+            text.fragment_shader,
+        )?;
+        let program = Self::link_program(&self.context, &vertex_shader, &frag_shader)?;
+        self.context.use_program(Some(&program));
+        let position_attribute_location =
+            Some(self.context.get_attrib_location(&program, "position"));
+        let uv_attribute_location = Some(self.context.get_attrib_location(&program, "uv"));
+        let normal_attribute_location = Some(self.context.get_attrib_location(&program, "normal"));
+        let texture_sampler_location = self.context.get_uniform_location(&program, "u_texture");
+        let mut uniforms = HashMap::new();
+        uniforms.insert(
+            "model".to_string(),
+            self.context.get_uniform_location(&program, "model"),
+        );
+        uniforms.insert(
+            "camera".to_string(),
+            self.context.get_uniform_location(&program, "camera"),
+        );
+        Ok(Shader {
+            program,
             position_attribute_location,
             uv_attribute_location,
-            texture_sampler_location,
-            program,
             normal_attribute_location,
+            texture_sampler_location,
+            uniforms,
         })
     }
-    pub fn build_mesh(&mut self, mesh: Mesh) -> Result<RuntimeMesh, ErrorType> {
+    pub fn build_mesh(&mut self, mesh: Mesh, shader: &Shader) -> Result<RuntimeMesh, ErrorType> {
         debug!("building mesh");
         let position_buffer = self.context.create_buffer();
         let mut array: Vec<f32> = vec![];
@@ -190,13 +219,13 @@ impl WebGl {
         let vao = self.context.create_vertex_array();
         self.context.bind_vertex_array(vao.as_ref());
         self.context
-            .enable_vertex_attrib_array(self.position_attribute_location as u32);
+            .enable_vertex_attrib_array(shader.position_attribute_location.unwrap() as u32);
         self.context
-            .enable_vertex_attrib_array(self.uv_attribute_location as u32);
+            .enable_vertex_attrib_array(shader.uv_attribute_location.unwrap() as u32);
         self.context
-            .enable_vertex_attrib_array(self.normal_attribute_location as u32);
+            .enable_vertex_attrib_array(shader.normal_attribute_location.unwrap() as u32);
         self.context.vertex_attrib_pointer_with_f64(
-            self.position_attribute_location as u32,
+            shader.position_attribute_location.unwrap() as u32,
             3,
             WebGl2RenderingContext::FLOAT,
             false,
@@ -204,7 +233,7 @@ impl WebGl {
             0.0,
         );
         self.context.vertex_attrib_pointer_with_i32(
-            self.uv_attribute_location as u32,
+            shader.uv_attribute_location.unwrap() as u32,
             2,
             WebGl2RenderingContext::FLOAT,
             false,
@@ -212,7 +241,7 @@ impl WebGl {
             3 * std::mem::size_of::<f32>() as i32,
         );
         self.context.vertex_attrib_pointer_with_i32(
-            self.normal_attribute_location as u32,
+            shader.normal_attribute_location.unwrap() as u32,
             3,
             WebGl2RenderingContext::FLOAT,
             false,
@@ -228,6 +257,7 @@ impl WebGl {
     pub fn build_depth_texture(
         &mut self,
         dimensions: Vector2<u32>,
+        shader: &Shader,
     ) -> Result<RuntimeDepthTexture, ErrorType> {
         debug!("building texture");
         let gl_texture = self.context.create_texture();
@@ -258,8 +288,10 @@ impl WebGl {
         //self.gl_context.generate_mipmap(WebGl2RenderingContext::TEXTURE_2D);
         //getting location of sampler
 
-        self.context
-            .uniform1i(self.texture_sampler_location.as_ref(), texture_unit as i32);
+        self.context.uniform1i(
+            shader.texture_sampler_location.as_ref(),
+            texture_unit as i32,
+        );
         self.context.tex_parameteri(
             WebGl2RenderingContext::TEXTURE_2D,
             WebGl2RenderingContext::TEXTURE_MIN_FILTER,
@@ -281,7 +313,11 @@ impl WebGl {
             },
         })
     }
-    pub fn build_texture(&mut self, texture: RGBATexture) -> Result<RuntimeTexture, ErrorType> {
+    pub fn build_texture(
+        &mut self,
+        texture: RGBATexture,
+        shader: &Shader,
+    ) -> Result<RuntimeTexture, ErrorType> {
         debug!("building texture");
         let gl_texture = self.context.create_texture();
         assert!(gl_texture.is_some());
@@ -312,8 +348,10 @@ impl WebGl {
         //self.gl_context.generate_mipmap(WebGl2RenderingContext::TEXTURE_2D);
         //getting location of sampler
 
-        self.context
-            .uniform1i(self.texture_sampler_location.as_ref(), texture_unit as i32);
+        self.context.uniform1i(
+            shader.texture_sampler_location.as_ref(),
+            texture_unit as i32,
+        );
         self.context.tex_parameteri(
             WebGl2RenderingContext::TEXTURE_2D,
             WebGl2RenderingContext::TEXTURE_MIN_FILTER,
@@ -386,14 +424,14 @@ impl WebGl {
         self.context.depth_func(WebGl2RenderingContext::LESS);
         self.context.clear(WebGl2RenderingContext::DEPTH_BUFFER_BIT);
     }
-    pub fn bind_texture(&mut self, texture: &RuntimeTexture) {
+    pub fn bind_texture(&mut self, texture: &RuntimeTexture, shader: &Shader) {
         debug!("binding texture");
         self.context
             .active_texture(WebGl2RenderingContext::TEXTURE0);
         self.context
             .bind_texture(WebGl2RenderingContext::TEXTURE_2D, texture.texture.as_ref());
         self.context
-            .uniform1i(self.texture_sampler_location.as_ref(), 0);
+            .uniform1i(shader.texture_sampler_location.as_ref(), 0);
     }
     pub fn bind_framebuffer(&mut self, framebuffer: &Framebuffer) {
         debug!("binding framebuffer");
@@ -416,20 +454,17 @@ impl WebGl {
         self.context
             .draw_arrays(WebGl2RenderingContext::LINES, 0, mesh.count);
     }
-    pub fn send_model_matrix(&mut self, matrix: Matrix4<f32>) {
-        debug!("sending model matrix");
-        let model_uniform = self.context.get_uniform_location(&self.program, "model");
+    pub fn send_model_matrix(&mut self, matrix: Matrix4<f32>, shader: &Shader) {
         self.context.uniform_matrix4fv_with_f32_array(
-            model_uniform.as_ref(),
+            shader.uniforms["model"].as_ref(),
             false,
             matrix.as_slice(),
         );
     }
-    pub fn send_view_matrix(&mut self, matrix: Matrix4<f32>) {
+    pub fn send_view_matrix(&mut self, matrix: Matrix4<f32>, shader: &Shader) {
         debug!("sending view matrix");
-        let model_uniform = self.context.get_uniform_location(&self.program, "camera");
         self.context.uniform_matrix4fv_with_f32_array(
-            model_uniform.as_ref(),
+            shader.uniforms["camera"].as_ref(),
             false,
             matrix.as_slice(),
         );
