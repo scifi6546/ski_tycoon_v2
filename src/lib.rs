@@ -11,7 +11,7 @@ mod terrain;
 mod utils;
 use graphics_engine::{Framebuffer, Mesh, RGBATexture, Transform, WebGl};
 use js_sys::Array as JsArray;
-use log::{debug, info};
+use log::debug;
 use nalgebra::{Matrix4, Vector2, Vector3, Vector4};
 mod events;
 use bindable::Bindable;
@@ -52,10 +52,9 @@ impl Game {
         let mut world = World::default();
         let mut webgl = WebGl::new()?;
         let mut shader_bind = Bindable::default();
-        info!("initted webgl");
         shader_bind.insert("world", webgl.build_world_shader()?);
-        info!("inserted world shader");
-        info!("built world shader");
+        shader_bind.bind("world");
+        webgl.bind_shader(shader_bind.get_bind()).ok().unwrap();
         webgl
             .send_vec3_uniform(
                 &shader_bind["world"],
@@ -72,9 +71,10 @@ impl Game {
             )
             .ok()
             .unwrap();
-        info!("sent uniforms");
+        webgl.get_error();
         shader_bind.insert("screen", webgl.build_screen_shader()?);
         shader_bind.bind("world");
+        webgl.bind_shader(shader_bind.get_bind()).ok().unwrap();
         let mut box_transform = Transform::default();
         box_transform.set_scale(Vector3::new(0.1, 0.1, 0.1));
         box_transform.translate(Vector3::new(-0.5, -0.5, 0.0));
@@ -84,13 +84,14 @@ impl Game {
             &mut webgl,
             &shader_bind.get_bind(),
         )?;
+        webgl.get_error();
         insert_terrain(
             Terrain::new_cone(Vector2::new(20, 20), Vector2::new(5.0, 5.0), 5.0, -1.0),
             &mut world,
             &mut webgl,
             &shader_bind.get_bind(),
         )?;
-
+        webgl.get_error();
         let mut fb_texture = webgl.build_texture(
             RGBATexture::constant_color(Vector4::new(0, 0, 0, 0), Vector2::new(800, 800)),
             &shader_bind.get_bind(),
@@ -103,6 +104,7 @@ impl Game {
             mesh: fb_mesh,
             texture: fb_texture,
         };
+        webgl.get_error();
         for i in 0..10 {
             skiier::build_skiier(
                 &mut world,
@@ -112,10 +114,10 @@ impl Game {
                 Vector2::new(10, i),
             )?;
         }
+        webgl.get_error();
         resources.insert(webgl);
         resources.insert(shader_bind);
         resources.insert(Camera::new(Vector3::new(0.0, 0.0, 0.0), 20.0, 1.0, 1.0));
-
         Ok(Game {
             world,
             resources,

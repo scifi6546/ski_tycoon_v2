@@ -40,7 +40,6 @@ pub fn insert_terrain(
         terrain.build_graph(),
         terrain,
         model.transform.clone(),
-        RuntimeDebugMesh::new(model.mesh.clone(), graphics, bound_shader)?,
         RuntimeModel::new(model, graphics, bound_shader)?,
     ));
     Ok(())

@@ -1,6 +1,6 @@
 mod mesh;
 mod shader;
-use log::{debug, error, info};
+use log::{debug, error};
 pub use mesh::{Mesh, Vertex};
 use nalgebra::{Matrix4, Vector2, Vector3, Vector4};
 use shader::shader_library;
@@ -109,10 +109,7 @@ impl WebGl {
         Ok(Self { context })
     }
     pub fn build_world_shader(&mut self) -> Result<Shader, ErrorType> {
-        info!("building shader");
         let mut s = self.build_shader(shader_library::WORLD_SHADER)?;
-
-        info!("built shader now getting uniforms");
         for i in ["sun_direction", "sun_color"].iter() {
             s.uniforms.insert(
                 i.to_string(),
@@ -131,16 +128,13 @@ impl WebGl {
             WebGl2RenderingContext::VERTEX_SHADER,
             text.vertex_shader,
         )?;
-        info!("compilled vertex shader");
         let frag_shader = Self::compile_shader(
             &self.context,
             WebGl2RenderingContext::FRAGMENT_SHADER,
             text.fragment_shader,
         )?;
-        info!("compilled fragment shader");
         let program = Self::link_program(&self.context, &vertex_shader, &frag_shader)?;
         self.context.use_program(Some(&program));
-        info!("using program?");
         let position_attribute_location =
             Some(self.context.get_attrib_location(&program, "position"));
         let uv_attribute_location = Some(self.context.get_attrib_location(&program, "uv"));
@@ -155,6 +149,7 @@ impl WebGl {
             "camera".to_string(),
             self.context.get_uniform_location(&program, "camera"),
         );
+        self.get_error();
         Ok(Shader {
             program,
             position_attribute_location,
@@ -251,6 +246,7 @@ impl WebGl {
             data.y,
             data.z,
         );
+        self.get_error();
         Ok(())
     }
     pub fn send_vec4_uniform(
@@ -266,6 +262,7 @@ impl WebGl {
             data.z,
             data.w,
         );
+        self.get_error();
         Ok(())
     }
     pub fn build_depth_texture(
@@ -474,6 +471,7 @@ impl WebGl {
             false,
             matrix.as_slice(),
         );
+        self.get_error();
     }
     pub fn send_view_matrix(&mut self, matrix: Matrix4<f32>, shader: &Shader) {
         debug!("sending view matrix");
@@ -482,6 +480,7 @@ impl WebGl {
             false,
             matrix.as_slice(),
         );
+        self.get_error();
     }
     fn compile_shader(
         context: &WebGl2RenderingContext,
@@ -529,6 +528,13 @@ impl WebGl {
             Err(context
                 .get_program_info_log(&program)
                 .unwrap_or_else(|| String::from("Unknown error creating program object")))
+        }
+    }
+    pub fn get_error(&self) {
+        let e = self.context.get_error();
+        if e != WebGl2RenderingContext::NO_ERROR {
+            error!("error: {}", e);
+            panic!()
         }
     }
 }

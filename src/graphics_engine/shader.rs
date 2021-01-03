@@ -29,8 +29,18 @@ pub mod shader_library {
         uniform vec3 sun_direction;
         uniform vec4 sun_color;
         uniform sampler2D u_texture;
+        vec4 onify(vec4 v){
+            return v*vec4(0.0,0.0,0.0,0.0)+vec4(1.0,1.0,1.0,1.0);
+        }
+        float sun(){
+            return dot(-1.0*sun_direction,o_normal);
+        }
+        vec4 sun_vec(){
+            float s = sun();
+            return vec4(s,s,s,1.0)*onify(sun_color);
+        }
         void main() {
-            color = texture(u_texture,o_uv)*dot(o_normal,sun_direction)*sun_color;
+            color = sun_vec()*sun_color*texture(u_texture,o_uv);
         }
     "#,
     };
