@@ -1,5 +1,6 @@
 mod bindable;
 mod camera;
+mod egui_integration;
 mod graph;
 mod graphics_engine;
 mod graphics_system;
@@ -31,6 +32,7 @@ pub mod prelude {
         ErrorType, Framebuffer, RuntimeMesh, RuntimeTexture, Shader, Transform, WebGl,
     };
     pub type ShaderBind = super::Bindable<Shader>;
+    pub use super::events::Event;
     pub use super::graphics_engine::{Mesh, RGBATexture as Texture, Vertex};
     pub use super::graphics_system::{RuntimeDebugMesh, RuntimeModel};
     pub use super::grid::Grid;
