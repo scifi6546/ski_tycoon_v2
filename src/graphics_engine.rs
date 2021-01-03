@@ -4,7 +4,7 @@ use log::{debug, error};
 pub use mesh::{Mesh, Vertex};
 use nalgebra::{Matrix4, Vector2, Vector3, Vector4};
 use shader::shader_library;
-pub use shader::Shader;
+pub use shader::{Shader, ShaderText};
 use std::collections::HashMap;
 use wasm_bindgen::{JsCast, JsValue};
 use web_sys::{
@@ -106,44 +106,16 @@ impl WebGl {
             .unwrap()
             .dyn_into::<WebGl2RenderingContext>()?;
         context.enable(WebGl2RenderingContext::DEPTH_TEST);
-        let vert_shader = Self::compile_shader(
-            &context,
-            WebGl2RenderingContext::VERTEX_SHADER,
-            r#"#version 300 es
-        in vec3 position;
-        in vec2 uv;
-        in vec3 normal;
-        out vec2 o_uv;
-        out vec3 o_normal;
-        uniform mat4 camera;
-        uniform mat4 model;
-        void main() {
-            gl_Position = camera*model*vec4(position,1.0);
-            o_normal = normal;
-            o_uv = uv;
-        }
-    "#,
-        )?;
-        let frag_shader = Self::compile_shader(
-            &context,
-            WebGl2RenderingContext::FRAGMENT_SHADER,
-            r#"#version 300 es
-        precision highp float;
-        out vec4 color;
-        in vec2 o_uv;
-        in vec3 o_normal;
-        uniform sampler2D u_texture;
-        void main() {
-            color = texture(u_texture,o_uv)+vec4(o_normal,1.0);
-        }
-    "#,
-        )?;
-        let program = Self::link_program(&context, &vert_shader, &frag_shader)?;
-        context.use_program(Some(&program));
         Ok(Self { context })
     }
     pub fn build_world_shader(&mut self) -> Result<Shader, ErrorType> {
-        let text = shader_library::WORLD_SHADER;
+        self.build_shader(shader_library::WORLD_SHADER)
+    }
+    /// Builds shader used for screenspace
+    pub fn build_screen_shader(&mut self) -> Result<Shader, JsValue> {
+        self.build_shader(shader_library::SCREEN_SHADER)
+    }
+    fn build_shader(&mut self, text: ShaderText) -> Result<Shader, JsValue> {
         let vertex_shader = Self::compile_shader(
             &self.context,
             WebGl2RenderingContext::VERTEX_SHADER,
@@ -178,6 +150,10 @@ impl WebGl {
             texture_sampler_location,
             uniforms,
         })
+    }
+    pub fn bind_shader(&mut self, shader: &Shader) -> Result<(), JsValue> {
+        self.context.use_program(Some(&shader.program));
+        Ok(())
     }
     pub fn build_mesh(&mut self, mesh: Mesh, shader: &Shader) -> Result<RuntimeMesh, ErrorType> {
         debug!("building mesh");

@@ -1,6 +1,6 @@
 use super::prelude::{
     dijkstra, FollowPath, GraphLayer, GraphLayerList, JsValue, Model, RuntimeModel, Shader,
-    Transform, WebGl,
+    ShaderBind, Transform, WebGl,
 };
 use legion::*;
 use log::info;
@@ -8,7 +8,7 @@ use nalgebra::{Vector2, Vector3};
 pub fn build_skiier(
     world: &mut World,
     graphics: &mut WebGl,
-    bound_shader: &Shader,
+    bound_shader: &ShaderBind,
     position: Vector2<i64>,
     end: Vector2<i64>,
 ) -> Result<(), JsValue> {
@@ -20,7 +20,7 @@ pub fn build_skiier(
     let mut transform = Transform::default();
     transform.set_scale(Vector3::new(0.1, 0.1, 0.1));
     let model = Model::cube(transform.clone());
-    let runtime_model = RuntimeModel::new(model, graphics, bound_shader)?;
+    let runtime_model = RuntimeModel::new(model, graphics, bound_shader.get_bind())?;
     let follow: FollowPath<GraphLayerList> = FollowPath::new(path);
     world.push((transform, follow, runtime_model));
     info!("built path");

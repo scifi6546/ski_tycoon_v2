@@ -1,3 +1,4 @@
+mod bindable;
 mod camera;
 mod graph;
 mod graphics_engine;
@@ -8,11 +9,12 @@ mod model;
 mod skiier;
 mod terrain;
 mod utils;
-use graphics_engine::{Framebuffer, Mesh, RGBATexture, Transform, WebGl};
+use graphics_engine::{Framebuffer, Mesh, RGBATexture, Shader, Transform, WebGl};
 use js_sys::Array as JsArray;
 use log::debug;
 use nalgebra::{Matrix4, Vector2, Vector3, Vector4};
 mod events;
+use bindable::Bindable;
 use camera::Camera;
 use events::{Event, MouseButton};
 use graphics_system::{insert_terrain, RuntimeModel};
@@ -28,7 +30,7 @@ pub mod prelude {
     pub use super::graphics_engine::{
         ErrorType, Framebuffer, RuntimeMesh, RuntimeTexture, Shader, Transform, WebGl,
     };
-
+    pub type ShaderBind = super::Bindable<Shader>;
     pub use super::graphics_engine::{Mesh, RGBATexture as Texture, Vertex};
     pub use super::graphics_system::{RuntimeDebugMesh, RuntimeModel};
     pub use super::grid::Grid;
@@ -37,6 +39,7 @@ pub mod prelude {
     pub use super::terrain::Terrain;
     pub use wasm_bindgen::prelude::JsValue;
 }
+use prelude::ShaderBind;
 struct Game {
     world: World,
     resources: Resources,
@@ -48,24 +51,33 @@ impl Game {
         let mut resources = Resources::default();
         let mut world = World::default();
         let mut webgl = WebGl::new()?;
-        let shader = webgl.build_world_shader()?;
+        let mut shader_bind = Bindable::default();
+        shader_bind.insert("world", webgl.build_world_shader()?);
+        shader_bind.insert("screen", webgl.build_screen_shader()?);
+        shader_bind.bind("world");
         let mut box_transform = Transform::default();
         box_transform.set_scale(Vector3::new(0.1, 0.1, 0.1));
         box_transform.translate(Vector3::new(-0.5, -0.5, 0.0));
-        GuiModel::simple_box(box_transform).insert(&mut world, &mut webgl, &shader)?;
+
+        GuiModel::simple_box(box_transform).insert(
+            &mut world,
+            &mut webgl,
+            &shader_bind.get_bind(),
+        )?;
         insert_terrain(
             Terrain::new_cone(Vector2::new(20, 20), Vector2::new(5.0, 5.0), 5.0, -1.0),
             &mut world,
             &mut webgl,
-            &shader,
+            &shader_bind.get_bind(),
         )?;
 
         let mut fb_texture = webgl.build_texture(
             RGBATexture::constant_color(Vector4::new(0, 0, 0, 0), Vector2::new(800, 800)),
-            &shader,
+            &shader_bind.get_bind(),
         )?;
-        let mut fb_depth = webgl.build_depth_texture(Vector2::new(800, 800), &shader)?;
-        let fb_mesh = webgl.build_mesh(Mesh::plane(), &shader)?;
+        let mut fb_depth =
+            webgl.build_depth_texture(Vector2::new(800, 800), &shader_bind.get_bind())?;
+        let fb_mesh = webgl.build_mesh(Mesh::plane(), &shader_bind.get_bind())?;
         let world_framebuffer = webgl.build_framebuffer(&mut fb_texture, &mut fb_depth)?;
         let world_render_surface = RuntimeModel {
             mesh: fb_mesh,
@@ -75,13 +87,13 @@ impl Game {
             skiier::build_skiier(
                 &mut world,
                 &mut webgl,
-                &shader,
+                &shader_bind,
                 Vector2::new(i, 0),
                 Vector2::new(10, i),
             )?;
         }
         resources.insert(webgl);
-        resources.insert(shader);
+        resources.insert(shader_bind);
         resources.insert(Camera::new(Vector3::new(0.0, 0.0, 0.0), 20.0, 1.0, 1.0));
 
         Ok(Game {
@@ -124,6 +136,10 @@ impl Game {
             let gl: &mut WebGl = &mut self.resources.get_mut().unwrap();
             gl.bind_framebuffer(&self.world_framebuffer);
             gl.clear_screen(Vector4::new(0.2, 0.2, 0.2, 1.0));
+
+            let shader: &mut ShaderBind = &mut self.resources.get_mut().unwrap();
+            shader.bind("world");
+            gl.bind_shader(shader.get_bind()).ok().unwrap();
         }
         //game logic
         let mut schedule = Schedule::builder()
@@ -146,12 +162,15 @@ impl Game {
             //binding to world framebuffer and rendering to it
 
             let gl: &mut WebGl = &mut self.resources.get_mut().unwrap();
-            let shader = &mut self.resources.get_mut().unwrap();
+            let shader: &mut ShaderBind = &mut self.resources.get_mut().unwrap();
+            shader.bind("screen");
             gl.bind_default_framebuffer();
-            gl.send_view_matrix(Matrix4::identity(), shader);
-            gl.send_model_matrix(Matrix4::identity(), shader);
+            //getting screen shader
+            gl.bind_shader(shader.get_bind()).ok().unwrap();
+            gl.send_view_matrix(Matrix4::identity(), shader.get_bind());
+            gl.send_model_matrix(Matrix4::identity(), shader.get_bind());
             gl.clear_screen(Vector4::new(0.2, 0.2, 0.2, 1.0));
-            gl.bind_texture(&self.world_render_surface.texture, shader);
+            gl.bind_texture(&self.world_render_surface.texture, shader.get_bind());
             gl.draw_mesh(&self.world_render_surface.mesh);
         }
         let mut gui_schedule = Schedule::builder()

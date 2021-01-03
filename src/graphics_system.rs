@@ -1,6 +1,6 @@
 use super::prelude::{
     Camera, ErrorType, GuiRuntimeModel, GuiTransform, Mesh, Model, RuntimeMesh, RuntimeTexture,
-    Shader, Terrain, Transform, WebGl,
+    Shader, ShaderBind, Terrain, Transform, WebGl,
 };
 use legion::*;
 use log::debug;
@@ -51,13 +51,13 @@ pub fn render_object(
     transform: &Transform,
     model: &RuntimeModel,
     #[resource] webgl: &mut WebGl,
-    #[resource] bound_shader: &Shader,
+    #[resource] shader: &ShaderBind,
     #[resource] camera: &Camera,
 ) {
     debug!("running render object");
-    webgl.bind_texture(&model.texture, bound_shader);
-    webgl.send_view_matrix(camera.get_matrix(), bound_shader);
-    webgl.send_model_matrix(transform.build().clone(), bound_shader);
+    webgl.bind_texture(&model.texture, shader.get_bind());
+    webgl.send_view_matrix(camera.get_matrix(), shader.get_bind());
+    webgl.send_model_matrix(transform.build().clone(), shader.get_bind());
     webgl.draw_mesh(&model.mesh);
 }
 #[system(for_each)]
@@ -65,11 +65,11 @@ pub fn render_debug(
     transform: &Transform,
     model: &RuntimeDebugMesh,
     #[resource] webgl: &mut WebGl,
-    #[resource] bound_shader: &Shader,
+    #[resource] shader: &ShaderBind,
     #[resource] camera: &Camera,
 ) {
-    webgl.send_model_matrix(transform.build().clone(), bound_shader);
-    webgl.send_view_matrix(camera.get_matrix(), bound_shader);
+    webgl.send_model_matrix(transform.build().clone(), shader.get_bind());
+    webgl.send_view_matrix(camera.get_matrix(), shader.get_bind());
     webgl.draw_lines(&model.mesh);
 }
 #[system(for_each)]
@@ -77,10 +77,10 @@ pub fn render_gui(
     transform: &GuiTransform,
     model: &GuiRuntimeModel,
     #[resource] webgl: &mut WebGl,
-    #[resource] bound_shader: &Shader,
+    #[resource] shader: &ShaderBind,
 ) {
     debug!("running render object");
-    webgl.bind_texture(&model.model.texture, bound_shader);
-    webgl.send_model_matrix(transform.transform.build().clone(), bound_shader);
+    webgl.bind_texture(&model.model.texture, shader.get_bind());
+    webgl.send_model_matrix(transform.transform.build().clone(), shader.get_bind());
     webgl.draw_mesh(&model.model.mesh);
 }
