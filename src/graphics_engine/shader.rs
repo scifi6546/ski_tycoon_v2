@@ -26,9 +26,11 @@ pub mod shader_library {
         out vec4 color;
         in vec2 o_uv;
         in vec3 o_normal;
+        uniform vec3 sun_direction;
+        uniform vec4 sun_color;
         uniform sampler2D u_texture;
         void main() {
-            color = texture(u_texture,o_uv)+vec4(o_normal,1.0);
+            color = texture(u_texture,o_uv)*dot(o_normal,sun_direction)*sun_color;
         }
     "#,
     };
@@ -49,6 +51,7 @@ pub mod shader_library {
     "#,
         fragment_shader: r#"#version 300 es
         precision highp float;
+        
         out vec4 color;
         in vec2 o_uv;
         in vec3 o_normal;

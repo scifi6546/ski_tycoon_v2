@@ -1,6 +1,6 @@
 mod mesh;
 mod shader;
-use log::{debug, error};
+use log::{debug, error, info};
 pub use mesh::{Mesh, Vertex};
 use nalgebra::{Matrix4, Vector2, Vector3, Vector4};
 use shader::shader_library;
@@ -109,7 +109,17 @@ impl WebGl {
         Ok(Self { context })
     }
     pub fn build_world_shader(&mut self) -> Result<Shader, ErrorType> {
-        self.build_shader(shader_library::WORLD_SHADER)
+        info!("building shader");
+        let mut s = self.build_shader(shader_library::WORLD_SHADER)?;
+
+        info!("built shader now getting uniforms");
+        for i in ["sun_direction", "sun_color"].iter() {
+            s.uniforms.insert(
+                i.to_string(),
+                self.context.get_uniform_location(&s.program, i),
+            );
+        }
+        Ok(s)
     }
     /// Builds shader used for screenspace
     pub fn build_screen_shader(&mut self) -> Result<Shader, JsValue> {
@@ -121,13 +131,16 @@ impl WebGl {
             WebGl2RenderingContext::VERTEX_SHADER,
             text.vertex_shader,
         )?;
+        info!("compilled vertex shader");
         let frag_shader = Self::compile_shader(
             &self.context,
             WebGl2RenderingContext::FRAGMENT_SHADER,
             text.fragment_shader,
         )?;
+        info!("compilled fragment shader");
         let program = Self::link_program(&self.context, &vertex_shader, &frag_shader)?;
         self.context.use_program(Some(&program));
+        info!("using program?");
         let position_attribute_location =
             Some(self.context.get_attrib_location(&program, "position"));
         let uv_attribute_location = Some(self.context.get_attrib_location(&program, "uv"));
@@ -225,6 +238,35 @@ impl WebGl {
             position_buffer,
             count: mesh.vertices.len() as i32,
         })
+    }
+    pub fn send_vec3_uniform(
+        &self,
+        shader: &Shader,
+        uniform_name: &str,
+        data: Vector3<f32>,
+    ) -> Result<(), ErrorType> {
+        self.context.uniform3f(
+            Some(&shader.uniforms[uniform_name].as_ref().unwrap()),
+            data.x,
+            data.y,
+            data.z,
+        );
+        Ok(())
+    }
+    pub fn send_vec4_uniform(
+        &self,
+        shader: &Shader,
+        uniform_name: &str,
+        data: Vector4<f32>,
+    ) -> Result<(), ErrorType> {
+        self.context.uniform4f(
+            Some(&shader.uniforms[uniform_name].as_ref().unwrap()),
+            data.x,
+            data.y,
+            data.z,
+            data.w,
+        );
+        Ok(())
     }
     pub fn build_depth_texture(
         &mut self,

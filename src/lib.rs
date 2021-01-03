@@ -11,7 +11,7 @@ mod terrain;
 mod utils;
 use graphics_engine::{Framebuffer, Mesh, RGBATexture, Transform, WebGl};
 use js_sys::Array as JsArray;
-use log::debug;
+use log::{debug, info};
 use nalgebra::{Matrix4, Vector2, Vector3, Vector4};
 mod events;
 use bindable::Bindable;
@@ -52,7 +52,27 @@ impl Game {
         let mut world = World::default();
         let mut webgl = WebGl::new()?;
         let mut shader_bind = Bindable::default();
+        info!("initted webgl");
         shader_bind.insert("world", webgl.build_world_shader()?);
+        info!("inserted world shader");
+        info!("built world shader");
+        webgl
+            .send_vec3_uniform(
+                &shader_bind["world"],
+                "sun_direction",
+                Vector3::new(1.0, -1.0, 0.0).normalize(),
+            )
+            .ok()
+            .unwrap();
+        webgl
+            .send_vec4_uniform(
+                &shader_bind["world"],
+                "sun_color",
+                Vector4::new(1.0, 1.0, 1.0, 1.0),
+            )
+            .ok()
+            .unwrap();
+        info!("sent uniforms");
         shader_bind.insert("screen", webgl.build_screen_shader()?);
         shader_bind.bind("world");
         let mut box_transform = Transform::default();
