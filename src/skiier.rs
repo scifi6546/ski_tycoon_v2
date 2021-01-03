@@ -1,6 +1,6 @@
 use super::prelude::{
-    dijkstra, FollowPath, GraphLayer, GraphLayerList, JsValue, Model, RuntimeModel, Shader,
-    ShaderBind, Transform, WebGl,
+    dijkstra, FollowPath, GraphLayer, GraphLayerList, JsValue, Model, RuntimeModel, ShaderBind,
+    Transform, WebGl,
 };
 use legion::*;
 use log::info;

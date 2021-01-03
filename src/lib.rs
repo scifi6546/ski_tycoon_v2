@@ -9,7 +9,7 @@ mod model;
 mod skiier;
 mod terrain;
 mod utils;
-use graphics_engine::{Framebuffer, Mesh, RGBATexture, Shader, Transform, WebGl};
+use graphics_engine::{Framebuffer, Mesh, RGBATexture, Transform, WebGl};
 use js_sys::Array as JsArray;
 use log::debug;
 use nalgebra::{Matrix4, Vector2, Vector3, Vector4};
