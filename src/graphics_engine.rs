@@ -1,5 +1,6 @@
 mod mesh;
 mod shader;
+use super::prelude::Texture;
 use log::{debug, error};
 pub use mesh::{Mesh, Vertex};
 use nalgebra::{Matrix4, Vector2, Vector3, Vector4};
@@ -54,30 +55,7 @@ unsafe impl Sync for RuntimeMesh {}
 unsafe impl Sync for RuntimeTexture {}
 unsafe impl Send for RuntimeMesh {}
 unsafe impl Send for RuntimeTexture {}
-#[derive(Clone)]
-pub struct RGBATexture {
-    dimensions: Vector2<u32>,
-    pixels: Vec<Vector4<u8>>,
-}
-impl RGBATexture {
-    pub fn get_raw_vector(&self) -> Vec<u8> {
-        let mut v = vec![];
-        v.reserve((self.dimensions.x * self.dimensions.y * 4) as usize);
-        for pixel in self.pixels.iter() {
-            v.push(pixel.x);
-            v.push(pixel.y);
-            v.push(pixel.z);
-            v.push(pixel.w);
-        }
-        return v;
-    }
-    pub fn constant_color(color: Vector4<u8>, dimensions: Vector2<u32>) -> Self {
-        let pixels = (0..(dimensions.x * dimensions.y))
-            .map(|_| color.clone())
-            .collect();
-        Self { dimensions, pixels }
-    }
-}
+
 pub struct WebGl {
     context: WebGl2RenderingContext,
 }
@@ -332,7 +310,7 @@ impl WebGl {
     }
     pub fn build_texture(
         &mut self,
-        texture: RGBATexture,
+        texture: Texture,
         shader: &Shader,
     ) -> Result<RuntimeTexture, ErrorType> {
         debug!("building texture");

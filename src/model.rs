@@ -3,7 +3,7 @@ use nalgebra::{Vector2, Vector3, Vector4};
 #[derive(Clone)]
 pub struct Model {
     pub mesh: super::graphics_engine::Mesh,
-    pub texture: super::graphics_engine::RGBATexture,
+    pub texture: Texture,
     pub transform: Transform,
 }
 impl Model {
