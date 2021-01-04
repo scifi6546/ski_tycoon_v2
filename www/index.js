@@ -6,7 +6,7 @@ let wheel_last_time = new Date();
 let events = []
 function canvas_click() {
     console.log("clicked??")
-    document.getElementById("canvas").requestPointerLock();
+    //document.getElementById("canvas").requestPointerLock();
 }
 function mouse_move(event) {
 
@@ -20,10 +20,12 @@ function mouse_move(event) {
     if (last_y === null) {
         last_y = event.clientY;
     }
-    let delta_x = Number(event.clientX - last_x);
     mouse_event.set("name", "mouse_move");
     mouse_event.set("delta_x", event.clientX - last_x);
+    mouse_event.set("x", event.clientX);
     mouse_event.set("delta_y", event.clientY - last_y);
+    mouse_event.set("y", event.clientY);
+
     mouse_event.set("delta_time_ms", Number(now - last_time))
     mouse_event.set("buttons", event.buttons);
     events.push(mouse_event)
@@ -48,10 +50,30 @@ function press_putton(event) {
     button_event.set("key", event.key)
     events.push(button_event)
 }
+function on_mouse_down(event) {
+    let mouse_event = new Map();
+    mouse_event.set("name", "mousedown");
+    mouse_event.set("buttons", event.buttons);
+    mouse_event.set("x", event.clientX);
+    mouse_event.set("y", event.clientY);
+
+    events.push(mouse_event);
+}
+function on_mouse_up(event) {
+    let mouse_event = new Map();
+    mouse_event.set("name", "mouseup");
+    mouse_event.set("buttons", event.buttons);
+    mouse_event.set("x", event.clientX);
+    mouse_event.set("y", event.clientY);
+
+    events.push(mouse_event);
+}
 document.getElementById("canvas").onclick = canvas_click;
 document.getElementById("canvas").onmousemove = mouse_move
 document.getElementById("canvas").onwheel = onwheel;
 document.onkeypress = press_putton;
+document.getElementById("canvas").onmousedown = on_mouse_down;
+document.getElementById("canvas").onmouseup = on_mouse_up;
 console.log("loading game")
 let game = rust.init_game();
 console.log("loaded game")

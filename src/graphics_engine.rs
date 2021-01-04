@@ -234,6 +234,12 @@ impl WebGl {
             count: mesh.vertices.len() as i32,
         })
     }
+    pub fn delete_mesh(&mut self, mesh: &mut WebGlMesh) -> Result<(), ErrorType> {
+        self.context
+            .delete_vertex_array(mesh.vertex_array_object.as_ref());
+        self.context.delete_buffer(mesh.position_buffer.as_ref());
+        Ok(())
+    }
     pub fn send_vec3_uniform(
         &self,
         shader: &Shader,
@@ -381,6 +387,9 @@ impl WebGl {
         Ok(WebGlRenderTexture {
             texture: gl_texture,
         })
+    }
+    pub fn delete_texture(&mut self, texture: &mut RuntimeTexture) {
+        self.context.delete_texture(texture.texture.as_ref())
     }
     pub fn build_framebuffer(
         &mut self,

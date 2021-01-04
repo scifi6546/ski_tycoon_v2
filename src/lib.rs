@@ -32,7 +32,7 @@ pub mod prelude {
         ErrorType, Framebuffer, RuntimeMesh, RuntimeTexture, Shader, Transform, WebGl,
     };
     pub type ShaderBind = super::Bindable<Shader>;
-    pub use super::events::Event;
+    pub use super::events::{Event, MouseButton};
     pub use super::graphics_engine::{Mesh, RGBATexture as Texture, Vertex};
     pub use super::graphics_system::{RuntimeDebugMesh, RuntimeModel};
     pub use super::grid::Grid;
@@ -137,6 +137,7 @@ impl Game {
                         delta_y,
                         delta_time_ms,
                         buttons_pressed,
+                        ..
                     } => {
                         if buttons_pressed.contains(&MouseButton::RightClick) {
                             camera.rotate_phi(delta_x * 0.001 * delta_time_ms);
@@ -144,7 +145,7 @@ impl Game {
                         }
                     }
                     Event::CameraMove { direction } => camera.translate(&(0.1 * direction)),
-                    Event::CameraZoom {
+                    Event::Scroll {
                         delta_y,
                         delta_time_ms,
                     } => {
