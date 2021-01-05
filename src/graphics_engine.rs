@@ -4,7 +4,7 @@ use super::prelude::Texture;
 use log::{debug, error, info};
 pub use mesh::{Mesh, Vertex};
 use nalgebra::{Matrix4, Vector2, Vector3, Vector4};
-use shader::shader_library;
+use shader::{shader_library, RuntimeAttribute};
 pub use shader::{Shader, ShaderText};
 use std::collections::HashMap;
 use wasm_bindgen::{JsCast, JsValue};
@@ -94,6 +94,10 @@ impl WebGl {
     pub fn build_screen_shader(&mut self) -> Result<Shader, JsValue> {
         self.build_shader(shader_library::SCREEN_SHADER)
     }
+    pub fn build_gui_shader(&mut self) -> Result<Shader, ErrorType> {
+        info!("building gui shader");
+        self.build_shader(shader_library::GUI_SHADER)
+    }
     fn build_shader(&mut self, text: ShaderText) -> Result<Shader, JsValue> {
         let vertex_shader = Self::compile_shader(
             &self.context,
@@ -106,6 +110,7 @@ impl WebGl {
             text.fragment_shader,
         )?;
         let program = Self::link_program(&self.context, &vertex_shader, &frag_shader)?;
+        info!("linked shader");
         self.context.use_program(Some(&program));
         let position_attribute_location =
             Some(self.context.get_attrib_location(&program, "position"));
@@ -121,24 +126,29 @@ impl WebGl {
             );
             self.get_error();
         }
-        let attribute_locations = text
+        info!("got all uniforms");
+        let attributes = text
             .custom_attributes
             .iter()
             .map(|attr| {
+                self.get_error();
                 (
                     attr.name.to_string(),
-                    Some(self.context.get_attrib_location(&program, attr.name)),
+                    RuntimeAttribute {
+                        location: Some(self.context.get_attrib_location(&program, attr.name)),
+                        size: attr.size,
+                    },
                 )
             })
             .collect();
-
+        info!("built shader");
         Ok(Shader {
             program,
             position_attribute_location,
             uv_attribute_location,
             normal_attribute_location,
             texture_sampler_location,
-            attribute_locations,
+            attributes,
             uniforms,
         })
     }
@@ -211,7 +221,55 @@ impl WebGl {
             (3 + 2 + 3) * std::mem::size_of::<f32>() as i32,
             5 * std::mem::size_of::<f32>() as i32,
         );
+        //custom verticies
 
+        for (name, data) in mesh.custom_attributes.iter() {
+            if let Some(attribute) = shader.attributes.get(name) {
+                if data.len() / attribute.size != mesh.vertices.len() {
+                    self.context.bind_vertex_array(vao.as_ref());
+                    error!(
+                        "custom attribute len is: {} while mesh len is: {}",
+                        data.len() / attribute.size,
+                        mesh.vertices.len()
+                    );
+                    panic!()
+                }
+                self.context
+                    .enable_vertex_attrib_array(attribute.location.unwrap() as u32);
+                self.get_error();
+                //  Note that `Float32Array::view` is somewhat dangerous (hence the
+                // `unsafe`!). This is creating a raw view into our module's
+                // `WebAssembly.Memory` buffer, but if we allocate more pages for ourself
+                // (aka do a memory allocation in Rust) it'll cause the buffer to change,
+                // causing the `Float32Array` to be invalid.
+                let attribute_buffer = self.context.create_buffer();
+                self.context.bind_buffer(
+                    WebGl2RenderingContext::ARRAY_BUFFER,
+                    (&attribute_buffer).as_ref(),
+                );
+                let l = unsafe {
+                    let vert_array = js_sys::Float32Array::view(data.as_slice());
+                    self.context.buffer_data_with_array_buffer_view(
+                        WebGl2RenderingContext::ARRAY_BUFFER,
+                        &vert_array,
+                        WebGl2RenderingContext::STATIC_DRAW,
+                    );
+                    vert_array.length()
+                };
+                self.context.vertex_attrib_pointer_with_i32(
+                    attribute.location.unwrap() as u32,
+                    attribute.size as i32,
+                    WebGl2RenderingContext::FLOAT,
+                    false,
+                    0,
+                    0,
+                );
+                self.get_error();
+            } else {
+                error!("invalid attribute: {}", name);
+                panic!();
+            }
+        }
         Ok(WebGlMesh {
             vertex_array_object: vao,
             position_buffer,

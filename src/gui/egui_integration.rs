@@ -78,21 +78,12 @@ pub fn draw_egui(
                 .indices
                 .iter()
                 .map(|i| triangles.vertices[*i as usize])
-                //.map(|v| {
-                //    info!("{:?}", v);
-                //    v
-                //})
-                //.map(|i| {
-                //    info!("{:?}", i);
-                //    i
-                //})
                 .collect(),
         );
         let custom_attributes = [("vertex_color".to_string(), colors)]
             .iter()
             .cloned()
             .collect();
-        info!("vertex len: {}", vertices.len());
         let mut runtime_mesh = gl.build_mesh(
             Mesh {
                 vertices,
@@ -106,7 +97,7 @@ pub fn draw_egui(
     gl.delete_texture(&mut render_texture);
     Ok(())
 }
-fn to_vertex(vertex_list: &Vec<EguiVertex>) -> (Vec<Vertex>, Vec<u8>) {
+fn to_vertex(vertex_list: &Vec<EguiVertex>) -> (Vec<Vertex>, Vec<f32>) {
     let mut vertices = vec![];
     let mut colors = vec![];
     for vertex in vertex_list.iter() {
@@ -123,22 +114,10 @@ fn to_vertex(vertex_list: &Vec<EguiVertex>) -> (Vec<Vertex>, Vec<u8>) {
             normal,
         });
         let color: egui::paint::Rgba = vertex.color.into();
-        colors.append(&mut color.r().to_le_bytes().to_vec());
-        colors.append(&mut color.g().to_le_bytes().to_vec());
-        colors.append(&mut color.b().to_le_bytes().to_vec());
-        colors.append(&mut color.a().to_le_bytes().to_vec());
+        colors.push(color.r());
+        colors.push(color.g());
+        colors.push(color.b());
+        colors.push(color.a());
     }
     (vertices, colors)
-    //let position = Vector3::new(
-    //    vertex.pos.x / 400.0 - 1.0,
-    //    -1.0 * vertex.pos.y / 400.0 + 1.0,
-    //    -0.8,
-    //);
-    //let uv = Vector2::new(vertex.uv.x, vertex.uv.y);
-    //let normal = Vector3::new(0.0, 0.0, 1.0);
-    //Vertex {
-    //    position,
-    //    uv,
-    //    normal,
-    //}
 }

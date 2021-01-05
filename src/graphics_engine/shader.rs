@@ -1,7 +1,8 @@
 use std::collections::HashMap;
 use web_sys::{WebGlProgram, WebGlUniformLocation};
 pub struct Attribute {
-    size: usize,
+    /// number of floats in attribute
+    pub size: usize,
     pub name: &'static str,
 }
 pub struct ShaderText {
@@ -27,7 +28,7 @@ pub mod shader_library {
             gl_Position = camera*model*vec4(position,1.0);
             o_normal = normal;
             o_uv = uv;
-            o_color=vertex_color
+            o_color=vertex_color;
         }
     "#,
         fragment_shader: r#"#version 300 es
@@ -36,15 +37,18 @@ pub mod shader_library {
         out vec4 color;
         in vec2 o_uv;
         in vec3 o_normal;
-        in vec4 o_color
+        in vec4 o_color;
         uniform sampler2D u_texture;
+        vec4 onify(vec4 v){
+            return v*vec4(0.0,0.0,0.0,0.0)+vec4(1.0,1.0,1.0,1.0);
+        }
         void main() {
-            color = texture(u_texture,o_uv)*o_color;
+            color = texture(u_texture,o_uv)*onify(o_color);
         }
     "#,
         uniforms: &["camera", "model"],
         custom_attributes: &[Attribute {
-            size: std::mem::size_of::<f32>() * 4,
+            size: 4,
             name: "vertex_color",
         }],
     };
@@ -119,12 +123,17 @@ pub mod shader_library {
     };
 }
 #[derive(Clone)]
+pub struct RuntimeAttribute {
+    pub location: Option<i32>,
+    pub size: usize,
+}
+#[derive(Clone)]
 pub struct Shader {
     pub uniforms: HashMap<String, Option<WebGlUniformLocation>>,
     pub position_attribute_location: Option<i32>,
     pub uv_attribute_location: Option<i32>,
     pub normal_attribute_location: Option<i32>,
-    pub attribute_locations: HashMap<String, Option<i32>>,
+    pub attributes: HashMap<String, RuntimeAttribute>,
     pub texture_sampler_location: Option<WebGlUniformLocation>,
     pub program: WebGlProgram,
 }

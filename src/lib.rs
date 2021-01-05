@@ -82,6 +82,7 @@ impl Game {
             .unwrap();
         webgl.get_error();
         shader_bind.insert("screen", webgl.build_screen_shader()?);
+        shader_bind.insert("gui", webgl.build_gui_shader()?);
         shader_bind.bind("world");
         webgl.bind_shader(shader_bind.get_bind()).ok().unwrap();
         let mut box_transform = Transform::default();
@@ -214,6 +215,10 @@ impl Game {
             gl.clear_screen(Vector4::new(0.2, 0.2, 0.2, 1.0));
             gl.bind_texture(&self.world_render_surface.texture, shader.get_bind());
             gl.draw_mesh(&self.world_render_surface.mesh);
+
+            //binding and drawing gui shader
+            shader.bind("gui");
+            gl.bind_shader(shader.get_bind()).ok().unwrap();
             gui::draw_gui(
                 &mut self.egui_context,
                 &events,
@@ -222,6 +227,9 @@ impl Game {
                 &mut self.egui_adaptor,
             )
             .expect("successfully drew");
+            shader.bind("screen");
+            //getting screen shader
+            gl.bind_shader(shader.get_bind()).ok().unwrap();
         }
         let mut gui_schedule = Schedule::builder()
             .add_system(graphics_system::render_gui_system())

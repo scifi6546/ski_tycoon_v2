@@ -9,7 +9,7 @@ pub struct Vertex {
 #[derive(Clone, Debug)]
 pub struct Mesh {
     pub vertices: Vec<Vertex>,
-    pub custom_attributes: HashMap<String, Vec<u8>>,
+    pub custom_attributes: HashMap<String, Vec<f32>>,
 }
 impl Mesh {
     /// Returns a 2x2 plane aligended with the x-y plane centerd at (0,0,0)
