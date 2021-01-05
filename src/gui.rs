@@ -3,14 +3,11 @@ use super::prelude::{
     ErrorType, Event, Mesh, Model, RuntimeModel, Shader, ShaderBind, Texture, Transform, WebGl,
 };
 use legion::*;
-use log::info;
 mod egui_integration;
-use egui::{CtxRef, Ui};
+use egui::CtxRef;
 use egui_integration::draw_egui;
 pub use egui_integration::EguiRawInputAdaptor;
-use epi::App as EpiApp;
 use nalgebra::{Vector2, Vector4};
-use std::sync::Arc;
 pub struct GuiRuntimeModel {
     pub model: RuntimeModel,
 }
@@ -52,10 +49,12 @@ trait App: std::fmt::Debug {}
 struct Test<T: Clone> {
     t: T,
 }
+#[allow(unused_must_use)]
 pub fn init_gui() -> (CtxRef, EguiRawInputAdaptor) {
     let mut ctx = CtxRef::default();
     let mut adaptor = EguiRawInputAdaptor::default();
     ctx.begin_frame(adaptor.process_events(&vec![]));
+    //not painting because it is just in the init phase
     ctx.end_frame();
     (ctx, adaptor)
 }

@@ -127,7 +127,7 @@ impl Game {
         resources.insert(webgl);
         resources.insert(shader_bind);
         resources.insert(Camera::new(Vector3::new(0.0, 0.0, 0.0), 20.0, 1.0, 1.0));
-        let (mut egui_context, egui_adaptor) = gui::init_gui();
+        let (egui_context, egui_adaptor) = gui::init_gui();
         // gui::insert_ui(&mut egui_context);
         info!("context created");
         info!("inserted ui");
