@@ -1,6 +1,6 @@
 mod bindable;
 mod camera;
-mod egui_integration;
+
 mod graph;
 mod graphics_engine;
 mod graphics_system;
@@ -13,15 +13,17 @@ mod texture;
 mod utils;
 use graphics_engine::{Framebuffer, Mesh, Transform, WebGl};
 use js_sys::Array as JsArray;
-use log::debug;
+use log::{debug, info};
 use nalgebra::{Matrix4, Vector2, Vector3, Vector4};
 use texture::RGBATexture;
 mod events;
 use bindable::Bindable;
 use camera::Camera;
+use egui::CtxRef;
+
 use events::{Event, MouseButton};
 use graphics_system::{insert_terrain, RuntimeModel};
-use gui::GuiModel;
+use gui::{EguiRawInputAdaptor, GuiModel};
 use legion::*;
 use terrain::Terrain;
 use wasm_bindgen::prelude::*;
@@ -50,6 +52,8 @@ struct Game {
     resources: Resources,
     world_framebuffer: Framebuffer,
     world_render_surface: RuntimeModel,
+    egui_context: CtxRef,
+    egui_adaptor: EguiRawInputAdaptor,
 }
 impl Game {
     pub fn new() -> Result<Game, JsValue> {
@@ -123,17 +127,27 @@ impl Game {
         resources.insert(webgl);
         resources.insert(shader_bind);
         resources.insert(Camera::new(Vector3::new(0.0, 0.0, 0.0), 20.0, 1.0, 1.0));
-        Ok(Game {
+        let (mut egui_context, egui_adaptor) = gui::init_gui();
+        // gui::insert_ui(&mut egui_context);
+        info!("context created");
+        info!("inserted ui");
+        let g = Game {
             world,
             resources,
             world_framebuffer,
             world_render_surface,
-        })
+            egui_adaptor,
+            egui_context,
+        };
+        info!("built game successfully");
+        Ok(g)
     }
     pub fn run_frame(&mut self, events: Vec<Event>) {
+        info!("running frame?");
+        gui::insert_ui(&mut self.egui_context);
         {
             let camera: &mut Camera = &mut self.resources.get_mut().unwrap();
-            for e in events {
+            for e in events.iter() {
                 match e {
                     Event::MouseMove {
                         delta_x,
@@ -198,8 +212,16 @@ impl Game {
             gl.send_view_matrix(Matrix4::identity(), shader.get_bind());
             gl.send_model_matrix(Matrix4::identity(), shader.get_bind());
             gl.clear_screen(Vector4::new(0.2, 0.2, 0.2, 1.0));
-            gl.bind_texture(&self.world_render_surface.texture, shader.get_bind());
-            gl.draw_mesh(&self.world_render_surface.mesh);
+            //gl.bind_texture(&self.world_render_surface.texture, shader.get_bind());
+            //gl.draw_mesh(&self.world_render_surface.mesh);
+            gui::draw_gui(
+                &mut self.egui_context,
+                &events,
+                gl,
+                shader,
+                &mut self.egui_adaptor,
+            )
+            .expect("successfully drew");
         }
         let mut gui_schedule = Schedule::builder()
             .add_system(graphics_system::render_gui_system())

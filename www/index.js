@@ -91,6 +91,6 @@ function render() {
     }
     game.render_frame(events);
     events = []
-    requestAnimationFrame(render)
+    //requestAnimationFrame(render)
 }
 requestAnimationFrame(render)
