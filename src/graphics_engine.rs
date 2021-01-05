@@ -134,6 +134,7 @@ impl WebGl {
             uv_attribute_location,
             normal_attribute_location,
             texture_sampler_location,
+            attribute_locations: HashMap::new(),
             uniforms,
         })
     }

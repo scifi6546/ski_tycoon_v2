@@ -77,15 +77,15 @@ pub fn draw_egui(
             .indices
             .iter()
             .map(|i| triangles.vertices[*i as usize])
-            .map(|v| {
-                info!("{:?}", v);
-                v
-            })
+            //.map(|v| {
+            //    info!("{:?}", v);
+            //    v
+            //})
             .map(|v| to_vertex(&v))
-            .map(|i| {
-                info!("{:?}", i);
-                i
-            })
+            //.map(|i| {
+            //    info!("{:?}", i);
+            //    i
+            //})
             .collect();
         info!("vertex len: {}", vertices.len());
         let mut runtime_mesh = gl.build_mesh(Mesh { vertices }, shader.get_bind())?;
@@ -99,7 +99,7 @@ fn to_vertex(vertex: &EguiVertex) -> Vertex {
     let position = Vector3::new(
         vertex.pos.x / 400.0 - 1.0,
         -1.0 * vertex.pos.y / 400.0 + 1.0,
-        -0.5,
+        -0.8,
     );
     let uv = Vector2::new(vertex.uv.x, vertex.uv.y);
     let normal = Vector3::new(0.0, 0.0, 1.0);

@@ -212,8 +212,8 @@ impl Game {
             gl.send_view_matrix(Matrix4::identity(), shader.get_bind());
             gl.send_model_matrix(Matrix4::identity(), shader.get_bind());
             gl.clear_screen(Vector4::new(0.2, 0.2, 0.2, 1.0));
-            //gl.bind_texture(&self.world_render_surface.texture, shader.get_bind());
-            //gl.draw_mesh(&self.world_render_surface.mesh);
+            gl.bind_texture(&self.world_render_surface.texture, shader.get_bind());
+            gl.draw_mesh(&self.world_render_surface.mesh);
             gui::draw_gui(
                 &mut self.egui_context,
                 &events,

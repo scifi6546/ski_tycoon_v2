@@ -74,8 +74,6 @@ pub fn draw_gui(
 }
 pub fn insert_ui(context: &mut CtxRef) {
     egui::Window::new("dfsadfas").show(context, |ui| {
-        info!("can I get here?");
-        ui.label("                     ");
+        ui.label("Can I Read?");
     });
-    info!("created window");
 }

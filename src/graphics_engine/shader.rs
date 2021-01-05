@@ -6,6 +6,35 @@ pub struct ShaderText {
 }
 pub mod shader_library {
     use super::ShaderText;
+    pub const GUI_SHADER: ShaderText = ShaderText {
+        vertex_shader: r#"#version 300 es
+        in vec3 position;
+        in vec2 uv;
+        in vec3 normal;
+        in vec4 o_color;
+        out vec2 o_uv;
+        out vec3 o_normal;
+        out vec4 o_color;
+        uniform mat4 camera;
+        uniform mat4 model;
+        void main() {
+            gl_Position = camera*model*vec4(position,1.0);
+            o_normal = normal;
+            o_uv = uv;
+        }
+    "#,
+        fragment_shader: r#"#version 300 es
+        precision highp float;
+        
+        out vec4 color;
+        in vec2 o_uv;
+        in vec3 o_normal;
+        uniform sampler2D u_texture;
+        void main() {
+            color = texture(u_texture,o_uv);
+        }
+    "#,
+    };
     pub const WORLD_SHADER: ShaderText = ShaderText {
         vertex_shader: r#"#version 300 es
         in vec3 position;
@@ -78,6 +107,7 @@ pub struct Shader {
     pub position_attribute_location: Option<i32>,
     pub uv_attribute_location: Option<i32>,
     pub normal_attribute_location: Option<i32>,
+    pub attribute_locations: HashMap<String, Option<i32>>,
     pub texture_sampler_location: Option<WebGlUniformLocation>,
     pub program: WebGlProgram,
 }
