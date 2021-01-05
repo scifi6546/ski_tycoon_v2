@@ -3,6 +3,7 @@ use web_sys::{WebGlProgram, WebGlUniformLocation};
 pub struct ShaderText {
     pub fragment_shader: &'static str,
     pub vertex_shader: &'static str,
+    pub uniforms: &'static [&'static str],
 }
 pub mod shader_library {
     use super::ShaderText;
@@ -34,6 +35,7 @@ pub mod shader_library {
             color = texture(u_texture,o_uv);
         }
     "#,
+        uniforms: &["camera", "model"],
     };
     pub const WORLD_SHADER: ShaderText = ShaderText {
         vertex_shader: r#"#version 300 es
@@ -72,6 +74,7 @@ pub mod shader_library {
             color = sun_vec()*sun_color*texture(u_texture,o_uv);
         }
     "#,
+        uniforms: &["camera", "model", "sun_direction", "sun_color"],
     };
     pub const SCREEN_SHADER: ShaderText = ShaderText {
         vertex_shader: r#"#version 300 es
@@ -99,6 +102,7 @@ pub mod shader_library {
             color = texture(u_texture,o_uv);
         }
     "#,
+        uniforms: &["camera", "model"],
     };
 }
 #[derive(Clone)]

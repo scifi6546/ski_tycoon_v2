@@ -1,7 +1,7 @@
 mod mesh;
 mod shader;
 use super::prelude::Texture;
-use log::{debug, error};
+use log::{debug, error, info};
 pub use mesh::{Mesh, Vertex};
 use nalgebra::{Matrix4, Vector2, Vector3, Vector4};
 use shader::shader_library;
@@ -88,12 +88,6 @@ impl WebGl {
     }
     pub fn build_world_shader(&mut self) -> Result<Shader, ErrorType> {
         let mut s = self.build_shader(shader_library::WORLD_SHADER)?;
-        for i in ["sun_direction", "sun_color"].iter() {
-            s.uniforms.insert(
-                i.to_string(),
-                self.context.get_uniform_location(&s.program, i),
-            );
-        }
         Ok(s)
     }
     /// Builds shader used for screenspace
@@ -119,15 +113,14 @@ impl WebGl {
         let normal_attribute_location = Some(self.context.get_attrib_location(&program, "normal"));
         let texture_sampler_location = self.context.get_uniform_location(&program, "u_texture");
         let mut uniforms = HashMap::new();
-        uniforms.insert(
-            "model".to_string(),
-            self.context.get_uniform_location(&program, "model"),
-        );
-        uniforms.insert(
-            "camera".to_string(),
-            self.context.get_uniform_location(&program, "camera"),
-        );
-        self.get_error();
+        for uniform_name in text.uniforms.iter() {
+            info!("{}", uniform_name);
+            uniforms.insert(
+                uniform_name.to_string(),
+                self.context.get_uniform_location(&program, uniform_name),
+            );
+            self.get_error();
+        }
         Ok(Shader {
             program,
             position_attribute_location,
@@ -207,6 +200,7 @@ impl WebGl {
             (3 + 2 + 3) * std::mem::size_of::<f32>() as i32,
             5 * std::mem::size_of::<f32>() as i32,
         );
+
         Ok(WebGlMesh {
             vertex_array_object: vao,
             position_buffer,
