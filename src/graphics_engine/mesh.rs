@@ -1,4 +1,5 @@
 use nalgebra::{Vector2, Vector3};
+use std::collections::HashMap;
 #[derive(Clone, Debug)]
 pub struct Vertex {
     pub position: Vector3<f32>,
@@ -8,6 +9,7 @@ pub struct Vertex {
 #[derive(Clone, Debug)]
 pub struct Mesh {
     pub vertices: Vec<Vertex>,
+    pub custom_attributes: HashMap<String, Vec<u8>>,
 }
 impl Mesh {
     /// Returns a 2x2 plane aligended with the x-y plane centerd at (0,0,0)
@@ -46,6 +48,7 @@ impl Mesh {
                     normal: Vector3::new(0.0, 0.0, 1.0),
                 },
             ],
+            custom_attributes: HashMap::new(),
         }
     }
 }

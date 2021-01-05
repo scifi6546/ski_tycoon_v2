@@ -73,39 +73,72 @@ pub fn draw_egui(
     let mut render_texture = gl.build_texture(texture, shader.get_bind())?;
     gl.bind_texture(&render_texture, shader.get_bind());
     for (_rect, triangles) in paint_jobs.iter() {
-        let vertices: Vec<Vertex> = triangles
-            .indices
+        let (vertices, colors) = to_vertex(
+            &triangles
+                .indices
+                .iter()
+                .map(|i| triangles.vertices[*i as usize])
+                //.map(|v| {
+                //    info!("{:?}", v);
+                //    v
+                //})
+                //.map(|i| {
+                //    info!("{:?}", i);
+                //    i
+                //})
+                .collect(),
+        );
+        let custom_attributes = [("vertex_color".to_string(), colors)]
             .iter()
-            .map(|i| triangles.vertices[*i as usize])
-            //.map(|v| {
-            //    info!("{:?}", v);
-            //    v
-            //})
-            .map(|v| to_vertex(&v))
-            //.map(|i| {
-            //    info!("{:?}", i);
-            //    i
-            //})
+            .cloned()
             .collect();
         info!("vertex len: {}", vertices.len());
-        let mut runtime_mesh = gl.build_mesh(Mesh { vertices }, shader.get_bind())?;
+        let mut runtime_mesh = gl.build_mesh(
+            Mesh {
+                vertices,
+                custom_attributes,
+            },
+            shader.get_bind(),
+        )?;
         gl.draw_mesh(&runtime_mesh);
         gl.delete_mesh(&mut runtime_mesh)?;
     }
     gl.delete_texture(&mut render_texture);
     Ok(())
 }
-fn to_vertex(vertex: &EguiVertex) -> Vertex {
-    let position = Vector3::new(
-        vertex.pos.x / 400.0 - 1.0,
-        -1.0 * vertex.pos.y / 400.0 + 1.0,
-        -0.8,
-    );
-    let uv = Vector2::new(vertex.uv.x, vertex.uv.y);
-    let normal = Vector3::new(0.0, 0.0, 1.0);
-    Vertex {
-        position,
-        uv,
-        normal,
+fn to_vertex(vertex_list: &Vec<EguiVertex>) -> (Vec<Vertex>, Vec<u8>) {
+    let mut vertices = vec![];
+    let mut colors = vec![];
+    for vertex in vertex_list.iter() {
+        let position = Vector3::new(
+            vertex.pos.x / 400.0 - 1.0,
+            -1.0 * vertex.pos.y / 400.0 + 1.0,
+            -0.8,
+        );
+        let uv = Vector2::new(vertex.uv.x, vertex.uv.y);
+        let normal = Vector3::new(0.0, 0.0, 1.0);
+        vertices.push(Vertex {
+            position,
+            uv,
+            normal,
+        });
+        let color: egui::paint::Rgba = vertex.color.into();
+        colors.append(&mut color.r().to_le_bytes().to_vec());
+        colors.append(&mut color.g().to_le_bytes().to_vec());
+        colors.append(&mut color.b().to_le_bytes().to_vec());
+        colors.append(&mut color.a().to_le_bytes().to_vec());
     }
+    (vertices, colors)
+    //let position = Vector3::new(
+    //    vertex.pos.x / 400.0 - 1.0,
+    //    -1.0 * vertex.pos.y / 400.0 + 1.0,
+    //    -0.8,
+    //);
+    //let uv = Vector2::new(vertex.uv.x, vertex.uv.y);
+    //let normal = Vector3::new(0.0, 0.0, 1.0);
+    //Vertex {
+    //    position,
+    //    uv,
+    //    normal,
+    //}
 }

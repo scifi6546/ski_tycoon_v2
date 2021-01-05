@@ -1,18 +1,23 @@
 use std::collections::HashMap;
 use web_sys::{WebGlProgram, WebGlUniformLocation};
+pub struct Attribute {
+    size: usize,
+    pub name: &'static str,
+}
 pub struct ShaderText {
     pub fragment_shader: &'static str,
     pub vertex_shader: &'static str,
     pub uniforms: &'static [&'static str],
+    pub custom_attributes: &'static [Attribute],
 }
 pub mod shader_library {
-    use super::ShaderText;
+    use super::{Attribute, ShaderText};
     pub const GUI_SHADER: ShaderText = ShaderText {
         vertex_shader: r#"#version 300 es
         in vec3 position;
         in vec2 uv;
         in vec3 normal;
-        in vec4 o_color;
+        in vec4 vertex_color;
         out vec2 o_uv;
         out vec3 o_normal;
         out vec4 o_color;
@@ -22,6 +27,7 @@ pub mod shader_library {
             gl_Position = camera*model*vec4(position,1.0);
             o_normal = normal;
             o_uv = uv;
+            o_color=vertex_color
         }
     "#,
         fragment_shader: r#"#version 300 es
@@ -30,12 +36,17 @@ pub mod shader_library {
         out vec4 color;
         in vec2 o_uv;
         in vec3 o_normal;
+        in vec4 o_color
         uniform sampler2D u_texture;
         void main() {
-            color = texture(u_texture,o_uv);
+            color = texture(u_texture,o_uv)*o_color;
         }
     "#,
         uniforms: &["camera", "model"],
+        custom_attributes: &[Attribute {
+            size: std::mem::size_of::<f32>() * 4,
+            name: "vertex_color",
+        }],
     };
     pub const WORLD_SHADER: ShaderText = ShaderText {
         vertex_shader: r#"#version 300 es
@@ -75,6 +86,7 @@ pub mod shader_library {
         }
     "#,
         uniforms: &["camera", "model", "sun_direction", "sun_color"],
+        custom_attributes: &[],
     };
     pub const SCREEN_SHADER: ShaderText = ShaderText {
         vertex_shader: r#"#version 300 es
@@ -103,6 +115,7 @@ pub mod shader_library {
         }
     "#,
         uniforms: &["camera", "model"],
+        custom_attributes: &[],
     };
 }
 #[derive(Clone)]

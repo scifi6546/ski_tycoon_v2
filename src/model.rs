@@ -1,5 +1,6 @@
 use super::prelude::{Mesh, Texture, Transform, Vertex};
 use nalgebra::{Vector2, Vector3, Vector4};
+use std::collections::HashMap;
 #[derive(Clone)]
 pub struct Model {
     pub mesh: super::graphics_engine::Mesh,
@@ -68,7 +69,10 @@ impl Model {
             }
         }
         Model {
-            mesh: Mesh { vertices },
+            mesh: Mesh {
+                vertices,
+                custom_attributes: HashMap::new(),
+            },
             texture: Texture::constant_color(Vector4::new(200, 200, 200, 255), Vector2::new(8, 8)),
             transform,
         }
@@ -268,7 +272,10 @@ impl Model {
             },
         ];
         Model {
-            mesh: Mesh { vertices },
+            mesh: Mesh {
+                vertices,
+                custom_attributes: HashMap::new(),
+            },
             texture: Texture::constant_color(Vector4::new(255, 0, 0, 255), Vector2::new(8, 8)),
             transform,
         }

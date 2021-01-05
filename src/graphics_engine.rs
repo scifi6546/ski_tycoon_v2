@@ -121,13 +121,24 @@ impl WebGl {
             );
             self.get_error();
         }
+        let attribute_locations = text
+            .custom_attributes
+            .iter()
+            .map(|attr| {
+                (
+                    attr.name.to_string(),
+                    Some(self.context.get_attrib_location(&program, attr.name)),
+                )
+            })
+            .collect();
+
         Ok(Shader {
             program,
             position_attribute_location,
             uv_attribute_location,
             normal_attribute_location,
             texture_sampler_location,
-            attribute_locations: HashMap::new(),
+            attribute_locations,
             uniforms,
         })
     }
