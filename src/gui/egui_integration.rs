@@ -74,7 +74,7 @@ pub fn draw_egui(
     let mut render_texture = gl.build_texture(texture, shader.get_bind())?;
     gl.bind_texture(&render_texture, shader.get_bind());
     for (_rect, triangles) in paint_jobs.iter() {
-        let (vertices, colors) = to_vertex(
+        let vertices = to_vertex(
             &triangles
                 .indices
                 .iter()
@@ -98,14 +98,13 @@ pub fn draw_egui(
     gl.delete_texture(&mut render_texture);
     Ok(())
 }
-fn to_vertex(vertex_list: &Vec<EguiVertex>) -> (Vec<Vertex>, Vec<f32>) {
+fn to_vertex(vertex_list: &Vec<EguiVertex>) -> Vec<Vertex> {
     let mut vertices = vec![];
-    let mut colors = vec![];
     for vertex in vertex_list.iter() {
         let position = Vector3::new(
             vertex.pos.x / 400.0 - 1.0,
             -1.0 * vertex.pos.y / 400.0 + 1.0,
-            0.8,
+            -0.8,
         );
         let uv = Vector2::new(vertex.uv.x, vertex.uv.y);
         let normal = Vector3::new(0.0, 0.0, 1.0);
@@ -118,5 +117,5 @@ fn to_vertex(vertex_list: &Vec<EguiVertex>) -> (Vec<Vertex>, Vec<f32>) {
             extra_custom,
         });
     }
-    (vertices, colors)
+    vertices
 }

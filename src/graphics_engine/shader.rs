@@ -25,7 +25,7 @@ pub mod shader_library {
         uniform mat4 camera;
         uniform mat4 model;
         void main() {
-            gl_Position = camera*model*vec4(position,1.0);
+            gl_Position = vec4(position,1.0);
             o_normal = normal;
             o_uv = uv;
             o_color=vertex_color;
@@ -43,10 +43,10 @@ pub mod shader_library {
             return v*vec4(0.0,0.0,0.0,0.0)+vec4(1.0,1.0,1.0,1.0);
         }
         void main() {
-            color = texture(u_texture,o_uv)*onify(o_color);
+            color = texture(u_texture,o_uv)*o_color;
         }
     "#,
-        uniforms: &["camera", "model"],
+        uniforms: &[],
         custom_attributes: &[Attribute {
             size: 4,
             name: "vertex_color",
