@@ -2,7 +2,7 @@ mod mesh;
 mod shader;
 use super::prelude::Texture;
 use log::{debug, error, info};
-pub use mesh::{Mesh, Vertex};
+pub use mesh::{ItemDesc, Mesh, Vertex};
 use nalgebra::{Matrix4, Vector2, Vector3, Vector4};
 use shader::{shader_library, RuntimeAttribute};
 pub use shader::{Shader, ShaderText};
@@ -165,6 +165,16 @@ impl WebGl {
             WebGl2RenderingContext::ARRAY_BUFFER,
             (&position_buffer).as_ref(),
         );
+        let data_size = (3 + 2 + 3) * std::mem::size_of::<f32>() as i32 + {
+            {
+                let s: usize = mesh
+                    .description
+                    .iter()
+                    .map(|d| d.number_components * d.size_component)
+                    .sum();
+                s as i32
+            }
+        };
         for vertex in mesh.vertices.iter() {
             array.push(vertex.position.x);
             array.push(vertex.position.y);
@@ -174,6 +184,9 @@ impl WebGl {
             array.push(vertex.normal.x);
             array.push(vertex.normal.y);
             array.push(vertex.normal.z);
+            for f in vertex.extra_custom.iter() {
+                array.push(*f);
+            }
         }
         //  Note that `Float32Array::view` is somewhat dangerous (hence the
         // `unsafe`!). This is creating a raw view into our module's
@@ -202,7 +215,7 @@ impl WebGl {
             3,
             WebGl2RenderingContext::FLOAT,
             false,
-            (3 + 2 + 3) * std::mem::size_of::<f32>() as i32,
+            data_size,
             0.0,
         );
         self.context.vertex_attrib_pointer_with_i32(
@@ -210,7 +223,7 @@ impl WebGl {
             2,
             WebGl2RenderingContext::FLOAT,
             false,
-            (3 + 2 + 3) * std::mem::size_of::<f32>() as i32,
+            data_size,
             3 * std::mem::size_of::<f32>() as i32,
         );
         self.context.vertex_attrib_pointer_with_i32(
@@ -218,58 +231,23 @@ impl WebGl {
             3,
             WebGl2RenderingContext::FLOAT,
             false,
-            (3 + 2 + 3) * std::mem::size_of::<f32>() as i32,
+            data_size,
             5 * std::mem::size_of::<f32>() as i32,
         );
+        let mut addn: usize = 0;
+        for desc in mesh.description.iter() {
+            self.context.vertex_attrib_pointer_with_i32(
+                shader.attributes[&desc.name].location.unwrap() as u32,
+                desc.number_components as i32,
+                WebGl2RenderingContext::FLOAT,
+                false,
+                data_size,
+                5 * std::mem::size_of::<f32>() as i32 + addn as i32,
+            );
+            addn += desc.number_components * desc.size_component;
+        }
         //custom verticies
 
-        for (name, data) in mesh.custom_attributes.iter() {
-            if let Some(attribute) = shader.attributes.get(name) {
-                if data.len() / attribute.size != mesh.vertices.len() {
-                    self.context.bind_vertex_array(vao.as_ref());
-                    error!(
-                        "custom attribute len is: {} while mesh len is: {}",
-                        data.len() / attribute.size,
-                        mesh.vertices.len()
-                    );
-                    panic!()
-                }
-                self.context
-                    .enable_vertex_attrib_array(attribute.location.unwrap() as u32);
-                self.get_error();
-                //  Note that `Float32Array::view` is somewhat dangerous (hence the
-                // `unsafe`!). This is creating a raw view into our module's
-                // `WebAssembly.Memory` buffer, but if we allocate more pages for ourself
-                // (aka do a memory allocation in Rust) it'll cause the buffer to change,
-                // causing the `Float32Array` to be invalid.
-                let attribute_buffer = self.context.create_buffer();
-                self.context.bind_buffer(
-                    WebGl2RenderingContext::ARRAY_BUFFER,
-                    (&attribute_buffer).as_ref(),
-                );
-                let l = unsafe {
-                    let vert_array = js_sys::Float32Array::view(data.as_slice());
-                    self.context.buffer_data_with_array_buffer_view(
-                        WebGl2RenderingContext::ARRAY_BUFFER,
-                        &vert_array,
-                        WebGl2RenderingContext::STATIC_DRAW,
-                    );
-                    vert_array.length()
-                };
-                self.context.vertex_attrib_pointer_with_i32(
-                    attribute.location.unwrap() as u32,
-                    attribute.size as i32,
-                    WebGl2RenderingContext::FLOAT,
-                    false,
-                    0,
-                    0,
-                );
-                self.get_error();
-            } else {
-                error!("invalid attribute: {}", name);
-                panic!();
-            }
-        }
         Ok(WebGlMesh {
             vertex_array_object: vao,
             position_buffer,

@@ -37,7 +37,7 @@ pub mod prelude {
     };
     pub type ShaderBind = super::Bindable<Shader>;
     pub use super::events::{Event, MouseButton};
-    pub use super::graphics_engine::{Mesh, Vertex};
+    pub use super::graphics_engine::{ItemDesc, Mesh, Vertex};
     pub use super::graphics_system::{RuntimeDebugMesh, RuntimeModel};
     pub use super::grid::Grid;
     pub use super::gui::{GuiModel, GuiRuntimeModel, GuiTransform};

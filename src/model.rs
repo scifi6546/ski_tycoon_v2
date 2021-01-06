@@ -39,39 +39,45 @@ impl Model {
                     position: x0_y0,
                     uv: Vector2::new(0.0, 0.0),
                     normal: triangle0_normal,
+                    extra_custom: vec![],
                 });
                 vertices.push(Vertex {
                     position: x0_y1,
                     uv: Vector2::new(0.0, 1.0),
                     normal: triangle0_normal,
+                    extra_custom: vec![],
                 });
                 vertices.push(Vertex {
                     position: x1_y0,
                     uv: Vector2::new(1.0, 0.0),
                     normal: triangle0_normal,
+                    extra_custom: vec![],
                 });
                 //triangle 1
                 vertices.push(Vertex {
                     position: x0_y1,
                     uv: Vector2::new(0.0, 1.0),
                     normal: triangle1_normal,
+                    extra_custom: vec![],
                 });
                 vertices.push(Vertex {
                     position: x1_y1,
                     uv: Vector2::new(1.0, 1.0),
                     normal: triangle1_normal,
+                    extra_custom: vec![],
                 });
                 vertices.push(Vertex {
                     position: x1_y0,
                     uv: Vector2::new(1.0, 0.0),
                     normal: triangle1_normal,
+                    extra_custom: vec![],
                 });
             }
         }
         Model {
             mesh: Mesh {
                 vertices,
-                custom_attributes: HashMap::new(),
+                description: vec![],
             },
             texture: Texture::constant_color(Vector4::new(200, 200, 200, 255), Vector2::new(8, 8)),
             transform,
@@ -83,198 +89,234 @@ impl Model {
                 position: Vector3::new(-1.0, -1.0, 1.0),
                 uv: Vector2::new(0.0, 0.0),
                 normal: Vector3::new(-1.0, 0.0, 0.0),
+                extra_custom: vec![],
             },
             Vertex {
                 position: Vector3::new(1.0, 1.0, 1.0),
                 uv: Vector2::new(1.0, 1.0),
                 normal: Vector3::new(-1.0, 0.0, 0.0),
+                extra_custom: vec![],
             },
             Vertex {
                 position: Vector3::new(1.0, -1.0, 1.0),
                 uv: Vector2::new(1.0, 0.0),
                 normal: Vector3::new(-1.0, 0.0, 0.0),
+                extra_custom: vec![],
             },
             //second triangle
             Vertex {
                 position: Vector3::new(-1.0, -1.0, 1.0),
                 uv: Vector2::new(0.0, 0.0),
                 normal: Vector3::new(-1.0, 0.0, 0.0),
+                extra_custom: vec![],
             },
             Vertex {
                 position: Vector3::new(-1.0, 1.0, 1.0),
                 uv: Vector2::new(0.0, 1.0),
                 normal: Vector3::new(-1.0, 0.0, 0.0),
+                extra_custom: vec![],
             },
             Vertex {
                 position: Vector3::new(1.0, 1.0, 1.0),
                 uv: Vector2::new(1.0, 1.0),
                 normal: Vector3::new(-1.0, 0.0, 0.0),
+                extra_custom: vec![],
             },
             //third triangle
             Vertex {
                 position: Vector3::new(1.0, -1.0, 1.0),
                 uv: Vector2::new(0.0, 0.0),
                 normal: Vector3::new(1.0, 0.0, 0.0),
+                extra_custom: vec![],
             },
             Vertex {
                 position: Vector3::new(1.0, 1.0, -1.0),
                 uv: Vector2::new(0.0, 1.0),
                 normal: Vector3::new(-1.0, 0.0, 0.0),
+                extra_custom: vec![],
             },
             Vertex {
                 position: Vector3::new(1.0, -1.0, -1.0),
                 uv: Vector2::new(0.0, 1.0),
                 normal: Vector3::new(-1.0, 0.0, 0.0),
+                extra_custom: vec![],
             },
             //fourth triangle
             Vertex {
                 position: Vector3::new(1.0, -1.0, 1.0),
                 uv: Vector2::new(0.0, 0.0),
                 normal: Vector3::new(-1.0, 0.0, 0.0),
+                extra_custom: vec![],
             },
             Vertex {
                 position: Vector3::new(1.0, 1.0, 1.0),
                 uv: Vector2::new(0.0, 1.0),
                 normal: Vector3::new(-1.0, 0.0, 0.0),
+                extra_custom: vec![],
             },
             Vertex {
                 position: Vector3::new(1.0, 1.0, -1.0),
                 uv: Vector2::new(1.0, 1.0),
                 normal: Vector3::new(-1.0, 0.0, 0.0),
+                extra_custom: vec![],
             },
             //fith triangle
             Vertex {
                 position: Vector3::new(1.0, -1.0, -1.0),
                 uv: Vector2::new(0.0, 0.0),
                 normal: Vector3::new(0.0, 0.0, -1.0),
+                extra_custom: vec![],
             },
             Vertex {
                 position: Vector3::new(-1.0, -1.0, -1.0),
                 uv: Vector2::new(1.0, 0.0),
                 normal: Vector3::new(0.0, 0.0, -1.0),
+                extra_custom: vec![],
             },
             Vertex {
                 position: Vector3::new(1.0, 1.0, -1.0),
                 uv: Vector2::new(0.0, 1.0),
                 normal: Vector3::new(0.0, 0.0, -1.0),
+                extra_custom: vec![],
             },
             //sixth triangle
             Vertex {
                 position: Vector3::new(-1.0, -1.0, -1.0),
                 uv: Vector2::new(1.0, 0.0),
                 normal: Vector3::new(0.0, 0.0, -1.0),
+                extra_custom: vec![],
             },
             Vertex {
                 position: Vector3::new(-1.0, 1.0, -1.0),
                 uv: Vector2::new(1.0, 1.0),
                 normal: Vector3::new(0.0, 0.0, -1.0),
+                extra_custom: vec![],
             },
             Vertex {
                 position: Vector3::new(1.0, 1.0, -1.0),
                 uv: Vector2::new(0.0, 1.0),
                 normal: Vector3::new(0.0, 0.0, -1.0),
+                extra_custom: vec![],
             },
             //seventh triangle
             Vertex {
                 position: Vector3::new(-1.0, -1.0, -1.0),
                 uv: Vector2::new(0.0, 0.0),
                 normal: Vector3::new(-1.0, 0.0, 0.0),
+                extra_custom: vec![],
             },
             Vertex {
                 position: Vector3::new(-1.0, -1.0, 1.0),
                 uv: Vector2::new(1.0, 0.0),
                 normal: Vector3::new(-1.0, 0.0, 0.0),
+                extra_custom: vec![],
             },
             Vertex {
                 position: Vector3::new(-1.0, 1.0, 1.0),
                 uv: Vector2::new(1.0, 1.0),
                 normal: Vector3::new(-1.0, 0.0, 0.0),
+                extra_custom: vec![],
             },
             //eighth triangle
             Vertex {
                 position: Vector3::new(-1.0, -1.0, -1.0),
                 uv: Vector2::new(0.0, 0.0),
                 normal: Vector3::new(-1.0, 0.0, 0.0),
+                extra_custom: vec![],
             },
             Vertex {
                 position: Vector3::new(-1.0, 1.0, 1.0),
                 uv: Vector2::new(1.0, 1.0),
                 normal: Vector3::new(-1.0, 0.0, 0.0),
+                extra_custom: vec![],
             },
             Vertex {
                 position: Vector3::new(-1.0, 1.0, -1.0),
                 uv: Vector2::new(0.0, 1.0),
                 normal: Vector3::new(-1.0, 0.0, 0.0),
+                extra_custom: vec![],
             },
             //9th triangle
             Vertex {
                 position: Vector3::new(1.0, 1.0, 1.0),
                 uv: Vector2::new(0.0, 0.0),
                 normal: Vector3::new(0.0, 1.0, 0.0),
+                extra_custom: vec![],
             },
             Vertex {
                 position: Vector3::new(1.0, 1.0, -1.0),
                 uv: Vector2::new(0.0, 1.0),
                 normal: Vector3::new(0.0, 1.0, 0.0),
+                extra_custom: vec![],
             },
             Vertex {
                 position: Vector3::new(-1.0, 1.0, -1.0),
                 uv: Vector2::new(1.0, 1.0),
                 normal: Vector3::new(0.0, 1.0, 0.0),
+                extra_custom: vec![],
             },
             //10th triangle
             Vertex {
                 position: Vector3::new(1.0, 1.0, 1.0),
                 uv: Vector2::new(0.0, 0.0),
                 normal: Vector3::new(0.0, 1.0, 0.0),
+                extra_custom: vec![],
             },
             Vertex {
                 position: Vector3::new(-1.0, 1.0, -1.0),
                 uv: Vector2::new(1.0, 1.0),
                 normal: Vector3::new(0.0, 1.0, 0.0),
+                extra_custom: vec![],
             },
             Vertex {
                 position: Vector3::new(-1.0, 1.0, 1.0),
                 uv: Vector2::new(0.0, 1.0),
                 normal: Vector3::new(0.0, 1.0, 0.0),
+                extra_custom: vec![],
             },
             //11th triangle
             Vertex {
                 position: Vector3::new(1.0, -1.0, 1.0),
                 uv: Vector2::new(0.0, 0.0),
                 normal: Vector3::new(0.0, -1.0, 0.0),
+                extra_custom: vec![],
             },
             Vertex {
                 position: Vector3::new(-1.0, -1.0, 1.0),
                 uv: Vector2::new(1.0, 0.0),
                 normal: Vector3::new(0.0, -1.0, 0.0),
+                extra_custom: vec![],
             },
             Vertex {
                 position: Vector3::new(-1.0, -1.0, -1.0),
                 uv: Vector2::new(1.0, 1.0),
                 normal: Vector3::new(0.0, -1.0, 0.0),
+                extra_custom: vec![],
             },
             //12th triangle
             Vertex {
                 position: Vector3::new(1.0, -1.0, 1.0),
                 uv: Vector2::new(0.0, 0.0),
                 normal: Vector3::new(0.0, -1.0, 0.0),
+                extra_custom: vec![],
             },
             Vertex {
                 position: Vector3::new(-1.0, -1.0, -1.0),
                 uv: Vector2::new(1.0, 1.0),
                 normal: Vector3::new(0.0, -1.0, 0.0),
+                extra_custom: vec![],
             },
             Vertex {
                 position: Vector3::new(1.0, -1.0, -1.0),
                 uv: Vector2::new(0.0, 1.0),
                 normal: Vector3::new(0.0, -1.0, 0.0),
+                extra_custom: vec![],
             },
         ];
         Model {
             mesh: Mesh {
                 vertices,
-                custom_attributes: HashMap::new(),
+                description: vec![],
             },
             texture: Texture::constant_color(Vector4::new(255, 0, 0, 255), Vector2::new(8, 8)),
             transform,

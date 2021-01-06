@@ -1,5 +1,6 @@
 use super::prelude::{
-    ErrorType, Event, Mesh, MouseButton, ShaderBind, Texture as RGBATexture, Vertex, WebGl,
+    ErrorType, Event, ItemDesc, Mesh, MouseButton, ShaderBind, Texture as RGBATexture, Vertex,
+    WebGl,
 };
 use egui::{
     math::{Pos2, Rect, Vec2},
@@ -80,14 +81,14 @@ pub fn draw_egui(
                 .map(|i| triangles.vertices[*i as usize])
                 .collect(),
         );
-        let custom_attributes = [("vertex_color".to_string(), colors)]
-            .iter()
-            .cloned()
-            .collect();
         let mut runtime_mesh = gl.build_mesh(
             Mesh {
                 vertices,
-                custom_attributes,
+                description: vec![ItemDesc {
+                    number_components: 4,
+                    size_component: std::mem::size_of::<f32>(),
+                    name: "vertex_color".to_string(),
+                }],
             },
             shader.get_bind(),
         )?;
@@ -104,20 +105,18 @@ fn to_vertex(vertex_list: &Vec<EguiVertex>) -> (Vec<Vertex>, Vec<f32>) {
         let position = Vector3::new(
             vertex.pos.x / 400.0 - 1.0,
             -1.0 * vertex.pos.y / 400.0 + 1.0,
-            -0.8,
+            0.8,
         );
         let uv = Vector2::new(vertex.uv.x, vertex.uv.y);
         let normal = Vector3::new(0.0, 0.0, 1.0);
+        let color: egui::paint::Rgba = vertex.color.into();
+        let extra_custom = vec![color.r(), color.g(), color.b(), color.a()];
         vertices.push(Vertex {
             position,
             uv,
             normal,
+            extra_custom,
         });
-        let color: egui::paint::Rgba = vertex.color.into();
-        colors.push(color.r());
-        colors.push(color.g());
-        colors.push(color.b());
-        colors.push(color.a());
     }
     (vertices, colors)
 }
