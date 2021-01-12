@@ -73,13 +73,14 @@ pub fn draw_egui(
     let texture = RGBATexture { pixels, dimensions };
     let mut render_texture = gl.build_texture(texture, shader.get_bind())?;
     gl.bind_texture(&render_texture, shader.get_bind());
+    let mut depth = -0.8;
     for (_rect, triangles) in paint_jobs.iter() {
         let vertices = to_vertex(
             &triangles
                 .indices
                 .iter()
                 .map(|i| triangles.vertices[*i as usize])
-                .collect(),
+                .collect(),depth
         );
         let mut runtime_mesh = gl.build_mesh(
             Mesh {
@@ -94,17 +95,18 @@ pub fn draw_egui(
         )?;
         gl.draw_mesh(&runtime_mesh);
         gl.delete_mesh(&mut runtime_mesh)?;
+        depth-=0.01;
     }
     gl.delete_texture(&mut render_texture);
     Ok(())
 }
-fn to_vertex(vertex_list: &Vec<EguiVertex>) -> Vec<Vertex> {
+fn to_vertex(vertex_list: &Vec<EguiVertex>,depth:f32) -> Vec<Vertex> {
     let mut vertices = vec![];
     for vertex in vertex_list.iter() {
         let position = Vector3::new(
             vertex.pos.x / 400.0 - 1.0,
             -1.0 * vertex.pos.y / 400.0 + 1.0,
-            -0.8,
+            depth,
         );
         let uv = Vector2::new(vertex.uv.x, vertex.uv.y);
         let normal = Vector3::new(0.0, 0.0, 1.0);

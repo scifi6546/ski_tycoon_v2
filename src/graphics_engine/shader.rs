@@ -42,8 +42,12 @@ pub mod shader_library {
         vec4 onify(vec4 v){
             return v*vec4(0.0,0.0,0.0,0.0)+vec4(1.0,1.0,1.0,1.0);
         }
+        vec4 one_alpha(vec4 v){
+            v.w=1.0;
+            return v;
+        }
         void main() {
-            color = texture(u_texture,o_uv)*o_color;
+            color = one_alpha(o_color*10.0);
         }
     "#,
         uniforms: &[],

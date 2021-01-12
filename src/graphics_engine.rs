@@ -185,6 +185,7 @@ impl WebGl {
             array.push(vertex.normal.y);
             array.push(vertex.normal.z);
             for f in vertex.extra_custom.iter() {
+                //info!("f: {}",f);
                 array.push(*f);
             }
         }
@@ -236,13 +237,17 @@ impl WebGl {
         );
         let mut addn: usize = 0;
         for desc in mesh.description.iter() {
+            self.context.enable_vertex_attrib_array(shader.attributes[&desc.name].location.unwrap() as u32);
+            //info!("desc name: {}",desc.name);
+            //info!("location: {}",shader.attributes[&desc.name].location.unwrap());
             self.context.vertex_attrib_pointer_with_i32(
+                
                 shader.attributes[&desc.name].location.unwrap() as u32,
                 desc.number_components as i32,
                 WebGl2RenderingContext::FLOAT,
                 false,
                 data_size,
-                5 * std::mem::size_of::<f32>() as i32 + addn as i32,
+                (3+2+3) * std::mem::size_of::<f32>() as i32+addn as i32,
             );
             addn += desc.number_components * desc.size_component;
         }
