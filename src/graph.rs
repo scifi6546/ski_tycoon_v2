@@ -175,15 +175,15 @@ impl GraphLayer {
         }
     }
 }
-pub struct GraphLayerList {
-    layers: Vec<GraphLayer>,
+pub struct GraphLayerList<'a> {
+    layers: Vec<&'a GraphLayer>,
 }
-impl GraphLayerList {
-    pub fn new(layers: Vec<GraphLayer>) -> Self {
+impl<'a> GraphLayerList<'a> {
+    pub fn new(layers: Vec<&'a GraphLayer>) -> Self {
         Self { layers }
     }
 }
-impl Graph for GraphLayerList {
+impl<'a> Graph for GraphLayerList<'a> {
     fn get_children(&self, node: &Node) -> Vec<(Node, GraphWeight)> {
         let mut out = vec![];
         for layer in self.layers.iter() {

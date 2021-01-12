@@ -12,10 +12,7 @@ pub fn build_skiier(
     position: Vector2<i64>,
     end: Vector2<i64>,
 ) -> Result<(), JsValue> {
-    let layers: Vec<GraphLayer> = <&GraphLayer>::query()
-        .iter(world)
-        .map(|l| l.clone())
-        .collect();
+    let layers: Vec<&GraphLayer> = <&GraphLayer>::query().iter(world).collect();
     let path = dijkstra(
         Node { node: position },
         Node { node: end },
