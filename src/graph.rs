@@ -60,16 +60,82 @@ pub struct GridNode {
 pub enum GraphLayer {
     Grid { grid: Grid<GridNode> },
 }
+#[derive(Clone, Debug, Hash, Eq, PartialEq)]
+pub struct Node {
+    pub node: Vector2<i64>,
+}
+impl Node {
+    pub fn to_node_float(&self) -> NodeFloat {
+        NodeFloat {
+            node: Vector2::new(self.node.x as f32, self.node.y as f32),
+        }
+    }
+}
+impl std::ops::Sub for Node {
+    type Output = Self;
+    fn sub(self, other: Self) -> Self::Output {
+        Self {
+            node: self.node - other.node,
+        }
+    }
+}
+pub struct NodeFloat {
+    pub node: Vector2<f32>,
+}
+impl std::ops::Div<f64> for NodeFloat {
+    type Output = Self;
+    fn div(self, other: f64) -> Self {
+        Self {
+            node: self.node / other as f32,
+        }
+    }
+}
+impl std::ops::Mul<f64> for NodeFloat {
+    type Output = Self;
+    fn mul(self, other: f64) -> Self {
+        Self {
+            node: self.node * other as f32,
+        }
+    }
+}
+impl std::ops::Add for NodeFloat {
+    type Output = Self;
+    fn add(self, other: Self) -> Self {
+        Self {
+            node: self.node + other.node,
+        }
+    }
+}
 impl GraphLayer {
-    pub fn get_children(&self, source: &Vector2<i64>) -> Vec<(Vector2<i64>, GraphWeight)> {
+    pub fn get_children(&self, source: &Node) -> Vec<(Node, GraphWeight)> {
         match self {
             Self::Grid { grid } => {
-                if let Some(node) = grid.get(source.clone()) {
+                if let Some(node) = grid.get(source.node) {
                     vec![
-                        (source + Vector2::new(1, 0), node.x_plus.clone()),
-                        (source + Vector2::new(-1, 0), node.x_minus.clone()),
-                        (source + Vector2::new(0, 1), node.z_plus.clone()),
-                        (source + Vector2::new(0, -1), node.z_minus.clone()),
+                        (
+                            Node {
+                                node: source.node + Vector2::new(1, 0),
+                            },
+                            node.x_plus.clone(),
+                        ),
+                        (
+                            Node {
+                                node: source.node + Vector2::new(-1, 0),
+                            },
+                            node.x_minus.clone(),
+                        ),
+                        (
+                            Node {
+                                node: source.node + Vector2::new(0, 1),
+                            },
+                            node.z_plus.clone(),
+                        ),
+                        (
+                            Node {
+                                node: source.node + Vector2::new(0, -1),
+                            },
+                            node.z_minus.clone(),
+                        ),
                     ]
                     .iter()
                     .filter(|(_, weight)| weight.is_finite())
@@ -81,24 +147,23 @@ impl GraphLayer {
             }
         }
     }
-    pub fn get(&self, source: Vector2<i64>, destination: Vector2<i64>) -> GraphWeight {
-        info!("source: {} destination: {}", source, destination);
+    pub fn get(&self, source: Node, destination: Node) -> GraphWeight {
+        info!("source: {:?} destination: {:?}", source, destination);
         match self {
             Self::Grid { grid } => {
-                if let Some(node) = grid.get(source) {
+                if let Some(node) = grid.get(source.node) {
                     let x_plus = Vector2::new(1, 0);
                     let x_minus = Vector2::new(-1, 0);
                     let z_plus = Vector2::new(0, 1);
                     let z_minus = Vector2::new(0, -1);
                     let delta = destination - source;
-                    info!("delta: {}", delta);
-                    if delta == x_plus {
+                    if delta.node == x_plus {
                         node.x_plus.clone()
-                    } else if delta == x_minus {
+                    } else if delta.node == x_minus {
                         node.x_minus.clone()
-                    } else if delta == z_plus {
+                    } else if delta.node == z_plus {
                         node.z_plus.clone()
-                    } else if delta == z_minus {
+                    } else if delta.node == z_minus {
                         node.z_minus.clone()
                     } else {
                         GraphWeight::Infinity
@@ -119,12 +184,7 @@ impl GraphLayerList {
     }
 }
 impl Graph for GraphLayerList {
-    type Node = Vector2<i64>;
-    type NodeFloat = Vector2<f64>;
-    fn to_node_float(node: Self::Node) -> Self::NodeFloat {
-        Vector2::new(node.x as f64, node.y as f64)
-    }
-    fn get_children(&self, node: &Self::Node) -> Vec<(Self::Node, GraphWeight)> {
+    fn get_children(&self, node: &Node) -> Vec<(Node, GraphWeight)> {
         let mut out = vec![];
         for layer in self.layers.iter() {
             out.append(&mut layer.get_children(node));
@@ -133,38 +193,22 @@ impl Graph for GraphLayerList {
     }
 }
 pub trait Graph {
-    type Node: PartialEq
-        + Eq
-        + std::hash::Hash
-        + Clone
-        + std::fmt::Debug
-        + std::fmt::Display
-        + std::ops::Sub<Output = Self::Node>;
-    type NodeFloat: PartialEq
-        + Clone
-        + std::fmt::Debug
-        + std::fmt::Display
-        + std::ops::Add<Output = Self::NodeFloat>
-        + std::ops::Sub<Output = Self::NodeFloat>
-        + std::ops::Div<f64, Output = Self::NodeFloat>
-        + std::ops::Mul<f64, Output = Self::NodeFloat>;
-    fn to_node_float(node: Self::Node) -> Self::NodeFloat;
     /// Gets children of a given node
-    fn get_children(&self, node: &Self::Node) -> Vec<(Self::Node, GraphWeight)>;
+    fn get_children(&self, node: &Node) -> Vec<(Node, GraphWeight)>;
 }
 #[derive(Clone, Debug)]
-pub struct Path<G: Graph> {
-    pub path: Vec<G::Node>,
+pub struct Path {
+    pub path: Vec<Node>,
 }
 /// Implements Dijkstra's algorythm on a generic graph.
 /// used [wikipedia](https://en.wikipedia.org/wiki/Dijkstra%27s_algorithm) as a refrence
-pub fn dijkstra<'a, G: Graph>(source: G::Node, destination: G::Node, graph: G) -> Path<G> {
+pub fn dijkstra<'a, G: Graph>(source: Node, destination: Node, graph: G) -> Path {
     //queue used to priortize searching
     let mut queue = PriorityQueue::new();
     //annotates previous node in shortest path tree. If item is not preseant then previous is marked as infinite.
     let mut previous = HashMap::new();
     //annotates the distance of the node from the source to a given node. If Node is not present then distance can be considered as infinite
-    let mut distance = HashMap::<G::Node, GraphWeight>::new();
+    let mut distance = HashMap::<Node, GraphWeight>::new();
     //inserting first node
     queue.push(source.clone(), Reverse(GraphWeight::Some(0)));
     distance.insert(source, GraphWeight::Some(0));
@@ -188,7 +232,7 @@ pub fn dijkstra<'a, G: Graph>(source: G::Node, destination: G::Node, graph: G) -
             }
         }
     }
-    let mut path: Vec<G::Node> = vec![];
+    let mut path: Vec<Node> = vec![];
     let mut current = &destination;
     path.push(current.clone());
     loop {
@@ -204,30 +248,30 @@ pub fn dijkstra<'a, G: Graph>(source: G::Node, destination: G::Node, graph: G) -
 }
 /// Path used to follow
 #[derive(Clone, Debug)]
-pub struct FollowPath<G: Graph> {
-    path: Path<G>,
+pub struct FollowPath {
+    path: Path,
     t: f64,
 }
-impl<G: Graph> FollowPath<G> {
-    pub fn new(path: Path<G>) -> Self {
+impl FollowPath {
+    pub fn new(path: Path) -> Self {
         Self { path, t: 0.0 }
     }
     pub fn incr(&mut self, incr: f64) {
         self.t += incr
     }
-    pub fn get(&self) -> G::NodeFloat {
+    pub fn get(&self) -> NodeFloat {
         let t0: usize = self.t.floor() as usize;
         if t0 >= self.path.path.len() {
-            G::to_node_float(self.path.path[self.path.path.len() - 1].clone())
+            self.path.path[self.path.path.len() - 1].to_node_float()
         } else {
             if t0 + 1 < self.path.path.len() {
                 let x0 = self.path.path[t0].clone();
                 let x1 = self.path.path[t0 + 1].clone();
                 let t1 = t0 as f64 + 1.0;
-                (G::to_node_float(x1 - x0.clone()) / (t1 - t0 as f64)) * (self.t - t0 as f64)
-                    + G::to_node_float(x0.clone())
+                ((x1 - x0.clone()).to_node_float() / (t1 - t0 as f64)) * (self.t - t0 as f64)
+                    + (x0.clone()).to_node_float()
             } else {
-                G::to_node_float(self.path.path[t0].clone())
+                (self.path.path[t0].clone()).to_node_float()
             }
         }
     }

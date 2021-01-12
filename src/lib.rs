@@ -30,7 +30,8 @@ use wasm_bindgen::prelude::*;
 pub mod prelude {
     pub use super::camera::Camera;
     pub use super::graph::{
-        dijkstra, FollowPath, GraphLayer, GraphLayerList, GraphWeight, GridNode, Path,
+        dijkstra, FollowPath, GraphLayer, GraphLayerList, GraphWeight, GridNode, Node, NodeFloat,
+        Path,
     };
     pub use super::graphics_engine::{
         ErrorType, Framebuffer, RuntimeMesh, RuntimeTexture, Shader, Transform, WebGl,
@@ -52,8 +53,8 @@ struct Game {
     resources: Resources,
     world_framebuffer: Framebuffer,
     world_render_surface: RuntimeModel,
-    egui_context: CtxRef,
-    egui_adaptor: EguiRawInputAdaptor,
+    //egui_context: CtxRef,
+    //egui_adaptor: EguiRawInputAdaptor,
 }
 impl Game {
     pub fn new() -> Result<Game, JsValue> {
@@ -129,6 +130,8 @@ impl Game {
         resources.insert(shader_bind);
         resources.insert(Camera::new(Vector3::new(0.0, 0.0, 0.0), 20.0, 1.0, 1.0));
         let (egui_context, egui_adaptor) = gui::init_gui();
+        resources.insert(egui_context);
+        resources.insert(egui_adaptor);
         // gui::insert_ui(&mut egui_context);
         info!("context created");
         info!("inserted ui");
@@ -137,15 +140,18 @@ impl Game {
             resources,
             world_framebuffer,
             world_render_surface,
-            egui_adaptor,
-            egui_context,
+            //egui_adaptor,
+            //egui_context,
         };
         info!("built game successfully");
         Ok(g)
     }
     pub fn run_frame(&mut self, events: Vec<Event>) {
         info!("running frame?");
-        gui::insert_ui(&mut self.egui_context);
+        {
+            let context = &mut self.resources.get_mut().unwrap();
+            gui::insert_ui(context);
+        }
         {
             let camera: &mut Camera = &mut self.resources.get_mut().unwrap();
             for e in events.iter() {
@@ -219,14 +225,12 @@ impl Game {
             //binding and drawing gui shader
             shader.bind("gui");
             gl.bind_shader(shader.get_bind()).ok().unwrap();
-            gui::draw_gui(
-                &mut self.egui_context,
-                &events,
-                gl,
-                shader,
-                &mut self.egui_adaptor,
-            )
-            .expect("successfully drew");
+            {
+                let egui_context = &mut self.resources.get_mut().unwrap();
+                let egui_adaptor = &mut self.resources.get_mut().unwrap();
+                gui::draw_gui(egui_context, &events, gl, shader, egui_adaptor)
+                    .expect("successfully drew");
+            }
             shader.bind("screen");
             //getting screen shader
             gl.bind_shader(shader.get_bind()).ok().unwrap();

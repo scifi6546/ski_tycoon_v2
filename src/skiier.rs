@@ -1,6 +1,6 @@
 use super::prelude::{
-    dijkstra, FollowPath, GraphLayer, GraphLayerList, JsValue, Model, RuntimeModel, ShaderBind,
-    Transform, WebGl,
+    dijkstra, FollowPath, GraphLayer, GraphLayerList, JsValue, Model, Node, RuntimeModel,
+    ShaderBind, Transform, WebGl,
 };
 use legion::*;
 use log::info;
@@ -16,20 +16,24 @@ pub fn build_skiier(
         .iter(world)
         .map(|l| l.clone())
         .collect();
-    let path = dijkstra(position, end, GraphLayerList::new(layers));
+    let path = dijkstra(
+        Node { node: position },
+        Node { node: end },
+        GraphLayerList::new(layers),
+    );
     let mut transform = Transform::default();
     transform.set_scale(Vector3::new(0.1, 0.1, 0.1));
     let model = Model::cube(transform.clone());
     let runtime_model = RuntimeModel::new(model, graphics, bound_shader.get_bind())?;
-    let follow: FollowPath<GraphLayerList> = FollowPath::new(path);
+    let follow: FollowPath = FollowPath::new(path);
     world.push((transform, follow, runtime_model));
     info!("built path");
     Ok(())
 }
 #[system(for_each)]
-pub fn follow_path(transform: &mut Transform, path: &mut FollowPath<GraphLayerList>) {
+pub fn follow_path(transform: &mut Transform, path: &mut FollowPath) {
     path.incr(0.01);
 
     let t = path.get();
-    transform.set_translation(Vector3::new(t.x as f32, 0.0, t.y as f32));
+    transform.set_translation(Vector3::new(t.node.x as f32, 0.0, t.node.y as f32));
 }
