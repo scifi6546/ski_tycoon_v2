@@ -7,7 +7,6 @@ use egui::{
     paint::tessellator::Vertex as EguiVertex,
     PaintJobs, RawInput, Texture,
 };
-use log::info;
 use nalgebra::{Vector2, Vector3, Vector4};
 use std::sync::Arc;
 /// Struct used to get statell
@@ -80,7 +79,8 @@ pub fn draw_egui(
                 .indices
                 .iter()
                 .map(|i| triangles.vertices[*i as usize])
-                .collect(),depth
+                .collect(),
+            depth,
         );
         let mut runtime_mesh = gl.build_mesh(
             Mesh {
@@ -95,12 +95,12 @@ pub fn draw_egui(
         )?;
         gl.draw_mesh(&runtime_mesh);
         gl.delete_mesh(&mut runtime_mesh)?;
-        depth-=0.01;
+        depth -= 0.01;
     }
     gl.delete_texture(&mut render_texture);
     Ok(())
 }
-fn to_vertex(vertex_list: &Vec<EguiVertex>,depth:f32) -> Vec<Vertex> {
+fn to_vertex(vertex_list: &Vec<EguiVertex>, depth: f32) -> Vec<Vertex> {
     let mut vertices = vec![];
     for vertex in vertex_list.iter() {
         let position = Vector3::new(

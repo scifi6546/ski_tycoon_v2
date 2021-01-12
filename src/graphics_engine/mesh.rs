@@ -1,5 +1,4 @@
 use nalgebra::{Vector2, Vector3};
-use std::collections::HashMap;
 #[derive(Clone, Debug)]
 pub struct Vertex {
     pub position: Vector3<f32>,
