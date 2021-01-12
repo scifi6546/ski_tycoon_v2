@@ -47,7 +47,7 @@ pub mod shader_library {
             return v;
         }
         void main() {
-            color = one_alpha(o_color*10.0);
+            color = one_alpha(o_color*10.0)*one_alpha(texture(u_texture,o_uv));
         }
     "#,
         uniforms: &[],
