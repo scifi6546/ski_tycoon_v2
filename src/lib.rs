@@ -30,8 +30,8 @@ use wasm_bindgen::prelude::*;
 pub mod prelude {
     pub use super::camera::Camera;
     pub use super::graph::{
-        dijkstra, FollowPath, GraphLayer, GraphLayerList, GraphWeight, GridNode, Node, NodeFloat,
-        Path,
+        dijkstra, find_best_path, FollowPath, GraphLayer, GraphLayerList, GraphWeight, GridNode,
+        Node, NodeFloat, Path,
     };
     pub use super::graphics_engine::{
         ErrorType, Framebuffer, RuntimeMesh, RuntimeTexture, Shader, Transform, WebGl,

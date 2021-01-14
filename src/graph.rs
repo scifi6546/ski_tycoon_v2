@@ -246,6 +246,65 @@ pub fn dijkstra<'a, G: Graph>(source: Node, destination: Node, graph: G) -> Path
         }
     }
 }
+/// Finds the best path while searching `search_size` nodes
+/// current issues: Having skiiers avoid punishments just results in them taking a really short hop rather then trying to go far out
+///
+pub fn find_best_path<'a, G: Graph>(
+    source: Node,
+    destination: Node,
+    search_size: usize,
+    graph: G,
+) -> Path {
+    let mut nodes_processed = 0;
+    //queue used to priortize searching
+    let mut queue = PriorityQueue::new();
+    //annotates previous node in shortest path tree. If item is not preseant then previous is marked as infinite.
+    let mut previous = HashMap::new();
+    //annotates the distance of the node from the source to a given node. If Node is not present then distance can be considered as infinite
+    let mut distance = HashMap::<Node, GraphWeight>::new();
+    let mut distance_priority: PriorityQueue<Node, Reverse<GraphWeight>> = PriorityQueue::new();
+    //inserting first node
+    queue.push(source.clone(), Reverse(GraphWeight::Some(0)));
+    distance.insert(source, GraphWeight::Some(0));
+    while queue.is_empty() == false {
+        let (best_vertex, parent_distance) = queue.pop().unwrap();
+        //getting neighbors
+        for (child, child_distance) in graph.get_children(&best_vertex).iter() {
+            let total_distance = child_distance.clone() + parent_distance.0.clone();
+            let is_shortest_path = {
+                if let Some(best_known_distance) = distance.get(child) {
+                    &total_distance < best_known_distance
+                } else {
+                    true
+                }
+            };
+            if is_shortest_path {
+                distance.insert(child.clone(), total_distance.clone());
+                previous.insert(child.clone(), best_vertex.clone());
+                distance_priority.push(child.clone(), Reverse(total_distance.clone().into()));
+                queue.push(child.clone(), Reverse(total_distance.into()));
+            }
+            nodes_processed += 1;
+            if nodes_processed == search_size {
+                break;
+            }
+        }
+    }
+    let mut path: Vec<Node> = vec![];
+    let (mut current, _) = distance_priority.pop().unwrap();
+    path.push(current.clone());
+    loop {
+        if let Some(p) = previous.get(&current) {
+            path.push(p.clone());
+            current = p.clone();
+        } else {
+            return Path {
+                path: path.iter().rev().map(|p| p.clone()).collect(),
+            };
+        }
+    }
+    todo!()
+}
 /// Path used to follow
 #[derive(Clone, Debug)]
 pub struct FollowPath {

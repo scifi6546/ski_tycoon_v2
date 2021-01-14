@@ -1,6 +1,6 @@
 use super::prelude::{
-    dijkstra, FollowPath, GraphLayer, GraphLayerList, JsValue, Model, Node, RuntimeModel,
-    ShaderBind, Transform, WebGl,
+    dijkstra, find_best_path, FollowPath, GraphLayer, GraphLayerList, JsValue, Model, Node,
+    RuntimeModel, ShaderBind, Transform, WebGl,
 };
 use legion::*;
 use log::info;
@@ -13,9 +13,10 @@ pub fn build_skiier(
     end: Vector2<i64>,
 ) -> Result<(), JsValue> {
     let layers: Vec<&GraphLayer> = <&GraphLayer>::query().iter(world).collect();
-    let path = dijkstra(
+    let path = find_best_path(
         Node { node: position },
         Node { node: end },
+        100,
         GraphLayerList::new(layers),
     );
     let mut transform = Transform::default();
