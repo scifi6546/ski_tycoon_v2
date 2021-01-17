@@ -1,12 +1,12 @@
 use super::prelude::Grid;
-use log::info;
+use log::{error, info};
 use nalgebra::Vector2;
 use priority_queue::PriorityQueue;
 use std::cmp::Reverse;
 use std::collections::HashMap;
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum GraphWeight {
-    Some(u32),
+    Some(i32),
     Infinity,
 }
 impl GraphWeight {
@@ -266,7 +266,7 @@ pub fn find_best_path<'a, G: Graph>(
     //inserting first node
     queue.push(source.clone(), Reverse(GraphWeight::Some(0)));
     distance.insert(source, GraphWeight::Some(0));
-    while queue.is_empty() == false {
+    while queue.is_empty() == false && nodes_processed < search_size {
         let (best_vertex, parent_distance) = queue.pop().unwrap();
         //getting neighbors
         for (child, child_distance) in graph.get_children(&best_vertex).iter() {
@@ -284,16 +284,17 @@ pub fn find_best_path<'a, G: Graph>(
                 distance_priority.push(child.clone(), Reverse(total_distance.clone().into()));
                 queue.push(child.clone(), Reverse(total_distance.into()));
             }
-            nodes_processed += 1;
             if nodes_processed == search_size {
                 break;
             }
         }
+        nodes_processed += 1;
     }
     let mut path: Vec<Node> = vec![];
     let (mut current, _) = distance_priority.pop().unwrap();
     path.push(current.clone());
-    loop {
+
+    for _ in 0..search_size {
         if let Some(p) = previous.get(&current) {
             path.push(p.clone());
             current = p.clone();
@@ -303,7 +304,8 @@ pub fn find_best_path<'a, G: Graph>(
             };
         }
     }
-    todo!()
+    error!("Path has loop");
+    panic!()
 }
 /// Path used to follow
 #[derive(Clone, Debug)]

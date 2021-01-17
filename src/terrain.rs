@@ -56,9 +56,12 @@ impl Terrain {
         } else {
             let start_tile = &self.tiles[start.x as usize * self.dimensions.y + start.y as usize];
             let end_tile = &self.tiles[end.x as usize * self.dimensions.y + end.y as usize];
-            let delta_height = end_tile.height - start_tile.height;
-
-            GraphWeight::Some(delta_height.abs() as u32)
+            let delta_height = start_tile.height - end_tile.height;
+            if delta_height as i32 >= 0 {
+                GraphWeight::Some(delta_height as i32 * 10 as i32)
+            } else {
+                GraphWeight::Some(delta_height as i32)
+            }
         }
     }
     pub fn build_graph(&self) -> GraphLayer {

@@ -16,7 +16,7 @@ pub fn build_skiier(
     let path = find_best_path(
         Node { node: position },
         Node { node: end },
-        100,
+        10,
         GraphLayerList::new(layers),
     );
     let mut transform = Transform::default();
