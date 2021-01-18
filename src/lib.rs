@@ -1,6 +1,6 @@
+mod asset_manager;
 mod bindable;
 mod camera;
-
 mod graph;
 mod graphics_engine;
 mod graphics_system;
