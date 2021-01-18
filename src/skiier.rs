@@ -1,7 +1,8 @@
 use super::prelude::{
-    dijkstra, find_best_path, FollowPath, GraphLayer, GraphLayerList, JsValue, Model, Node,
+    dijkstra, find_best_path, FollowPath, GraphLayer, GraphLayerList, JsValue, Model, Node, Path,
     RuntimeModel, ShaderBind, Transform, WebGl,
 };
+mod behavior_tree;
 use legion::*;
 use log::info;
 use nalgebra::{Vector2, Vector3};

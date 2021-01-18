@@ -196,7 +196,7 @@ pub trait Graph {
     /// Gets children of a given node
     fn get_children(&self, node: &Node) -> Vec<(Node, GraphWeight)>;
 }
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq)]
 pub struct Path {
     pub path: Vec<Node>,
 }
@@ -308,7 +308,7 @@ pub fn find_best_path<'a, G: Graph>(
     panic!()
 }
 /// Path used to follow
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq)]
 pub struct FollowPath {
     path: Path,
     t: f64,
