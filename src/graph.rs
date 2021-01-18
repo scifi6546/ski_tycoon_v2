@@ -200,6 +200,18 @@ pub trait Graph {
 pub struct Path {
     pub path: Vec<Node>,
 }
+impl Path {
+    pub fn append(&self, other: &Self) -> Self {
+        let mut path = vec![];
+        for p in self.path.iter() {
+            path.push(p.clone());
+        }
+        for p in other.path.iter() {
+            path.push(p.clone());
+        }
+        Self { path }
+    }
+}
 /// Implements Dijkstra's algorythm on a generic graph.
 /// used [wikipedia](https://en.wikipedia.org/wiki/Dijkstra%27s_algorithm) as a refrence
 pub fn dijkstra<'a, G: Graph>(source: Node, destination: Node, graph: G) -> Path {
@@ -319,6 +331,13 @@ impl FollowPath {
     }
     pub fn incr(&mut self, incr: f64) {
         self.t += incr
+    }
+    pub fn append(&self, other: &Self) -> Self {
+        let t = self.t;
+        Self {
+            t,
+            path: self.path.append(&other.path),
+        }
     }
     pub fn get(&self) -> NodeFloat {
         let t0: usize = self.t.floor() as usize;
