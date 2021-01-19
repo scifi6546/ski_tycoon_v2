@@ -40,7 +40,7 @@ trait TreeNode {
 }
 #[cfg(test)]
 mod test {
-    use super::super::Path;
+    use super::super::super::prelude::Path;
     use super::*;
     use nalgebra::Vector2;
     struct A {}

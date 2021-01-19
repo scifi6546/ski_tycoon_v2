@@ -20,12 +20,11 @@ use texture::RGBATexture;
 mod events;
 use bindable::Bindable;
 use camera::Camera;
-use egui::CtxRef;
 
 use asset_manager::AssetManager;
 use events::{Event, MouseButton};
 use graphics_system::{insert_terrain, RuntimeModel};
-use gui::{EguiRawInputAdaptor, GuiModel};
+use gui::GuiModel;
 use legion::*;
 use lift::insert_lift;
 use terrain::Terrain;
