@@ -34,7 +34,7 @@ pub mod prelude {
     pub use super::camera::Camera;
     pub use super::graph::{
         dijkstra, find_best_path, FollowPath, GraphLayer, GraphLayerList, GraphWeight, GridNode,
-        Node, NodeFloat, Path,
+        LiftLayer, Node, NodeFloat, Path,
     };
     pub use super::graphics_engine::{
         ErrorType, Framebuffer, RuntimeMesh, RuntimeTexture, Shader, Transform, WebGl,
@@ -113,6 +113,7 @@ impl Game {
             &mut model_manager,
             &shader_bind,
             Vector2::new(0, 0),
+            Vector2::new(10, 10),
         )?;
         webgl.get_error();
         let mut fb_texture = webgl.build_texture(
@@ -134,7 +135,7 @@ impl Game {
                 &mut webgl,
                 &shader_bind,
                 Vector2::new(i, 0),
-                Vector2::new(10, i),
+                Vector2::new(10, 10),
             )?;
         }
         webgl.get_error();

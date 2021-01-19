@@ -1,5 +1,6 @@
 use super::prelude::{
-    AssetManager, JsValue, Model, RuntimeModel, ShaderBind, Texture, Transform, WebGl,
+    AssetManager, GraphLayer, GraphWeight, JsValue, LiftLayer, Model, Node, RuntimeModel,
+    ShaderBind, Texture, Transform, WebGl,
 };
 use legion::*;
 use log::info;
@@ -9,11 +10,16 @@ pub fn insert_lift(
     graphics: &mut WebGl,
     asset_manager: &mut AssetManager<RuntimeModel>,
     bound_shader: &ShaderBind,
-    position: Vector2<i64>,
+    start_position: Vector2<i64>,
+    end_position: Vector2<i64>,
 ) -> Result<(), JsValue> {
     let mut transform = Transform::default();
     transform.set_scale(Vector3::new(1.0, 1.0, 1.0));
-    transform.set_translation(Vector3::new(position.x as f32, 0.0, position.y as f32));
+    transform.set_translation(Vector3::new(
+        start_position.x as f32,
+        0.0,
+        start_position.y as f32,
+    ));
     let runtime_model = if asset_manager.contains("lift") {
         asset_manager.get("lift").unwrap().clone()
     } else {
@@ -30,7 +36,26 @@ pub fn insert_lift(
             )
             .clone()
     };
-    world.push((transform, runtime_model));
+    let start = Node {
+        node: start_position,
+    };
+    let end = Node { node: end_position };
+    world.push((
+        transform,
+        runtime_model.clone(),
+        GraphLayer::Lift(LiftLayer {
+            start,
+            end,
+            weight: GraphWeight::Some(1),
+        }),
+    ));
+    let mut end_transform = Transform::default();
+    end_transform.set_translation(Vector3::new(
+        end_position.x as f32,
+        0.0,
+        end_position.y as f32,
+    ));
+    world.push((end_transform, runtime_model));
     info!("built path");
     Ok(())
 }

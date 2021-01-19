@@ -55,10 +55,33 @@ pub struct GridNode {
     pub z_plus: GraphWeight,
     pub z_minus: GraphWeight,
 }
+#[derive(Clone, Debug)]
+pub struct LiftLayer {
+    pub start: Node,
+    pub end: Node,
+    pub weight: GraphWeight,
+}
+impl LiftLayer {
+    pub fn get_children(&self, source: &Node) -> Vec<(Node, GraphWeight)> {
+        if source == &self.start {
+            vec![(self.end.clone(), self.weight.clone())]
+        } else {
+            vec![]
+        }
+    }
+    pub fn get(&self, source: Node, destination: Node) -> GraphWeight {
+        if source == self.start && destination == self.end {
+            self.weight.clone()
+        } else {
+            GraphWeight::Infinity
+        }
+    }
+}
 //layer of graph system
 #[derive(Clone, Debug)]
 pub enum GraphLayer {
     Grid { grid: Grid<GridNode> },
+    Lift(LiftLayer),
 }
 #[derive(Clone, Debug, Hash, Eq, PartialEq)]
 pub struct Node {
@@ -145,6 +168,7 @@ impl GraphLayer {
                     vec![]
                 }
             }
+            Self::Lift(l) => l.get_children(source),
         }
     }
     pub fn get(&self, source: Node, destination: Node) -> GraphWeight {
@@ -172,6 +196,7 @@ impl GraphLayer {
                     GraphWeight::Infinity
                 }
             }
+            Self::Lift(l) => l.get(source, destination),
         }
     }
 }
