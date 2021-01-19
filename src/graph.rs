@@ -262,12 +262,7 @@ pub fn dijkstra<'a, G: Graph>(source: Node, destination: Node, graph: G) -> Path
 /// Finds the best path while searching `search_size` nodes
 /// current issues: Having skiiers avoid punishments just results in them taking a really short hop rather then trying to go far out
 ///
-pub fn find_best_path<'a, G: Graph>(
-    source: Node,
-    destination: Node,
-    search_size: usize,
-    graph: G,
-) -> Path {
+pub fn find_best_path<'a, G: Graph>(source: Node, search_size: usize, graph: G) -> Path {
     let mut nodes_processed = 0;
     //queue used to priortize searching
     let mut queue = PriorityQueue::new();

@@ -45,7 +45,7 @@ mod test {
     use nalgebra::Vector2;
     struct A {}
     impl TreeNode for A {
-        fn cost(&self, layers: &GraphLayerList, position: Node) -> Decision {
+        fn cost(&self, _layers: &GraphLayerList, position: Node) -> Decision {
             Decision {
                 cost: 5.0,
                 path: FollowPath::new(Path { path: vec![] }),
@@ -57,7 +57,7 @@ mod test {
         }
     }
     impl TreeNode for B {
-        fn cost(&self, layers: &GraphLayerList, position: Node) -> Decision {
+        fn cost(&self, _layers: &GraphLayerList, position: Node) -> Decision {
             Decision {
                 cost: 15.0,
                 path: FollowPath::new(Path { path: vec![] }),

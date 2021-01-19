@@ -28,12 +28,6 @@ impl<T> AssetManager<T> {
 #[cfg(test)]
 mod test {
     use super::*;
-    fn zero() -> u32 {
-        0
-    }
-    fn one() -> u32 {
-        1
-    }
     #[test]
     fn manage() {
         let mut manager = AssetManager::default();
