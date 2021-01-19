@@ -58,9 +58,9 @@ impl Terrain {
             let end_tile = &self.tiles[end.x as usize * self.dimensions.y + end.y as usize];
             let delta_height = start_tile.height - end_tile.height;
             if delta_height as i32 >= 0 {
-                GraphWeight::Some(delta_height as i32 * 10 as i32)
+                GraphWeight::Some((delta_height as i32 * 10 as i32).abs())
             } else {
-                GraphWeight::Some(delta_height as i32)
+                GraphWeight::Some(delta_height.abs() as i32)
             }
         }
     }

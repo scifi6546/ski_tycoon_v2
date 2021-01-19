@@ -1,9 +1,10 @@
 use super::prelude::{
-    Camera, ErrorType, GuiRuntimeModel, GuiTransform, Mesh, Model, RuntimeMesh, RuntimeTexture,
-    Shader, ShaderBind, Terrain, Transform, WebGl,
+    AssetManager, Camera, ErrorType, GuiRuntimeModel, GuiTransform, Mesh, Model, RuntimeMesh,
+    RuntimeTexture, Shader, ShaderBind, Terrain, Transform, WebGl,
 };
 use legion::*;
 use log::debug;
+#[derive(Clone)]
 pub struct RuntimeModel {
     pub mesh: RuntimeMesh,
     pub texture: RuntimeTexture,
@@ -14,12 +15,12 @@ pub struct RuntimeDebugMesh {
 }
 impl RuntimeModel {
     pub fn new(
-        model: Model,
+        model: &Model,
         graphics: &mut WebGl,
         bound_shader: &Shader,
     ) -> Result<Self, ErrorType> {
-        let mesh = graphics.build_mesh(model.mesh, bound_shader)?;
-        let texture = graphics.build_texture(model.texture, bound_shader)?;
+        let mesh = graphics.build_mesh(model.mesh.clone(), bound_shader)?;
+        let texture = graphics.build_texture(model.texture.clone(), bound_shader)?;
         Ok(Self { mesh, texture })
     }
 }
@@ -33,14 +34,22 @@ pub fn insert_terrain(
     terrain: Terrain,
     world: &mut World,
     graphics: &mut WebGl,
+    asset_manager: &mut AssetManager<RuntimeModel>,
     bound_shader: &Shader,
 ) -> Result<(), ErrorType> {
     let model = terrain.model();
+    let transform = model.transform.clone();
+    let runtime_model: RuntimeModel = asset_manager
+        .get_or_create(
+            "game_terrain",
+            RuntimeModel::new(&model, graphics, bound_shader).expect("created model"),
+        )
+        .clone();
     world.push((
         terrain.build_graph(),
         terrain,
-        model.transform.clone(),
-        RuntimeModel::new(model, graphics, bound_shader)?,
+        transform.clone(),
+        runtime_model,
     ));
     Ok(())
 }

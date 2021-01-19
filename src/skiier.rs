@@ -14,16 +14,15 @@ pub fn build_skiier(
     end: Vector2<i64>,
 ) -> Result<(), JsValue> {
     let layers: Vec<&GraphLayer> = <&GraphLayer>::query().iter(world).collect();
-    let path = find_best_path(
+    let path = dijkstra(
         Node { node: position },
         Node { node: end },
-        10,
         GraphLayerList::new(layers),
     );
     let mut transform = Transform::default();
     transform.set_scale(Vector3::new(0.1, 0.1, 0.1));
     let model = Model::cube(transform.clone());
-    let runtime_model = RuntimeModel::new(model, graphics, bound_shader.get_bind())?;
+    let runtime_model = RuntimeModel::new(&model, graphics, bound_shader.get_bind())?;
     let follow: FollowPath = FollowPath::new(path);
     world.push((transform, follow, runtime_model));
     info!("built path");

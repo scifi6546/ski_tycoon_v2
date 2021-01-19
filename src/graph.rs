@@ -228,6 +228,7 @@ pub fn dijkstra<'a, G: Graph>(source: Node, destination: Node, graph: G) -> Path
         let (best_vertex, parent_distance) = queue.pop().unwrap();
         //getting neighbors
         for (child, child_distance) in graph.get_children(&best_vertex).iter() {
+            assert!(child_distance >= &GraphWeight::Some(0));
             let total_distance = child_distance.clone() + parent_distance.0.clone();
             let is_shortest_path = {
                 if let Some(best_known_distance) = distance.get(child) {

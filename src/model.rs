@@ -7,6 +7,19 @@ pub struct Model {
     pub transform: Transform,
 }
 impl Model {
+    pub fn from_obj(
+        obj: &'static [u8],
+        mtl: &'static [u8],
+        transform: Transform,
+        texture: Texture,
+    ) -> Self {
+        let mesh = Mesh::from_obj(obj, mtl);
+        Self {
+            mesh,
+            texture,
+            transform,
+        }
+    }
     pub fn from_heights(
         heights: Vec<f32>,
         dimensions: Vector2<usize>,

@@ -6,6 +6,7 @@ mod graphics_engine;
 mod graphics_system;
 mod grid;
 mod gui;
+mod lift;
 mod model;
 mod skiier;
 mod terrain;
@@ -21,13 +22,16 @@ use bindable::Bindable;
 use camera::Camera;
 use egui::CtxRef;
 
+use asset_manager::AssetManager;
 use events::{Event, MouseButton};
 use graphics_system::{insert_terrain, RuntimeModel};
 use gui::{EguiRawInputAdaptor, GuiModel};
 use legion::*;
+use lift::insert_lift;
 use terrain::Terrain;
 use wasm_bindgen::prelude::*;
 pub mod prelude {
+    pub use super::asset_manager::AssetManager;
     pub use super::camera::Camera;
     pub use super::graph::{
         dijkstra, find_best_path, FollowPath, GraphLayer, GraphLayerList, GraphWeight, GridNode,
@@ -62,6 +66,7 @@ impl Game {
         let mut world = World::default();
         let mut webgl = WebGl::new()?;
         let mut shader_bind = Bindable::default();
+        let mut model_manager = AssetManager::default();
         shader_bind.insert("world", webgl.build_world_shader()?);
         shader_bind.bind("world");
         webgl.bind_shader(shader_bind.get_bind()).ok().unwrap();
@@ -100,7 +105,15 @@ impl Game {
             Terrain::new_cone(Vector2::new(20, 20), Vector2::new(5.0, 5.0), 5.0, -1.0),
             &mut world,
             &mut webgl,
+            &mut model_manager,
             &shader_bind.get_bind(),
+        )?;
+        insert_lift(
+            &mut world,
+            &mut webgl,
+            &mut model_manager,
+            &shader_bind,
+            Vector2::new(0, 0),
         )?;
         webgl.get_error();
         let mut fb_texture = webgl.build_texture(
@@ -132,6 +145,7 @@ impl Game {
         let (egui_context, egui_adaptor) = gui::init_gui();
         resources.insert(egui_context);
         resources.insert(egui_adaptor);
+        resources.insert(model_manager);
         // gui::insert_ui(&mut egui_context);
         info!("context created");
         info!("inserted ui");

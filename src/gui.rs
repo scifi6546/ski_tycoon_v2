@@ -40,7 +40,7 @@ impl GuiModel {
         let transform = GuiTransform {
             transform: self.model.transform.clone(),
         };
-        let model = RuntimeModel::new(self.model.clone(), webgl, bound_shader)?;
+        let model = RuntimeModel::new(&self.model, webgl, bound_shader)?;
         Ok(world.push((transform, GuiRuntimeModel { model })))
     }
 }

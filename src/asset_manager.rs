@@ -10,13 +10,19 @@ impl<T> Default for AssetManager<T> {
     }
 }
 impl<T> AssetManager<T> {
-    pub fn get_or_create(&mut self, key: &str, ctor: fn() -> T) -> &T {
+    pub fn get_or_create<'a>(&mut self, key: &str, data: T) -> &T {
         if self.data.contains_key(key) {
             self.data.get(key).unwrap()
         } else {
-            self.data.insert(key.to_string(), ctor());
+            self.data.insert(key.to_string(), data);
             self.data.get(key).unwrap()
         }
+    }
+    pub fn get(&self, key: &str) -> Option<&T> {
+        self.data.get(key)
+    }
+    pub fn contains(&self, key: &str) -> bool {
+        return self.data.contains_key(key);
     }
 }
 #[cfg(test)]
@@ -31,8 +37,12 @@ mod test {
     #[test]
     fn manage() {
         let mut manager = AssetManager::default();
-        assert_eq!(manager.get_or_create("zero", zero), &0);
-        assert_eq!(manager.get_or_create("zero", one), &0);
-        assert_eq!(manager.get_or_create("one", one), &1);
+        assert_eq!(manager.contains("zero"), false);
+        assert_eq!(manager.get_or_create("zero", 0), &0);
+        assert_eq!(manager.get_or_create("zero", 1), &0);
+        assert_eq!(manager.get("zero"), Some(&0));
+        assert_eq!(manager.get("one"), None);
+        assert_eq!(manager.contains("zero"), true);
+        assert_eq!(manager.get_or_create("one", 1), &1);
     }
 }
