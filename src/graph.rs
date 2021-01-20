@@ -64,6 +64,7 @@ pub struct LiftLayer {
 impl LiftLayer {
     pub fn get_children(&self, source: &Node) -> Vec<(Node, GraphWeight)> {
         if source == &self.start {
+            info!("getting children of lift");
             vec![(self.end.clone(), self.weight.clone())]
         } else {
             vec![]
