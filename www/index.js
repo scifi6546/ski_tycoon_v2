@@ -56,11 +56,12 @@ function on_mouse_down(event) {
     mouse_event.set("buttons", event.buttons);
     mouse_event.set("x", event.clientX);
     mouse_event.set("y", event.clientY);
-
+    console.info("mouse down");
     events.push(mouse_event);
 }
 function on_mouse_up(event) {
     let mouse_event = new Map();
+    console.info("mouse up");
     mouse_event.set("name", "mouseup");
     mouse_event.set("buttons", event.buttons);
     mouse_event.set("x", event.clientX);
@@ -89,6 +90,7 @@ function render() {
     } else {
         event_state.set("position_y", last_y);
     }
+
     game.render_frame(events);
     events = []
     requestAnimationFrame(render)

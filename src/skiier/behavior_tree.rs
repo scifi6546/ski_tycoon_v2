@@ -1,4 +1,8 @@
-use super::{FollowPath, GraphLayerList, Node};
+use super::{
+    super::prelude::{dijkstra, GraphWeight, Path},
+    FollowPath, GraphLayerList, Node,
+};
+use log::error;
 #[derive(Clone, Debug, PartialEq)]
 struct Decision {
     cost: f32,
@@ -36,6 +40,96 @@ trait TreeNode {
             }
             best_path
         }
+    }
+}
+pub struct Up {}
+impl TreeNode for Up {
+    fn cost(&self, layers: &GraphLayerList, position: Node) -> Decision {
+        let lift_list = layers.find_lifts();
+        let (cost, best_path) = lift_list
+            .iter()
+            .map(|lift| {
+                const LIFT_COST: i32 = 1;
+                let path_to_lift = dijkstra(&position, &lift.start, layers).append(&Path {
+                    path: vec![(lift.end.clone(), GraphWeight::Some(1))],
+                });
+                let path_cost: GraphWeight = path_to_lift
+                    .path
+                    .iter()
+                    .map(|(_, weight)| weight.clone())
+                    .sum();
+                let total_cost = match path_cost {
+                    GraphWeight::Infinity => {
+                        error!("invalid graph weight");
+                        panic!()
+                    }
+                    GraphWeight::Some(n) => n + LIFT_COST,
+                };
+                (total_cost, path_to_lift)
+            })
+            .fold((i32::MAX, Path::default()), |acc, x| {
+                if acc.0 > x.0 {
+                    x
+                } else {
+                    acc
+                }
+            });
+        Decision {
+            cost: cost as f32,
+            endpoint: best_path.endpoint().clone(),
+            path: FollowPath::new(best_path),
+        }
+    }
+    fn children(&self) -> Vec<Box<dyn TreeNode>> {
+        vec![Box::new(Up {}), Box::new(Down {})]
+    }
+}
+pub struct Down {}
+impl TreeNode for Down {
+    fn cost(&self, layers: &GraphLayerList, position: Node) -> Decision {
+        let lift_list = layers.find_lifts();
+        let (cost, best_path) = lift_list
+            .iter()
+            .map(|lift| {
+                let path_to_lift = dijkstra(&position, &lift.start, layers);
+                let path_cost: GraphWeight = path_to_lift
+                    .path
+                    .iter()
+                    .map(|(_, weight)| weight.clone())
+                    .sum();
+                let total_cost = match path_cost {
+                    GraphWeight::Infinity => {
+                        error!("invalid graph weight");
+                        panic!()
+                    }
+                    GraphWeight::Some(n) => n,
+                };
+                (total_cost, path_to_lift)
+            })
+            .fold((i32::MAX, Path::default()), |acc, x| {
+                if acc.0 > x.0 {
+                    x
+                } else {
+                    acc
+                }
+            });
+        Decision {
+            cost: cost as f32,
+            endpoint: best_path.endpoint().clone(),
+            path: FollowPath::new(best_path),
+        }
+    }
+    fn children(&self) -> Vec<Box<dyn TreeNode>> {
+        vec![Box::new(Up {}), Box::new(Down {})]
+    }
+}
+pub struct SearchStart {}
+impl TreeNode for SearchStart {
+    fn cost(&self, layers: &GraphLayerList, position: Node) -> Decision {
+        Decision {}
+    }
+    fn children(&self) -> Vec<Box<dyn TreeNode>> {
+        vec![Box::new(Up {}), Box::new(Down {})]
     }
 }
 #[cfg(test)]

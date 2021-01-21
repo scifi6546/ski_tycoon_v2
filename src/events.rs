@@ -8,12 +8,12 @@ pub enum MouseButton {
     MiddleClick,
     RightClick,
 }
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct MouseClick {
     position: Vector2<f32>,
     button_pressed: MouseButton,
 }
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub enum Event {
     MouseMove {
         delta_x: f32,
@@ -38,7 +38,6 @@ pub enum Event {
     MouseUp {
         x: f32,
         y: f32,
-        button: MouseButton,
     },
     MouseClick(MouseClick),
 }
@@ -69,17 +68,20 @@ impl Event {
         }
     }
     fn from_mouseup(map: JsMap) -> Option<Self> {
+        info!("processing mouse up");
         let button_i32 = map.get(&JsValue::from_str("buttons")).as_f64().unwrap();
-        info!("button: {}", button_i32);
+        info!("mouseup button: {}", button_i32);
         let button_vec = Self::get_mouse_button(button_i32 as i32);
         if button_vec.len() == 0 {
-            None
+            let x = map.get(&JsValue::from_str("x")).as_f64().unwrap() as f32;
+            let y = map.get(&JsValue::from_str("y")).as_f64().unwrap() as f32;
+            Some(Self::MouseUp { x, y })
         } else {
             let button = button_vec[0].clone();
             info!("button: {:?}", button);
             let x = map.get(&JsValue::from_str("x")).as_f64().unwrap() as f32;
             let y = map.get(&JsValue::from_str("y")).as_f64().unwrap() as f32;
-            Some(Self::MouseUp { button, x, y })
+            Some(Self::MouseUp { x, y })
         }
     }
     fn from_keypress(map: JsMap) -> Option<Self> {

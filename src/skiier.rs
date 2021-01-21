@@ -3,6 +3,7 @@ use super::prelude::{
     ShaderBind, Transform, WebGl,
 };
 mod behavior_tree;
+use egui::CtxRef;
 use legion::*;
 use log::info;
 use nalgebra::{Vector2, Vector3};
@@ -15,9 +16,9 @@ pub fn build_skiier(
 ) -> Result<(), JsValue> {
     let layers: Vec<&GraphLayer> = <&GraphLayer>::query().iter(world).collect();
     let path = dijkstra(
-        Node { node: position },
-        Node { node: end },
-        GraphLayerList::new(layers),
+        &Node { node: position },
+        &Node { node: end },
+        &GraphLayerList::new(layers),
     );
     let mut transform = Transform::default();
     transform.set_scale(Vector3::new(0.1, 0.1, 0.1));
@@ -27,6 +28,20 @@ pub fn build_skiier(
     world.push((transform, follow, runtime_model));
     info!("built path");
     Ok(())
+}
+
+pub fn draw_skiiers(world: &World, context: &mut CtxRef) {
+    egui::Window::new("skiiers").show(context, |ui| {
+        let mut query = <&FollowPath>::query();
+        for path in query.iter(world) {
+            ui.collapsing("skiier", |ui| {
+                for (node, weight) in path.path.path.iter() {
+                    ui.label(format!("{}: {}", node, weight));
+                }
+            });
+            ui.label("skiier");
+        }
+    });
 }
 #[system(for_each)]
 pub fn follow_path(transform: &mut Transform, path: &mut FollowPath) {

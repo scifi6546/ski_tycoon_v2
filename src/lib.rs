@@ -33,8 +33,8 @@ pub mod prelude {
     pub use super::asset_manager::AssetManager;
     pub use super::camera::Camera;
     pub use super::graph::{
-        dijkstra, find_best_path, FollowPath, GraphLayer, GraphLayerList, GraphWeight, GridNode,
-        LiftLayer, Node, NodeFloat, Path,
+        dijkstra, FollowPath, GraphLayer, GraphLayerList, GraphWeight, GridNode, LiftLayer, Node,
+        NodeFloat, Path,
     };
     pub use super::graphics_engine::{
         ErrorType, Framebuffer, RuntimeMesh, RuntimeTexture, Shader, Transform, WebGl,
@@ -161,7 +161,6 @@ impl Game {
         Ok(g)
     }
     pub fn run_frame(&mut self, events: Vec<Event>) {
-        info!("running frame?");
         {
             let context = &mut self.resources.get_mut().unwrap();
             gui::insert_ui(context);
@@ -212,6 +211,10 @@ impl Game {
         let mut schedule = Schedule::builder()
             .add_system(graphics_system::render_object_system())
             .build();
+        {
+            let ctx: &mut egui::CtxRef = &mut self.resources.get_mut().unwrap();
+            skiier::draw_skiiers(&self.world, ctx);
+        }
         schedule.execute(&mut self.world, &mut self.resources);
         {
             let gl: &mut WebGl = &mut self.resources.get_mut().unwrap();
