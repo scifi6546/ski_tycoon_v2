@@ -56,6 +56,11 @@ impl std::cmp::Ord for GraphWeight {
         }
     }
 }
+impl std::iter::Sum for GraphWeight {
+    fn sum<I: Iterator<Item = Self>>(iter: I) -> Self {
+        iter.fold(GraphWeight::Some(0), |acc, x| acc + x)
+    }
+}
 #[derive(Clone, Debug)]
 pub struct GridNode {
     pub x_plus: GraphWeight,
@@ -220,8 +225,28 @@ impl<'a> GraphLayerList<'a> {
     pub fn new(layers: Vec<&'a GraphLayer>) -> Self {
         Self { layers }
     }
+    pub fn find_lifts(&self) -> Vec<&'a LiftLayer> {
+        self.layers
+            .iter()
+            .map(|layer| match layer {
+                GraphLayer::Grid { .. } => None,
+                GraphLayer::Lift(l) => Some(l),
+            })
+            .filter(|l| l.is_some())
+            .map(|l| l.unwrap())
+            .collect()
+    }
 }
 impl<'a> Graph for GraphLayerList<'a> {
+    fn get_children(&self, node: &Node) -> Vec<(Node, GraphWeight)> {
+        let mut out = vec![];
+        for layer in self.layers.iter() {
+            out.append(&mut layer.get_children(node));
+        }
+        return out;
+    }
+}
+impl<'a> Graph for &GraphLayerList<'a> {
     fn get_children(&self, node: &Node) -> Vec<(Node, GraphWeight)> {
         let mut out = vec![];
         for layer in self.layers.iter() {
@@ -239,7 +264,7 @@ pub struct Path {
     pub path: Vec<(Node, GraphWeight)>,
 }
 impl Path {
-    pub fn append(&self, other: &Self) -> Self {
+    pub fn append(self, other: &Self) -> Self {
         let mut path = vec![];
         for p in self.path.iter() {
             path.push(p.clone());
@@ -249,13 +274,21 @@ impl Path {
         }
         Self { path }
     }
+    pub fn endpoint(&self) -> &Node {
+        &self.path[self.path.len() - 1].0
+    }
+}
+impl Default for Path {
+    fn default() -> Self {
+        Path { path: vec![] }
+    }
 }
 /// Implements Dijkstra's algorythm on a generic graph.
 /// used [wikipedia](https://en.wikipedia.org/wiki/Dijkstra%27s_algorithm) as a refrence
 /// # Preconditions:
 ///     Graph Weights are greater than zero. If any of the graph weights are less then zero then
 ///     the alorythm panics
-pub fn dijkstra<'a, G: Graph>(source: Node, destination: Node, graph: G) -> Path {
+pub fn dijkstra<'a, G: Graph>(source: &Node, destination: &Node, graph: &G) -> Path {
     //queue used to priortize searching
     let mut queue = PriorityQueue::new();
     //annotates previous node in shortest path tree. If item is not preseant then previous is marked as infinite.
@@ -264,7 +297,7 @@ pub fn dijkstra<'a, G: Graph>(source: Node, destination: Node, graph: G) -> Path
     let mut distance = HashMap::<Node, GraphWeight>::new();
     //inserting first node
     queue.push(source.clone(), Reverse(GraphWeight::Some(0)));
-    distance.insert(source, GraphWeight::Some(0));
+    distance.insert(source.clone(), GraphWeight::Some(0));
     while queue.is_empty() == false {
         let (best_vertex, parent_distance) = queue.pop().unwrap();
         //getting neighbors
@@ -317,7 +350,7 @@ impl FollowPath {
         let t = self.t;
         Self {
             t,
-            path: self.path.append(&other.path),
+            path: self.path.clone().append(&other.path),
         }
     }
     pub fn get(&self) -> NodeFloat {

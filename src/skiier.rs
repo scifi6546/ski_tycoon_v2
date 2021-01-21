@@ -16,9 +16,9 @@ pub fn build_skiier(
 ) -> Result<(), JsValue> {
     let layers: Vec<&GraphLayer> = <&GraphLayer>::query().iter(world).collect();
     let path = dijkstra(
-        Node { node: position },
-        Node { node: end },
-        GraphLayerList::new(layers),
+        &Node { node: position },
+        &Node { node: end },
+        &GraphLayerList::new(layers),
     );
     let mut transform = Transform::default();
     transform.set_scale(Vector3::new(0.1, 0.1, 0.1));
