@@ -4,12 +4,12 @@ use super::{
 };
 use log::error;
 #[derive(Clone, Debug, PartialEq)]
-struct Decision {
-    cost: f32,
-    path: FollowPath,
-    endpoint: Node,
+pub struct Decision {
+    pub cost: f32,
+    pub path: FollowPath,
+    pub endpoint: Node,
 }
-trait TreeNode {
+pub trait TreeNode {
     fn cost(&self, layers: &GraphLayerList, position: Node) -> Decision;
     fn children(&self) -> Vec<Box<dyn TreeNode>>;
     fn best_path(
@@ -124,9 +124,18 @@ impl TreeNode for Down {
     }
 }
 pub struct SearchStart {}
+impl Default for SearchStart{
+    fn default()->Self{
+        SearchStart{}
+    }
+}
 impl TreeNode for SearchStart {
-    fn cost(&self, layers: &GraphLayerList, position: Node) -> Decision {
-        Decision {}
+    fn cost(&self, _layers: &GraphLayerList, position: Node) -> Decision {
+        Decision {
+            cost:0.0,
+            endpoint: position,
+            path: FollowPath::new(Path::default())
+        }
     }
     fn children(&self) -> Vec<Box<dyn TreeNode>> {
         vec![Box::new(Up {}), Box::new(Down {})]

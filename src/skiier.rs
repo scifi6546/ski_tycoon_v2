@@ -1,8 +1,9 @@
 use super::prelude::{
     dijkstra, FollowPath, GraphLayer, GraphLayerList, JsValue, Model, Node, RuntimeModel,
-    ShaderBind, Transform, WebGl,
+    ShaderBind, Transform, WebGl,Path,
 };
 mod behavior_tree;
+use behavior_tree::{SearchStart,TreeNode};
 use egui::CtxRef;
 use legion::*;
 use log::info;
@@ -14,17 +15,15 @@ pub fn build_skiier(
     position: Vector2<i64>,
     end: Vector2<i64>,
 ) -> Result<(), JsValue> {
+    let tree_start:Box<dyn TreeNode> = Box::new(SearchStart::default());
     let layers: Vec<&GraphLayer> = <&GraphLayer>::query().iter(world).collect();
-    let path = dijkstra(
-        &Node { node: position },
-        &Node { node: end },
-        &GraphLayerList::new(layers),
-    );
+    let decisions = tree_start.best_path(4, &GraphLayerList::new(layers),Node { node: position });
+   
+    let follow = decisions.iter().fold(FollowPath::new(Path::default()),|acc,x|acc.append(&x.path));
     let mut transform = Transform::default();
     transform.set_scale(Vector3::new(0.1, 0.1, 0.1));
     let model = Model::cube(transform.clone());
     let runtime_model = RuntimeModel::new(&model, graphics, bound_shader.get_bind())?;
-    let follow: FollowPath = FollowPath::new(path);
     world.push((transform, follow, runtime_model));
     info!("built path");
     Ok(())
