@@ -94,6 +94,11 @@ impl Node {
         }
     }
 }
+impl std::fmt::Display for Node {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "({}, {})", self.node.x, self.node.y)
+    }
+}
 impl std::ops::Sub for Node {
     type Output = Self;
     fn sub(self, other: Self) -> Self::Output {
@@ -343,7 +348,7 @@ pub fn find_best_path<'a, G: Graph>(source: Node, search_size: usize, graph: G) 
 /// Path used to follow
 #[derive(Clone, Debug, PartialEq)]
 pub struct FollowPath {
-    path: Path,
+    pub path: Path,
     t: f64,
 }
 impl FollowPath {

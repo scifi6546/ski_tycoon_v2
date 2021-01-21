@@ -7,9 +7,10 @@ use egui::{
     paint::tessellator::Vertex as EguiVertex,
     PaintJobs, RawInput, Texture,
 };
+use log::info;
 use nalgebra::{Vector2, Vector3, Vector4};
 use std::sync::Arc;
-/// Struct used to get statell
+/// Struct used to get state
 ///
 pub struct EguiRawInputAdaptor {
     is_rightclick_down: bool,
@@ -22,14 +23,15 @@ impl EguiRawInputAdaptor {
         for e in events.iter() {
             match e {
                 Event::MouseDown { button, .. } => {
-                    if button == &MouseButton::LeftClick {
-                        self.is_rightclick_down = true;
-                    }
+                    info!("mouse down");
+                    self.is_rightclick_down = true;
+                    info!("right click down: {}", self.is_rightclick_down);
                 }
-                Event::MouseUp { button, .. } => {
-                    if button == &MouseButton::LeftClick {
-                        self.is_rightclick_down = false;
-                    }
+                Event::MouseUp { .. } => {
+                    info!("mouse up ujjj");
+                    info!("before??");
+                    self.is_rightclick_down = false;
+                    info!("right click down: {}", self.is_rightclick_down);
                 }
                 Event::MouseMove { x, y, .. } => {
                     self.last_cursor_pos = Vector2::new(x.clone(), y.clone())

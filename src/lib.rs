@@ -161,7 +161,6 @@ impl Game {
         Ok(g)
     }
     pub fn run_frame(&mut self, events: Vec<Event>) {
-        info!("running frame?");
         {
             let context = &mut self.resources.get_mut().unwrap();
             gui::insert_ui(context);
@@ -212,6 +211,10 @@ impl Game {
         let mut schedule = Schedule::builder()
             .add_system(graphics_system::render_object_system())
             .build();
+        {
+            let ctx: &mut egui::CtxRef = &mut self.resources.get_mut().unwrap();
+            skiier::draw_skiiers(&self.world, ctx);
+        }
         schedule.execute(&mut self.world, &mut self.resources);
         {
             let gl: &mut WebGl = &mut self.resources.get_mut().unwrap();
