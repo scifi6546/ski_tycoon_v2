@@ -17,6 +17,14 @@ impl GraphWeight {
         }
     }
 }
+impl std::fmt::Display for GraphWeight {
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+        match self {
+            Self::Infinity => write!(f, "Infinity"),
+            Self::Some(v) => write!(f, "Some({})", v),
+        }
+    }
+}
 impl std::ops::Add for GraphWeight {
     type Output = Self;
     fn add(self, other: Self) -> Self {
@@ -228,7 +236,7 @@ pub trait Graph {
 }
 #[derive(Clone, Debug, PartialEq)]
 pub struct Path {
-    pub path: Vec<Node>,
+    pub path: Vec<(Node, GraphWeight)>,
 }
 impl Path {
     pub fn append(&self, other: &Self) -> Self {
@@ -244,6 +252,9 @@ impl Path {
 }
 /// Implements Dijkstra's algorythm on a generic graph.
 /// used [wikipedia](https://en.wikipedia.org/wiki/Dijkstra%27s_algorithm) as a refrence
+/// # Preconditions:
+///     Graph Weights are greater than zero. If any of the graph weights are less then zero then
+///     the alorythm panics
 pub fn dijkstra<'a, G: Graph>(source: Node, destination: Node, graph: G) -> Path {
     //queue used to priortize searching
     let mut queue = PriorityQueue::new();
@@ -269,81 +280,25 @@ pub fn dijkstra<'a, G: Graph>(source: Node, destination: Node, graph: G) -> Path
             };
             if is_shortest_path {
                 distance.insert(child.clone(), total_distance.clone());
-                previous.insert(child.clone(), best_vertex.clone());
+                previous.insert(child.clone(), (best_vertex.clone(), child_distance.clone()));
 
                 queue.push(child.clone(), Reverse(total_distance.into()));
             }
         }
     }
-    let mut path: Vec<Node> = vec![];
-    let mut current = &destination;
+    let mut path: Vec<(Node, GraphWeight)> = vec![];
+    let mut current = (destination.clone(), GraphWeight::Some(0));
     path.push(current.clone());
     loop {
-        if let Some(p) = previous.get(current) {
-            path.push(p.clone());
-            current = p;
+        if let Some((node, weight)) = previous.get(&current.0) {
+            path.push((node.clone(), weight.clone().clone()));
+            current = (node.clone(), weight.clone().clone());
         } else {
             return Path {
                 path: path.iter().rev().map(|p| p.clone()).collect(),
             };
         }
     }
-}
-/// Finds the best path while searching `search_size` nodes
-/// current issues: Having skiiers avoid punishments just results in them taking a really short hop rather then trying to go far out
-///
-pub fn find_best_path<'a, G: Graph>(source: Node, search_size: usize, graph: G) -> Path {
-    let mut nodes_processed = 0;
-    //queue used to priortize searching
-    let mut queue = PriorityQueue::new();
-    //annotates previous node in shortest path tree. If item is not preseant then previous is marked as infinite.
-    let mut previous = HashMap::new();
-    //annotates the distance of the node from the source to a given node. If Node is not present then distance can be considered as infinite
-    let mut distance = HashMap::<Node, GraphWeight>::new();
-    let mut distance_priority: PriorityQueue<Node, Reverse<GraphWeight>> = PriorityQueue::new();
-    //inserting first node
-    queue.push(source.clone(), Reverse(GraphWeight::Some(0)));
-    distance.insert(source, GraphWeight::Some(0));
-    while queue.is_empty() == false && nodes_processed < search_size {
-        let (best_vertex, parent_distance) = queue.pop().unwrap();
-        //getting neighbors
-        for (child, child_distance) in graph.get_children(&best_vertex).iter() {
-            let total_distance = child_distance.clone() + parent_distance.0.clone();
-            let is_shortest_path = {
-                if let Some(best_known_distance) = distance.get(child) {
-                    &total_distance < best_known_distance
-                } else {
-                    true
-                }
-            };
-            if is_shortest_path {
-                distance.insert(child.clone(), total_distance.clone());
-                previous.insert(child.clone(), best_vertex.clone());
-                distance_priority.push(child.clone(), Reverse(total_distance.clone().into()));
-                queue.push(child.clone(), Reverse(total_distance.into()));
-            }
-            if nodes_processed == search_size {
-                break;
-            }
-        }
-        nodes_processed += 1;
-    }
-    let mut path: Vec<Node> = vec![];
-    let (mut current, _) = distance_priority.pop().unwrap();
-    path.push(current.clone());
-
-    for _ in 0..search_size {
-        if let Some(p) = previous.get(&current) {
-            path.push(p.clone());
-            current = p.clone();
-        } else {
-            return Path {
-                path: path.iter().rev().map(|p| p.clone()).collect(),
-            };
-        }
-    }
-    error!("Path has loop");
-    panic!()
 }
 /// Path used to follow
 #[derive(Clone, Debug, PartialEq)]
@@ -368,16 +323,16 @@ impl FollowPath {
     pub fn get(&self) -> NodeFloat {
         let t0: usize = self.t.floor() as usize;
         if t0 >= self.path.path.len() {
-            self.path.path[self.path.path.len() - 1].to_node_float()
+            self.path.path[self.path.path.len() - 1].0.to_node_float()
         } else {
             if t0 + 1 < self.path.path.len() {
-                let x0 = self.path.path[t0].clone();
-                let x1 = self.path.path[t0 + 1].clone();
+                let x0 = self.path.path[t0].0.clone();
+                let x1 = self.path.path[t0 + 1].0.clone();
                 let t1 = t0 as f64 + 1.0;
                 ((x1 - x0.clone()).to_node_float() / (t1 - t0 as f64)) * (self.t - t0 as f64)
                     + (x0.clone()).to_node_float()
             } else {
-                (self.path.path[t0].clone()).to_node_float()
+                (self.path.path[t0].clone()).0.to_node_float()
             }
         }
     }

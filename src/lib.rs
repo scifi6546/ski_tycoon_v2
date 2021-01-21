@@ -33,8 +33,8 @@ pub mod prelude {
     pub use super::asset_manager::AssetManager;
     pub use super::camera::Camera;
     pub use super::graph::{
-        dijkstra, find_best_path, FollowPath, GraphLayer, GraphLayerList, GraphWeight, GridNode,
-        LiftLayer, Node, NodeFloat, Path,
+        dijkstra, FollowPath, GraphLayer, GraphLayerList, GraphWeight, GridNode, LiftLayer, Node,
+        NodeFloat, Path,
     };
     pub use super::graphics_engine::{
         ErrorType, Framebuffer, RuntimeMesh, RuntimeTexture, Shader, Transform, WebGl,

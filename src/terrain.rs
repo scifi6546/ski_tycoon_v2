@@ -1,6 +1,6 @@
 use super::prelude::{GraphLayer, GraphWeight, Grid, GridNode, Model, Transform};
+use log::info;
 use nalgebra::Vector2;
-
 #[derive(Clone, Debug, PartialEq)]
 enum TileType {
     Snow,
@@ -58,9 +58,9 @@ impl Terrain {
             let end_tile = &self.tiles[end.x as usize * self.dimensions.y + end.y as usize];
             let delta_height = start_tile.height - end_tile.height;
             if delta_height as i32 >= 0 {
-                GraphWeight::Some((delta_height as i32 * 10 as i32).abs())
+                GraphWeight::Some((delta_height * 100.0).abs() as i32)
             } else {
-                GraphWeight::Some(delta_height.abs() as i32)
+                GraphWeight::Some((delta_height * 10.0).abs() as i32)
             }
         }
     }

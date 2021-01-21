@@ -32,11 +32,11 @@ pub fn build_skiier(
 
 pub fn draw_skiiers(world: &World, context: &mut CtxRef) {
     egui::Window::new("skiiers").show(context, |ui| {
-        let mut query = <(&FollowPath)>::query();
+        let mut query = <&FollowPath>::query();
         for path in query.iter(world) {
             ui.collapsing("skiier", |ui| {
-                for elm in path.path.path.iter() {
-                    ui.label(format!("{}", elm));
+                for (node, weight) in path.path.path.iter() {
+                    ui.label(format!("{}: {}", node, weight));
                 }
             });
             ui.label("skiier");
