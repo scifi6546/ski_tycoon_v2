@@ -2,12 +2,34 @@ use super::{
     super::prelude::{dijkstra, GraphWeight, Path},
     FollowPath, GraphLayerList, Node,
 };
-use log::error;
+use log::{error, info};
 #[derive(Clone, Debug, PartialEq)]
 pub struct Decision {
-    pub cost: f32,
+    pub cost: Number<f32>,
     pub path: FollowPath,
     pub endpoint: Node,
+}
+#[derive(Clone, Debug, PartialEq)]
+pub enum Number<T> {
+    Infinite,
+    Finite(T),
+}
+impl<T: std::ops::Add<Output = T>> std::ops::Add for Number<T> {
+    type Output = Self;
+    fn add(self, other: Self) -> Self {
+        match self {
+            Self::Infinite => Self::Infinite,
+            Self::Finite(n1) => match other {
+                Self::Infinite => Self::Infinite,
+                Self::Finite(n2) => Self::Finite(n1 + n2),
+            },
+        }
+    }
+}
+impl<T: std::cmp::PartialOrd> std::cmp::PartialOrd for Number<T> {
+    fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
+        todo!()
+    }
 }
 pub trait TreeNode {
     fn cost(&self, layers: &GraphLayerList, position: Node) -> Decision;
@@ -22,7 +44,7 @@ pub trait TreeNode {
             vec![self.cost(layers, position)]
         } else {
             let self_cost = self.cost(layers, position);
-            let mut best_weight = f32::MAX;
+            let mut best_weight = Number::Infinite;
             let mut best_path = vec![];
             for child in self.children().iter() {
                 let mut child_path = child.best_path(
@@ -30,7 +52,9 @@ pub trait TreeNode {
                     layers,
                     self_cost.clone().endpoint.clone(),
                 );
-                let child_weight = child_path.iter().fold(0.0, |acc, d| acc + d.cost);
+                let child_weight = child_path
+                    .iter()
+                    .fold(Number::Finite(0.0), |acc, d| acc + d.cost);
                 if child_weight < best_weight {
                     best_path = vec![];
                     best_path.push(self_cost.clone());
@@ -53,6 +77,7 @@ impl TreeNode for Up {
                 let path_to_lift = dijkstra(&position, &lift.start, layers).append(&Path {
                     path: vec![(lift.end.clone(), GraphWeight::Some(1))],
                 });
+
                 let path_cost: GraphWeight = path_to_lift
                     .path
                     .iter()
@@ -124,17 +149,17 @@ impl TreeNode for Down {
     }
 }
 pub struct SearchStart {}
-impl Default for SearchStart{
-    fn default()->Self{
-        SearchStart{}
+impl Default for SearchStart {
+    fn default() -> Self {
+        SearchStart {}
     }
 }
 impl TreeNode for SearchStart {
     fn cost(&self, _layers: &GraphLayerList, position: Node) -> Decision {
         Decision {
-            cost:0.0,
+            cost: 0.0,
             endpoint: position,
-            path: FollowPath::new(Path::default())
+            path: FollowPath::new(Path::default()),
         }
     }
     fn children(&self) -> Vec<Box<dyn TreeNode>> {
