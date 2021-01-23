@@ -1,5 +1,5 @@
 use super::prelude::Grid;
-use log::{error, info};
+use log::info;
 use nalgebra::Vector2;
 use priority_queue::PriorityQueue;
 use std::cmp::Reverse;

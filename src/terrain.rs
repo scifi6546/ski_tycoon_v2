@@ -1,5 +1,4 @@
 use super::prelude::{GraphLayer, GraphWeight, Grid, GridNode, Model, Transform};
-use log::info;
 use nalgebra::Vector2;
 #[derive(Clone, Debug, PartialEq)]
 enum TileType {

@@ -1,6 +1,5 @@
 use super::prelude::{
-    ErrorType, Event, ItemDesc, Mesh, MouseButton, ShaderBind, Texture as RGBATexture, Vertex,
-    WebGl,
+    ErrorType, Event, ItemDesc, Mesh, ShaderBind, Texture as RGBATexture, Vertex, WebGl,
 };
 use egui::{
     math::{Pos2, Rect, Vec2},
@@ -22,7 +21,7 @@ impl EguiRawInputAdaptor {
         self.frame_scroll = 0.0;
         for e in events.iter() {
             match e {
-                Event::MouseDown { button, .. } => {
+                Event::MouseDown { .. } => {
                     info!("mouse down");
                     self.is_rightclick_down = true;
                     info!("right click down: {}", self.is_rightclick_down);

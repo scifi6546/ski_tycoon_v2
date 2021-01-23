@@ -1,12 +1,12 @@
 use super::prelude::{
-    dijkstra, FollowPath, GraphLayer, GraphLayerList, JsValue, Model, Node, Path, RuntimeModel,
-    ShaderBind, Transform, WebGl,
+    FollowPath, GraphLayer, GraphLayerList, JsValue, Model, Node, Path, RuntimeModel, ShaderBind,
+    Transform, WebGl,
 };
 mod behavior_tree;
 use behavior_tree::{Number, SearchStart, TreeNode};
 use egui::CtxRef;
 use legion::*;
-use log::{error, info};
+use log::error;
 use nalgebra::{Vector2, Vector3};
 struct DecisionDebugInfo {
     name: String,

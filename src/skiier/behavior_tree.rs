@@ -2,7 +2,7 @@ use super::{
     super::prelude::{dijkstra, GraphWeight, Path},
     FollowPath, GraphLayerList, Node,
 };
-use log::{error, info};
+use log::error;
 #[derive(Clone, Debug, PartialEq)]
 pub struct Decision {
     pub cost: Number<f32>,
