@@ -11,6 +11,8 @@ use nalgebra::{Vector2, Vector3};
 struct DecisionDebugInfo {
     name: String,
     cost: Number<f32>,
+    start: Node,
+    end: Node,
     path_len: usize,
 }
 pub fn build_skiier(
@@ -28,19 +30,18 @@ pub fn build_skiier(
             acc.append(&x.path)
         });
 
-    if follow.len() == 0 {
-        error!("follow len to short, decisions: ");
-        for d in decisions.iter() {
-            error!("name: {} path_len: {}", d.name, d.path.len());
-        }
-        panic!();
-    }
     let decision_debug_info: Vec<DecisionDebugInfo> = decisions
         .iter()
         .map(|d| DecisionDebugInfo {
             name: d.name.clone(),
             cost: d.cost.clone(),
             path_len: d.path.len(),
+            start: if let Some(p) = d.path.start() {
+                p.clone()
+            } else {
+                d.endpoint.clone()
+            },
+            end: d.endpoint.clone(),
         })
         .collect();
     let mut transform = Transform::default();
@@ -69,8 +70,8 @@ pub fn draw_skiiers(world: &World, context: &mut CtxRef) {
             ui.collapsing("skiier", |ui| {
                 for debug in skiier.iter() {
                     ui.label(format!(
-                        "{}: {}, path len: {}",
-                        debug.name, debug.cost, debug.path_len
+                        "{}: {}, path len: {}, start: {}, end: {}",
+                        debug.name, debug.cost, debug.path_len, debug.start, debug.end
                     ));
                 }
             });
@@ -80,7 +81,8 @@ pub fn draw_skiiers(world: &World, context: &mut CtxRef) {
 #[system(for_each)]
 pub fn follow_path(transform: &mut Transform, path: &mut FollowPath) {
     path.incr(0.01);
-
-    let t = path.get();
-    transform.set_translation(Vector3::new(t.node.x as f32, 0.0, t.node.y as f32));
+    if path.len() > 0 {
+        let t = path.get();
+        transform.set_translation(Vector3::new(t.node.x as f32, 0.0, t.node.y as f32));
+    }
 }

@@ -265,6 +265,9 @@ pub struct Path {
     pub path: Vec<(Node, GraphWeight)>,
 }
 impl Path {
+    pub fn new(path: Vec<(Node, GraphWeight)>) -> Self {
+        Self { path }
+    }
     pub fn append(self, other: &Self) -> Self {
         let mut path = vec![];
         for p in self.path.iter() {
@@ -294,8 +297,8 @@ impl Default for Path {
 /// Implements Dijkstra's algorythm on a generic graph.
 /// used [wikipedia](https://en.wikipedia.org/wiki/Dijkstra%27s_algorithm) as a refrence
 /// # Preconditions:
-///     Graph Weights are greater than zero. If any of the graph weights are less then zero then
-///     the alorythm panics
+/// Graph Weights are greater than zero. If any of the graph weights are less then zero then
+/// the alorythm panics
 pub fn dijkstra<'a, G: Graph>(source: &Node, destination: &Node, graph: &G) -> Path {
     //queue used to priortize searching
     let mut queue = PriorityQueue::new();
@@ -354,6 +357,13 @@ impl FollowPath {
     pub fn incr(&mut self, incr: f64) {
         self.t += incr
     }
+    pub fn start(&self) -> Option<&Node> {
+        if self.path.path.len() >= 1 {
+            Some(&self.path.path[0].0)
+        } else {
+            None
+        }
+    }
     pub fn append(&self, other: &Self) -> Self {
         let t = self.t;
         Self {
@@ -379,6 +389,30 @@ impl FollowPath {
                 (self.path.path[t0].clone()).0.to_node_float()
             }
         }
+    }
+}
+pub mod GraphDebug {
+    use super::GraphLayer;
+    use egui::CtxRef;
+    use legion::*;
+    pub fn terrain_debug_window(world: &World, context: &mut CtxRef) {
+        egui::Window::new("terrain").show(context, |ui| {
+            let mut query = <&GraphLayer>::query();
+            for layer in query.iter(world) {
+                match layer {
+                    GraphLayer::Grid { grid } => {
+                        ui.label(format!(
+                            "Grid, width: {} height: {}",
+                            grid.width(),
+                            grid.height()
+                        ));
+                    }
+                    GraphLayer::Lift(lift) => {
+                        ui.label(format!("Lift start: {} end: {}", lift.start, lift.end));
+                    }
+                }
+            }
+        });
     }
 }
 #[cfg(test)]

@@ -23,6 +23,7 @@ use camera::Camera;
 
 use asset_manager::AssetManager;
 use events::{Event, MouseButton};
+use graph::GraphDebug;
 use graphics_system::{insert_terrain, RuntimeModel};
 use gui::GuiModel;
 use legion::*;
@@ -210,6 +211,7 @@ impl Game {
             .build();
         {
             let ctx: &mut egui::CtxRef = &mut self.resources.get_mut().unwrap();
+            GraphDebug::terrain_debug_window(&self.world, ctx);
             skiier::draw_skiiers(&self.world, ctx);
         }
         schedule.execute(&mut self.world, &mut self.resources);

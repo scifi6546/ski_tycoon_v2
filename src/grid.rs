@@ -30,6 +30,12 @@ impl<T> Grid<T> {
             }
         }
     }
+    pub fn width(&self) -> usize {
+        self.dimensions.x
+    }
+    pub fn height(&self) -> usize {
+        self.dimensions.y
+    }
 }
 impl<T> std::ops::Index<Vector2<usize>> for Grid<T> {
     type Output = T;

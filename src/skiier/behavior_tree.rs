@@ -97,27 +97,19 @@ impl TreeNode for Up {
         let (cost, best_path) = lift_list
             .iter()
             .map(|lift| {
-                const LIFT_COST: i32 = 1;
-                let path_to_lift = dijkstra(&position, &lift.start, layers).append(&Path {
-                    path: vec![(lift.end.clone(), GraphWeight::Some(1))],
-                });
-
-                let path_cost: GraphWeight = path_to_lift
-                    .path
-                    .iter()
-                    .map(|(_, weight)| weight.clone())
-                    .sum();
-                let total_cost = match path_cost {
-                    GraphWeight::Infinity => {
-                        error!("invalid graph weight");
-                        panic!()
-                    }
-                    GraphWeight::Some(n) => n + LIFT_COST,
-                };
-                (total_cost, path_to_lift)
+                const LIFT_COST: f32 = 1.0;
+                if position == lift.start {
+                    let path = Path::new(vec![
+                        (lift.start.clone(), GraphWeight::Some(0)),
+                        (lift.end.clone(), GraphWeight::Some(1)),
+                    ]);
+                    (Number::Finite(LIFT_COST), path)
+                } else {
+                    (Number::Infinite, Path::default())
+                }
             })
             .fold((Number::Infinite, Path::default()), |acc, x| {
-                let other_cost = Number::Finite(x.0 as f32);
+                let other_cost = Number::Finite(0.0 as f32);
                 if acc.0 > other_cost {
                     (other_cost, acc.1)
                 } else {
@@ -290,6 +282,10 @@ mod test {
         assert_ne!(inf, fin_0);
         assert!(inf > fin_0);
         assert!(inf >= fin_0);
+        assert!(fin_0 < inf);
+        assert!(fin_0 <= inf);
+        assert!(fin_5 < inf);
+        assert!(fin_5 <= inf);
         assert_ne!(fin_0, fin_5);
         assert!(fin_0 < fin_5);
         assert!(fin_0 <= fin_5);
