@@ -76,7 +76,7 @@ pub trait TreeNode {
                     .iter()
                     .fold(Number::Finite(0.0), |acc, d| acc + d.cost.clone());
 
-                if child_weight < best_weight {
+                if child_weight <= best_weight {
                     best_path = vec![];
                     best_path.push(self_cost.clone());
                     best_path.append(&mut child_path);
@@ -179,8 +179,16 @@ impl TreeNode for Down {
                 },
             );
         Decision {
-            cost: cost,
-            endpoint: best_path.endpoint().unwrap().clone(),
+            cost: if best_path.len() > 1 {
+                cost
+            } else {
+                Number::Infinite
+            },
+            endpoint: if let Some(point) = best_path.endpoint() {
+                point.clone()
+            } else {
+                position
+            },
             path: FollowPath::new(best_path),
             name: self.name(),
         }

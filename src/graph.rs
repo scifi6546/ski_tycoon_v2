@@ -275,6 +275,9 @@ impl Path {
         }
         Self { path }
     }
+    pub fn len(&self) -> usize {
+        self.path.len()
+    }
     pub fn endpoint(&self) -> Option<&Node> {
         if self.path.len() > 0 {
             Some(&self.path[self.path.len() - 1].0)
@@ -357,6 +360,9 @@ impl FollowPath {
             t,
             path: self.path.clone().append(&other.path),
         }
+    }
+    pub fn len(&self) -> usize {
+        self.path.len()
     }
     pub fn get(&self) -> NodeFloat {
         let t0: usize = self.t.floor() as usize;

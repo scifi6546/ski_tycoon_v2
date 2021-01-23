@@ -132,14 +132,7 @@ impl Game {
         webgl.get_error();
         info!("building skiiers");
         for i in 0..10 {
-            info!("building skiier: {}", i);
-            skiier::build_skiier(
-                &mut world,
-                &mut webgl,
-                &shader_bind,
-                Vector2::new(i, 0),
-                Vector2::new(10, 10),
-            )?;
+            skiier::build_skiier(&mut world, &mut webgl, &shader_bind, Vector2::new(i, 0))?;
         }
         info!("done building skiiers");
         webgl.get_error();

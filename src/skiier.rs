@@ -6,36 +6,48 @@ mod behavior_tree;
 use behavior_tree::{Number, SearchStart, TreeNode};
 use egui::CtxRef;
 use legion::*;
-use log::info;
+use log::{error, info};
 use nalgebra::{Vector2, Vector3};
+struct DecisionDebugInfo {
+    name: String,
+    cost: Number<f32>,
+    path_len: usize,
+}
 pub fn build_skiier(
     world: &mut World,
     graphics: &mut WebGl,
     bound_shader: &ShaderBind,
     position: Vector2<i64>,
-    end: Vector2<i64>,
 ) -> Result<(), JsValue> {
     let tree_start: Box<dyn TreeNode> = Box::new(SearchStart::default());
-    info!("built tree_start");
     let layers: Vec<&GraphLayer> = <&GraphLayer>::query().iter(world).collect();
-    info!("finding best path");
     let decisions = tree_start.best_path(4, &GraphLayerList::new(layers), Node { node: position });
-    info!("found best path");
     let follow = decisions
         .iter()
         .fold(FollowPath::new(Path::default()), |acc, x| {
             acc.append(&x.path)
         });
-    let decision_debug_info: Vec<(String, Number<f32>)> = decisions
+
+    if follow.len() == 0 {
+        error!("follow len to short, decisions: ");
+        for d in decisions.iter() {
+            error!("name: {} path_len: {}", d.name, d.path.len());
+        }
+        panic!();
+    }
+    let decision_debug_info: Vec<DecisionDebugInfo> = decisions
         .iter()
-        .map(|d| (d.name.clone(), d.cost.clone()))
+        .map(|d| DecisionDebugInfo {
+            name: d.name.clone(),
+            cost: d.cost.clone(),
+            path_len: d.path.len(),
+        })
         .collect();
     let mut transform = Transform::default();
     transform.set_scale(Vector3::new(0.1, 0.1, 0.1));
     let model = Model::cube(transform.clone());
     let runtime_model = RuntimeModel::new(&model, graphics, bound_shader.get_bind())?;
     world.push((transform, follow, runtime_model, decision_debug_info));
-    info!("built path");
     Ok(())
 }
 
@@ -52,11 +64,14 @@ pub fn draw_skiiers(world: &World, context: &mut CtxRef) {
         }
     });
     egui::Window::new("skiier decisions").show(context, |ui| {
-        let mut query = <&Vec<(String, Number<f32>)>>::query();
+        let mut query = <&Vec<DecisionDebugInfo>>::query();
         for skiier in query.iter(world) {
             ui.collapsing("skiier", |ui| {
-                for (name, cost) in skiier.iter() {
-                    ui.label(format!("{}: {}", name, cost));
+                for debug in skiier.iter() {
+                    ui.label(format!(
+                        "{}: {}, path len: {}",
+                        debug.name, debug.cost, debug.path_len
+                    ));
                 }
             });
         }
