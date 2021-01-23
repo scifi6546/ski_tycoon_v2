@@ -108,20 +108,18 @@ impl TreeNode for Up {
                     (Number::Infinite, Path::default())
                 }
             })
-            .fold((Number::Infinite, Path::default()), |acc, x| {
-                let other_cost = Number::Finite(0.0 as f32);
-                if acc.0 > other_cost {
-                    (other_cost, acc.1)
-                } else {
-                    acc
-                }
-            });
+            .fold(
+                (Number::Infinite, Path::default()),
+                |(acc_cost, acc_path), (other_cost, other_path)| {
+                    if acc_cost > other_cost {
+                        (other_cost, other_path)
+                    } else {
+                        (acc_cost, acc_path)
+                    }
+                },
+            );
         Decision {
-            cost: if best_path.endpoint().is_some() {
-                cost
-            } else {
-                Number::Infinite
-            },
+            cost: cost,
             endpoint: if let Some(point) = best_path.endpoint() {
                 point.clone()
             } else {

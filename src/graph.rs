@@ -391,7 +391,7 @@ impl FollowPath {
         }
     }
 }
-pub mod GraphDebug {
+pub mod graph_debug {
     use super::GraphLayer;
     use egui::CtxRef;
     use legion::*;

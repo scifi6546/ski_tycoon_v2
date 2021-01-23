@@ -6,7 +6,6 @@ mod behavior_tree;
 use behavior_tree::{Number, SearchStart, TreeNode};
 use egui::CtxRef;
 use legion::*;
-use log::error;
 use nalgebra::{Vector2, Vector3};
 struct DecisionDebugInfo {
     name: String,
