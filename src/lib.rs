@@ -61,6 +61,7 @@ struct Game {
 }
 impl Game {
     pub fn new() -> Result<Game, JsValue> {
+        utils::set_panic_hook();
         let mut resources = Resources::default();
         let mut world = World::default();
         let mut webgl = WebGl::new()?;
@@ -129,7 +130,9 @@ impl Game {
             texture: fb_texture,
         };
         webgl.get_error();
+        info!("building skiiers");
         for i in 0..10 {
+            info!("building skiier: {}", i);
             skiier::build_skiier(
                 &mut world,
                 &mut webgl,
@@ -138,6 +141,7 @@ impl Game {
                 Vector2::new(10, 10),
             )?;
         }
+        info!("done building skiiers");
         webgl.get_error();
         resources.insert(webgl);
         resources.insert(shader_bind);

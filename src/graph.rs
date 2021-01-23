@@ -275,8 +275,12 @@ impl Path {
         }
         Self { path }
     }
-    pub fn endpoint(&self) -> &Node {
-        &self.path[self.path.len() - 1].0
+    pub fn endpoint(&self) -> Option<&Node> {
+        if self.path.len() > 0 {
+            Some(&self.path[self.path.len() - 1].0)
+        } else {
+            None
+        }
     }
 }
 impl Default for Path {
