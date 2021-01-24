@@ -19,7 +19,6 @@ pub struct EguiRawInputAdaptor {
 impl EguiRawInputAdaptor {
     pub fn process_events(&mut self, events: &Vec<Event>, screen_size: Vector2<u32>) -> RawInput {
         self.frame_scroll = 0.0;
-        info!("screen size: {}", screen_size);
         for e in events.iter() {
             match e {
                 Event::MouseDown { .. } => {

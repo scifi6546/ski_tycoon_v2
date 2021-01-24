@@ -23,6 +23,9 @@ pub enum Event {
         delta_time_ms: f32,
         buttons_pressed: Vec<MouseButton>,
     },
+    ScreenSizeChange {
+        new_size: Vector2<u32>,
+    },
     Scroll {
         delta_y: f32,
         delta_time_ms: f32,
@@ -50,7 +53,15 @@ impl Event {
             "mouseup" => Self::from_mouseup(map),
             "wheel" => Some(Self::from_wheel_map(map)),
             "keypress" => Self::from_keypress(map),
+            "screen_size_change" => Some(Self::from_screen_size_change(map)),
             _ => panic!("invalid name"),
+        }
+    }
+    fn from_screen_size_change(map: JsMap) -> Self {
+        let x = map.get(&"x".into()).as_f64().unwrap() as u32;
+        let y = map.get(&"y".into()).as_f64().unwrap() as u32;
+        Self::ScreenSizeChange {
+            new_size: Vector2::new(x, y),
         }
     }
     fn from_mousedown(map: JsMap) -> Option<Self> {

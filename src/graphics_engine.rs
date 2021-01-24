@@ -86,7 +86,7 @@ impl WebGl {
         context.enable(WebGl2RenderingContext::DEPTH_TEST);
         Ok(Self { context })
     }
-    pub fn change_viewport(&self, screen_size: Vector2<u32>) -> Result<(), ErrorType> {
+    pub fn change_viewport(&self, screen_size: &Vector2<u32>) -> Result<(), ErrorType> {
         self.context
             .viewport(0, 0, screen_size.x as i32, screen_size.y as i32);
         Ok(())
@@ -359,6 +359,14 @@ impl WebGl {
             },
         })
     }
+    pub fn delete_depth_buffer(
+        &mut self,
+        texture: &mut RuntimeDepthTexture,
+    ) -> Result<(), ErrorType> {
+        self.context
+            .delete_texture(texture.texture.texture.as_ref());
+        Ok(())
+    }
     pub fn build_texture(
         &mut self,
         texture: Texture,
@@ -454,6 +462,14 @@ impl WebGl {
         // rebinding to default framebuffer to prevent side effects
         self.bind_default_framebuffer();
         Ok(WebFramebuffer { framebuffer })
+    }
+    pub fn delete_framebuffer(
+        &mut self,
+        framebuffer: &mut WebFramebuffer,
+    ) -> Result<(), ErrorType> {
+        self.context
+            .delete_framebuffer(framebuffer.framebuffer.as_ref());
+        Ok(())
     }
     pub fn bind_default_framebuffer(&mut self) {
         debug!("binding default framebuffer");

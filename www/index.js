@@ -82,8 +82,8 @@ document.getElementById("canvas").onresize = resize;
 document.onkeypress = press_putton;
 document.getElementById("canvas").onmousedown = on_mouse_down;
 document.getElementById("canvas").onmouseup = on_mouse_up;
-SCREEN_X_SIZE = document.body.clientWidth;
-SCREEN_Y_SIZE = document.body.clientHeight;
+SCREEN_X_SIZE = window.innerWidth;
+SCREEN_Y_SIZE = window.innerHeight;
 document.getElementById("canvas").width = SCREEN_X_SIZE;
 document.getElementById("canvas").height = SCREEN_Y_SIZE;
 console.log("loading game")
@@ -92,9 +92,30 @@ resolution_map.set("x", SCREEN_X_SIZE);
 resolution_map.set("y", SCREEN_Y_SIZE);
 
 let game = rust.init_game(resolution_map);
-
+console.log(window);
 console.log("loaded game")
 function render() {
+
+    let new_x_size = window.innerWidth;
+    let new_y_size = window.innerHeight;
+    if (new_x_size != SCREEN_X_SIZE || new_y_size != SCREEN_Y_SIZE) {
+        console.log("screen updated");
+        console.log(new_x_size);
+        console.log(SCREEN_X_SIZE);
+        console.log(new_y_size);
+        console.log(SCREEN_Y_SIZE);
+        let screen_update_map = new Map();
+        screen_update_map.set("name", "screen_size_change");
+        screen_update_map.set("x", new_x_size);
+        screen_update_map.set("y", new_y_size);
+        SCREEN_X_SIZE = new_x_size;
+        SCREEN_Y_SIZE = new_y_size;
+        document.getElementById("canvas").width = SCREEN_X_SIZE;
+        document.getElementById("canvas").height = SCREEN_Y_SIZE;
+        events.push(screen_update_map);
+
+    }
+
     let event_state = new Map();
     if (last_x === null) {
         event_state.set("position_x", 0.0);

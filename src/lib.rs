@@ -12,7 +12,7 @@ mod skiier;
 mod terrain;
 mod texture;
 mod utils;
-use graphics_engine::{Framebuffer, Mesh, Transform, WebGl};
+use graphics_engine::{Framebuffer, Mesh, RuntimeDepthTexture, Transform, WebGl};
 use js_sys::Array as JsArray;
 use log::{debug, info};
 use nalgebra::{Matrix4, Vector2, Vector3, Vector4};
@@ -55,14 +55,11 @@ use prelude::ShaderBind;
 struct Game {
     world: World,
     resources: Resources,
+    world_depth_texture: RuntimeDepthTexture,
     world_framebuffer: Framebuffer,
     world_render_surface: RuntimeModel,
-    screen_size: Vector2<u32>,
-    //egui_context: CtxRef,
-    //egui_adaptor: EguiRawInputAdaptor,
 }
 impl Game {
-    const DEFAULT_SCREEN_RESOLUTION: [u32; 2] = [1000, 1000];
     pub fn new(screen_size: Vector2<u32>) -> Result<Game, JsValue> {
         utils::set_panic_hook();
         let mut resources = Resources::default();
@@ -120,16 +117,18 @@ impl Game {
             Vector2::new(10, 10),
         )?;
         webgl.get_error();
-        let mut fb_texture = webgl.build_texture(
+        let mut world_framebuffer_texture = webgl.build_texture(
             RGBATexture::constant_color(Vector4::new(0, 0, 0, 0), screen_size),
             &shader_bind.get_bind(),
         )?;
-        let mut fb_depth = webgl.build_depth_texture(screen_size, &shader_bind.get_bind())?;
+        let mut world_depth_texture =
+            webgl.build_depth_texture(screen_size, &shader_bind.get_bind())?;
         let fb_mesh = webgl.build_mesh(Mesh::plane(), &shader_bind.get_bind())?;
-        let world_framebuffer = webgl.build_framebuffer(&mut fb_texture, &mut fb_depth)?;
+        let world_framebuffer =
+            webgl.build_framebuffer(&mut world_framebuffer_texture, &mut world_depth_texture)?;
         let world_render_surface = RuntimeModel {
             mesh: fb_mesh,
-            texture: fb_texture,
+            texture: world_framebuffer_texture,
         };
         webgl.get_error();
         info!("building skiiers");
@@ -156,7 +155,7 @@ impl Game {
             resources,
             world_framebuffer,
             world_render_surface,
-            screen_size,
+            world_depth_texture,
         };
         info!("built game successfully");
         Ok(g)
@@ -181,6 +180,47 @@ impl Game {
                             camera.rotate_phi(delta_x * 0.001 * delta_time_ms);
                             camera.rotate_theta(delta_y * 0.001 * delta_time_ms);
                         }
+                    }
+                    Event::ScreenSizeChange { new_size } => {
+                        let shader: &mut ShaderBind = &mut self.resources.get_mut().unwrap();
+                        shader.bind("screen");
+                        let gl: &mut WebGl = &mut self.resources.get_mut().unwrap();
+                        gl.change_viewport(new_size).expect("screen updated");
+                        let settings: &mut GraphicsSettings =
+                            &mut self.resources.get_mut().unwrap();
+                        settings.screen_size = new_size.clone();
+                        gl.delete_depth_buffer(&mut self.world_depth_texture)
+                            .expect("deleted old texture");
+                        gl.delete_texture(&mut self.world_render_surface.texture);
+                        gl.delete_mesh(&mut self.world_render_surface.mesh)
+                            .expect("failed to delete framebuffer mesh");
+                        gl.delete_framebuffer(&mut self.world_framebuffer)
+                            .expect("deleted old framebuffer");
+                        let mut world_framebuffer_texture = gl
+                            .build_texture(
+                                RGBATexture::constant_color(
+                                    Vector4::new(0, 0, 0, 0),
+                                    new_size.clone(),
+                                ),
+                                &shader.get_bind(),
+                            )
+                            .expect("failed to build new texture");
+                        let mut world_depth_texture = gl
+                            .build_depth_texture(new_size.clone(), &shader.get_bind())
+                            .expect("failed to build depth texture");
+                        let fb_mesh = gl
+                            .build_mesh(Mesh::plane(), &shader.get_bind())
+                            .expect("failed to build mesh");
+                        self.world_framebuffer = gl
+                            .build_framebuffer(
+                                &mut world_framebuffer_texture,
+                                &mut world_depth_texture,
+                            )
+                            .expect("failed to build framebuffer");
+                        self.world_render_surface = RuntimeModel {
+                            mesh: fb_mesh,
+                            texture: world_framebuffer_texture,
+                        };
                     }
                     Event::CameraMove { direction } => camera.translate(&(0.1 * direction)),
                     Event::Scroll {
@@ -247,13 +287,14 @@ impl Game {
             {
                 let egui_context = &mut self.resources.get_mut().unwrap();
                 let egui_adaptor = &mut self.resources.get_mut().unwrap();
+                let settings: &GraphicsSettings = &self.resources.get().unwrap();
                 gui::draw_gui(
                     egui_context,
                     &events,
                     gl,
                     shader,
                     egui_adaptor,
-                    self.screen_size,
+                    settings.screen_size,
                 )
                 .expect("successfully drew");
             }
