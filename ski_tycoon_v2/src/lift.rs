@@ -1,18 +1,18 @@
 use super::prelude::{
-    AssetManager, GraphLayer, GraphWeight, JsValue, LiftLayer, Model, Node, RuntimeModel,
-    ShaderBind, Texture, Transform, WebGl,
+    AssetManager, ErrorType, GraphLayer, GraphWeight, LiftLayer, Model, Node, RenderingContext,
+    RuntimeModel, ShaderBind, Texture, Transform,
 };
 use legion::*;
 use log::info;
 use nalgebra::{Vector2, Vector3, Vector4};
 pub fn insert_lift(
     world: &mut World,
-    graphics: &mut WebGl,
+    graphics: &mut RenderingContext,
     asset_manager: &mut AssetManager<RuntimeModel>,
     bound_shader: &ShaderBind,
     start_position: Vector2<i64>,
     end_position: Vector2<i64>,
-) -> Result<(), JsValue> {
+) -> Result<(), ErrorType> {
     let mut transform = Transform::default();
     transform.set_scale(Vector3::new(1.0, 1.0, 1.0));
     transform.set_translation(Vector3::new(

@@ -12,7 +12,9 @@ mod skiier;
 mod terrain;
 mod texture;
 mod utils;
-use graphics_engine::{Framebuffer, Mesh, RuntimeDepthTexture, Transform, WebGl};
+use graphics_engine::{
+    ErrorType, Framebuffer, InitContext, Mesh, RenderingContext, RuntimeDepthTexture, Transform,
+};
 use js_sys::Array as JsArray;
 use log::{debug, info};
 use nalgebra::{Matrix4, Vector2, Vector3, Vector4};
@@ -38,11 +40,11 @@ pub mod prelude {
         NodeFloat, Path,
     };
     pub use super::graphics_engine::{
-        ErrorType, Framebuffer, RuntimeMesh, RuntimeTexture, Shader, Transform, WebGl,
+        ErrorType, Framebuffer, ItemDesc, Mesh, RenderingContext, RuntimeMesh, RuntimeTexture,
+        Shader, Transform, Vertex,
     };
     pub type ShaderBind = super::Bindable<Shader>;
     pub use super::events::{Event, MouseButton};
-    pub use super::graphics_engine::{ItemDesc, Mesh, Vertex};
     pub use super::graphics_system::{RuntimeDebugMesh, RuntimeModel};
     pub use super::grid::Grid;
     pub use super::gui::{GuiModel, GuiRuntimeModel, GuiTransform};
@@ -52,7 +54,7 @@ pub mod prelude {
     pub use wasm_bindgen::prelude::JsValue;
 }
 use prelude::ShaderBind;
-struct Game {
+pub struct Game {
     world: World,
     resources: Resources,
     world_depth_texture: RuntimeDepthTexture,
@@ -60,11 +62,11 @@ struct Game {
     world_render_surface: RuntimeModel,
 }
 impl Game {
-    pub fn new(screen_size: Vector2<u32>) -> Result<Game, JsValue> {
+    pub fn new(screen_size: Vector2<u32>, init_context: &InitContext) -> Result<Game, ErrorType> {
         utils::set_panic_hook();
         let mut resources = Resources::default();
         let mut world = World::default();
-        let mut webgl = WebGl::new()?;
+        let mut webgl = RenderingContext::new(init_context)?;
         let mut shader_bind = Bindable::default();
         let mut model_manager = AssetManager::default();
         shader_bind.insert("world", webgl.build_world_shader()?);
@@ -184,7 +186,7 @@ impl Game {
                     Event::ScreenSizeChange { new_size } => {
                         let shader: &mut ShaderBind = &mut self.resources.get_mut().unwrap();
                         shader.bind("screen");
-                        let gl: &mut WebGl = &mut self.resources.get_mut().unwrap();
+                        let gl: &mut RenderingContext = &mut self.resources.get_mut().unwrap();
                         gl.change_viewport(new_size).expect("screen updated");
                         let settings: &mut GraphicsSettings =
                             &mut self.resources.get_mut().unwrap();
@@ -236,7 +238,7 @@ impl Game {
 
             //binding to world framebuffer and rendering to it
 
-            let gl: &mut WebGl = &mut self.resources.get_mut().unwrap();
+            let gl: &mut RenderingContext = &mut self.resources.get_mut().unwrap();
             gl.bind_framebuffer(&self.world_framebuffer);
             gl.clear_screen(Vector4::new(0.2, 0.2, 0.2, 1.0));
 
@@ -259,7 +261,7 @@ impl Game {
         }
         schedule.execute(&mut self.world, &mut self.resources);
         {
-            let gl: &mut WebGl = &mut self.resources.get_mut().unwrap();
+            let gl: &mut RenderingContext = &mut self.resources.get_mut().unwrap();
             gl.clear_depth();
         }
         let mut schedule = Schedule::builder()
@@ -269,7 +271,7 @@ impl Game {
         {
             //binding to world framebuffer and rendering to it
 
-            let gl: &mut WebGl = &mut self.resources.get_mut().unwrap();
+            let gl: &mut RenderingContext = &mut self.resources.get_mut().unwrap();
             let shader: &mut ShaderBind = &mut self.resources.get_mut().unwrap();
             shader.bind("screen");
             gl.bind_default_framebuffer();
@@ -308,10 +310,12 @@ impl Game {
         gui_schedule.execute(&mut self.world, &mut self.resources);
     }
 }
+#[cfg(target_arch = "wasm32")]
 #[wasm_bindgen]
 pub struct WebGame {
     game: Game,
 }
+#[cfg(target_arch = "wasm32")]
 #[wasm_bindgen]
 impl WebGame {
     #[wasm_bindgen]
@@ -347,14 +351,17 @@ impl ScreenResolution {
         Self { x, y }
     }
 }
-use js_sys::Map as JsMap;
 #[wasm_bindgen]
+#[cfg(target_arch = "wasm32")]
 pub fn init_game(resolution: JsMap) -> WebGame {
     console_log::init_with_level(Level::Info).expect("filed to init console_log");
-    let r = Game::new(Vector2::new(
-        resolution.get(&("x".into())).as_f64().unwrap() as u32,
-        resolution.get(&("y".into())).as_f64().unwrap() as u32,
-    ));
+    let r = Game::new(
+        Vector2::new(
+            resolution.get(&("x".into())).as_f64().unwrap() as u32,
+            resolution.get(&("y".into())).as_f64().unwrap() as u32,
+        ),
+        &(),
+    );
     if r.is_ok() {
         WebGame {
             game: r.ok().unwrap(),

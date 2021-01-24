@@ -1,6 +1,6 @@
 use super::prelude::{
-    AssetManager, Camera, ErrorType, GuiRuntimeModel, GuiTransform, Mesh, Model, RuntimeMesh,
-    RuntimeTexture, Shader, ShaderBind, Terrain, Transform, WebGl,
+    AssetManager, Camera, ErrorType, GuiRuntimeModel, GuiTransform, Mesh, Model, RenderingContext,
+    RuntimeMesh, RuntimeTexture, Shader, ShaderBind, Terrain, Transform,
 };
 use legion::*;
 use log::debug;
@@ -20,7 +20,7 @@ pub struct GraphicsSettings {
 impl RuntimeModel {
     pub fn new(
         model: &Model,
-        graphics: &mut WebGl,
+        graphics: &mut RenderingContext,
         bound_shader: &Shader,
     ) -> Result<Self, ErrorType> {
         let mesh = graphics.build_mesh(model.mesh.clone(), bound_shader)?;
@@ -29,7 +29,11 @@ impl RuntimeModel {
     }
 }
 impl RuntimeDebugMesh {
-    pub fn new(mesh: Mesh, graphics: &mut WebGl, bound_shader: &Shader) -> Result<Self, ErrorType> {
+    pub fn new(
+        mesh: Mesh,
+        graphics: &mut RenderingContext,
+        bound_shader: &Shader,
+    ) -> Result<Self, ErrorType> {
         let mesh = graphics.build_mesh(mesh, bound_shader)?;
         Ok(Self { mesh })
     }
@@ -37,7 +41,7 @@ impl RuntimeDebugMesh {
 pub fn insert_terrain(
     terrain: Terrain,
     world: &mut World,
-    graphics: &mut WebGl,
+    graphics: &mut RenderingContext,
     asset_manager: &mut AssetManager<RuntimeModel>,
     bound_shader: &Shader,
 ) -> Result<(), ErrorType> {
@@ -63,7 +67,7 @@ pub fn render_object(
     transform: &Transform,
     model: &RuntimeModel,
     #[resource] settings: &GraphicsSettings,
-    #[resource] webgl: &mut WebGl,
+    #[resource] webgl: &mut RenderingContext,
     #[resource] shader: &ShaderBind,
     #[resource] camera: &Camera,
 ) {
@@ -78,7 +82,7 @@ pub fn render_debug(
     transform: &Transform,
     model: &RuntimeDebugMesh,
     #[resource] settings: &GraphicsSettings,
-    #[resource] webgl: &mut WebGl,
+    #[resource] webgl: &mut RenderingContext,
     #[resource] shader: &ShaderBind,
     #[resource] camera: &Camera,
 ) {
@@ -90,7 +94,7 @@ pub fn render_debug(
 pub fn render_gui(
     transform: &GuiTransform,
     model: &GuiRuntimeModel,
-    #[resource] webgl: &mut WebGl,
+    #[resource] webgl: &mut RenderingContext,
     #[resource] shader: &ShaderBind,
 ) {
     debug!("running render object");

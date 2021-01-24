@@ -1,10 +1,15 @@
 mod mesh;
 mod shader;
+#[cfg(not(target_arch = "wasm32"))]
+mod vulkan;
+#[cfg(target_arch = "wasm32")]
 mod webgl;
-
 pub use mesh::{ItemDesc, Mesh, Vertex};
 use nalgebra::{Matrix4, Vector3};
 pub use shader::{Shader, ShaderText};
+#[cfg(not(target_arch = "wasm32"))]
+pub use vulkan::*;
+#[cfg(target_arch = "wasm32")]
 pub use webgl::*;
 #[derive(Debug, Clone)]
 pub struct Transform {

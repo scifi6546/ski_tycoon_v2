@@ -1,6 +1,7 @@
 pub use super::prelude;
 use super::prelude::{
-    ErrorType, Event, Mesh, Model, RuntimeModel, Shader, ShaderBind, Texture, Transform, WebGl,
+    ErrorType, Event, Mesh, Model, RenderingContext, RuntimeModel, Shader, ShaderBind, Texture,
+    Transform,
 };
 use legion::*;
 mod egui_integration;
@@ -34,7 +35,7 @@ impl GuiModel {
     pub fn insert(
         &self,
         world: &mut World,
-        webgl: &mut WebGl,
+        webgl: &mut RenderingContext,
         bound_shader: &Shader,
     ) -> Result<Entity, ErrorType> {
         let transform = GuiTransform {
@@ -61,7 +62,7 @@ pub fn init_gui(screen_size: Vector2<u32>) -> (CtxRef, EguiRawInputAdaptor) {
 pub fn draw_gui(
     context: &mut CtxRef,
     input: &Vec<Event>,
-    gl: &mut WebGl,
+    gl: &mut RenderingContext,
     shader: &mut ShaderBind,
     adaptor: &mut EguiRawInputAdaptor,
     screen_size: Vector2<u32>,

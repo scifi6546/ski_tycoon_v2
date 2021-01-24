@@ -36,8 +36,12 @@ log="^0.4"
 
 [target.'cfg(target_arch = "wasm32")'.dependencies]
 legion ={version= "0.3.1",default-features = false, features = ["wasm-bindgen","codegen"] }
+
+
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies]
 legion ={version= "0.3.1",default-features = true }
+ash = "0.31.0"
+winit = "0.24.0"
 [dependencies.web-sys]
 version = "0.3.4"
 features = [

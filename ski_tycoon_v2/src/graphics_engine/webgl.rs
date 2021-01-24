@@ -14,6 +14,8 @@ pub type RuntimeMesh = WebGlMesh;
 pub type RuntimeTexture = WebGlRenderTexture;
 pub type ErrorType = JsValue;
 pub type Framebuffer = WebFramebuffer;
+
+pub type InitContext = ();
 pub struct RuntimeDepthTexture {
     texture: RuntimeTexture,
 }
@@ -35,11 +37,12 @@ pub struct WebGlRenderTexture {
 pub struct WebFramebuffer {
     framebuffer: Option<WebGlFramebuffer>,
 }
-pub struct WebGl {
+pub struct RenderingContext {
     context: WebGl2RenderingContext,
 }
-impl WebGl {
-    pub fn new() -> Result<Self, ErrorType> {
+#[allow(dead_code)]
+impl RenderingContext {
+    pub fn new(_context: &InitContext) -> Result<Self, ErrorType> {
         debug!("creating webgl2 instance");
         let window = web_sys::window().unwrap();
         let document = window.document().unwrap();
@@ -560,4 +563,4 @@ impl WebGl {
 }
 
 /// Send can be implemented because threads do not exist in wasm
-unsafe impl Send for WebGl {}
+unsafe impl Send for RenderingContext {}

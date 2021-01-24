@@ -1,5 +1,5 @@
 use super::prelude::{
-    ErrorType, Event, ItemDesc, Mesh, ShaderBind, Texture as RGBATexture, Vertex, WebGl,
+    ErrorType, Event, ItemDesc, Mesh, RenderingContext, ShaderBind, Texture as RGBATexture, Vertex,
 };
 use egui::{
     math::{Pos2, Rect, Vec2},
@@ -62,7 +62,7 @@ impl Default for EguiRawInputAdaptor {
 pub fn draw_egui(
     paint_jobs: &PaintJobs,
     texture: &Arc<Texture>,
-    gl: &mut WebGl,
+    gl: &mut RenderingContext,
     shader: &ShaderBind,
     screen_size: &Vector2<u32>,
 ) -> Result<(), ErrorType> {

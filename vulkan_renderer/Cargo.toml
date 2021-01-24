@@ -9,3 +9,5 @@ edition = "2018"
 [dependencies]
 ash = "0.31.0"
 winit = "0.24.0"
+ski_tycoon_v2={path="../ski_tycoon_v2"}
+nalgebra = "0.23.1"

@@ -1,6 +1,6 @@
 use super::prelude::{
-    FollowPath, GraphLayer, GraphLayerList, JsValue, Model, Node, Path, RuntimeModel, ShaderBind,
-    Transform, WebGl,
+    ErrorType, FollowPath, GraphLayer, GraphLayerList, Model, Node, Path, RenderingContext,
+    RuntimeModel, ShaderBind, Transform,
 };
 mod behavior_tree;
 use behavior_tree::{Number, SearchStart, TreeNode};
@@ -16,10 +16,10 @@ struct DecisionDebugInfo {
 }
 pub fn build_skiier(
     world: &mut World,
-    graphics: &mut WebGl,
+    graphics: &mut RenderingContext,
     bound_shader: &ShaderBind,
     position: Vector2<i64>,
-) -> Result<(), JsValue> {
+) -> Result<(), ErrorType> {
     let tree_start: Box<dyn TreeNode> = Box::new(SearchStart::default());
     let layers: Vec<&GraphLayer> = <&GraphLayer>::query().iter(world).collect();
     let decisions = tree_start.best_path(4, &GraphLayerList::new(layers), Node { node: position });
