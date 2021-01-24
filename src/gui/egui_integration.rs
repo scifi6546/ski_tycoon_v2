@@ -17,7 +17,7 @@ pub struct EguiRawInputAdaptor {
     frame_scroll: f32,
 }
 impl EguiRawInputAdaptor {
-    pub fn process_events(&mut self, events: &Vec<Event>) -> RawInput {
+    pub fn process_events(&mut self, events: &Vec<Event>, screen_size: Vector2<u32>) -> RawInput {
         self.frame_scroll = 0.0;
         for e in events.iter() {
             match e {
@@ -45,7 +45,7 @@ impl EguiRawInputAdaptor {
         input.scroll_delta = Vec2::new(0.0, self.frame_scroll);
         input.screen_rect = Some(Rect {
             min: Pos2::new(0.0, 0.0),
-            max: Pos2::new(800.0, 800.0),
+            max: Pos2::new(screen_size.x as f32, screen_size.y as f32),
         });
         return input;
     }

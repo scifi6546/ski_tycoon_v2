@@ -69,9 +69,14 @@ function on_mouse_up(event) {
 
     events.push(mouse_event);
 }
+function resize(event) {
+    console.log("resized")
+    console.log(event);
+}
 document.getElementById("canvas").onclick = canvas_click;
 document.getElementById("canvas").onmousemove = mouse_move
 document.getElementById("canvas").onwheel = onwheel;
+document.getElementById("canvas").onresize = resize;
 document.onkeypress = press_putton;
 document.getElementById("canvas").onmousedown = on_mouse_down;
 document.getElementById("canvas").onmouseup = on_mouse_up;

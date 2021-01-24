@@ -50,10 +50,10 @@ struct Test<T: Clone> {
     t: T,
 }
 #[allow(unused_must_use)]
-pub fn init_gui() -> (CtxRef, EguiRawInputAdaptor) {
+pub fn init_gui(screen_size: Vector2<u32>) -> (CtxRef, EguiRawInputAdaptor) {
     let mut ctx = CtxRef::default();
     let mut adaptor = EguiRawInputAdaptor::default();
-    ctx.begin_frame(adaptor.process_events(&vec![]));
+    ctx.begin_frame(adaptor.process_events(&vec![], screen_size));
     //not painting because it is just in the init phase
     ctx.end_frame();
     (ctx, adaptor)
@@ -64,8 +64,9 @@ pub fn draw_gui(
     gl: &mut WebGl,
     shader: &mut ShaderBind,
     adaptor: &mut EguiRawInputAdaptor,
+    screen_size: Vector2<u32>,
 ) -> Result<(), ErrorType> {
-    context.begin_frame(adaptor.process_events(input));
+    context.begin_frame(adaptor.process_events(input, screen_size));
     let (_, commands) = context.end_frame();
     let paint_jobs = context.tesselate(commands);
     draw_egui(&paint_jobs, &context.texture(), gl, shader)?;

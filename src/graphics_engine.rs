@@ -560,7 +560,7 @@ impl WebGl {
         } else {
             Err(context
                 .get_program_info_log(&program)
-                .unwrap_or_else(|| String::from("Unknown error creating program object")))
+                .unwrap_or_else(|| String::from("Unknvhown error creating program object")))
         }
     }
     pub fn get_error(&self) {

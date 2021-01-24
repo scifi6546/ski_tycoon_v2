@@ -57,12 +57,18 @@ struct Game {
     resources: Resources,
     world_framebuffer: Framebuffer,
     world_render_surface: RuntimeModel,
+    screen_size: Vector2<u32>,
     //egui_context: CtxRef,
     //egui_adaptor: EguiRawInputAdaptor,
 }
 impl Game {
+    const DEFAULT_SCREEN_RESOLUTION: [u32; 2] = [1000, 1000];
     pub fn new() -> Result<Game, JsValue> {
         utils::set_panic_hook();
+        let screen_size = Vector2::new(
+            Self::DEFAULT_SCREEN_RESOLUTION[0],
+            Self::DEFAULT_SCREEN_RESOLUTION[1],
+        );
         let mut resources = Resources::default();
         let mut world = World::default();
         let mut webgl = WebGl::new()?;
@@ -103,7 +109,7 @@ impl Game {
         )?;
         webgl.get_error();
         insert_terrain(
-            Terrain::new_cone(Vector2::new(20, 20), Vector2::new(5.0, 5.0), 5.0, -1.0),
+            Terrain::new_cone(Vector2::new(20, 20), Vector2::new(10.0, 10.0), 5.0, -1.0),
             &mut world,
             &mut webgl,
             &mut model_manager,
@@ -119,11 +125,10 @@ impl Game {
         )?;
         webgl.get_error();
         let mut fb_texture = webgl.build_texture(
-            RGBATexture::constant_color(Vector4::new(0, 0, 0, 0), Vector2::new(800, 800)),
+            RGBATexture::constant_color(Vector4::new(0, 0, 0, 0), screen_size),
             &shader_bind.get_bind(),
         )?;
-        let mut fb_depth =
-            webgl.build_depth_texture(Vector2::new(800, 800), &shader_bind.get_bind())?;
+        let mut fb_depth = webgl.build_depth_texture(screen_size, &shader_bind.get_bind())?;
         let fb_mesh = webgl.build_mesh(Mesh::plane(), &shader_bind.get_bind())?;
         let world_framebuffer = webgl.build_framebuffer(&mut fb_texture, &mut fb_depth)?;
         let world_render_surface = RuntimeModel {
@@ -140,7 +145,7 @@ impl Game {
         resources.insert(webgl);
         resources.insert(shader_bind);
         resources.insert(Camera::new(Vector3::new(0.0, 0.0, 0.0), 20.0, 1.0, 1.0));
-        let (egui_context, egui_adaptor) = gui::init_gui();
+        let (egui_context, egui_adaptor) = gui::init_gui(screen_size);
         resources.insert(egui_context);
         resources.insert(egui_adaptor);
         resources.insert(model_manager);
@@ -152,8 +157,7 @@ impl Game {
             resources,
             world_framebuffer,
             world_render_surface,
-            //egui_adaptor,
-            //egui_context,
+            screen_size,
         };
         info!("built game successfully");
         Ok(g)
@@ -244,8 +248,15 @@ impl Game {
             {
                 let egui_context = &mut self.resources.get_mut().unwrap();
                 let egui_adaptor = &mut self.resources.get_mut().unwrap();
-                gui::draw_gui(egui_context, &events, gl, shader, egui_adaptor)
-                    .expect("successfully drew");
+                gui::draw_gui(
+                    egui_context,
+                    &events,
+                    gl,
+                    shader,
+                    egui_adaptor,
+                    self.screen_size,
+                )
+                .expect("successfully drew");
             }
             shader.bind("screen");
             //getting screen shader
