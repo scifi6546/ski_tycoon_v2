@@ -1,3 +1,3 @@
 [workspace]
-members=["ski_tycoon_v2"]
+members=["ski_tycoon_v2","vulkan_renderer"]
 resolver = "2"
