@@ -21,7 +21,7 @@
     "webpack"
   ],
   "dependencies": {
-    "rust": "file:../pkg"
+    "rust": "file:../ski_tycoon_v2/pkg"
   },
   "author": "Ashley Williams <ashley666ashley@gmail.com>",
   "license": "(MIT OR Apache-2.0)",
