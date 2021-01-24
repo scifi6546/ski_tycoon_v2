@@ -4,6 +4,7 @@ use super::prelude::{
 };
 use legion::*;
 use log::debug;
+use nalgebra::Vector2;
 #[derive(Clone)]
 pub struct RuntimeModel {
     pub mesh: RuntimeMesh,
@@ -12,6 +13,9 @@ pub struct RuntimeModel {
 /// Used for printing debug info
 pub struct RuntimeDebugMesh {
     mesh: RuntimeMesh,
+}
+pub struct GraphicsSettings {
+    pub screen_size: Vector2<u32>,
 }
 impl RuntimeModel {
     pub fn new(
@@ -58,13 +62,14 @@ pub fn insert_terrain(
 pub fn render_object(
     transform: &Transform,
     model: &RuntimeModel,
+    #[resource] settings: &GraphicsSettings,
     #[resource] webgl: &mut WebGl,
     #[resource] shader: &ShaderBind,
     #[resource] camera: &Camera,
 ) {
     debug!("running render object");
     webgl.bind_texture(&model.texture, shader.get_bind());
-    webgl.send_view_matrix(camera.get_matrix(), shader.get_bind());
+    webgl.send_view_matrix(camera.get_matrix(settings.screen_size), shader.get_bind());
     webgl.send_model_matrix(transform.build().clone(), shader.get_bind());
     webgl.draw_mesh(&model.mesh);
 }
@@ -72,12 +77,13 @@ pub fn render_object(
 pub fn render_debug(
     transform: &Transform,
     model: &RuntimeDebugMesh,
+    #[resource] settings: &GraphicsSettings,
     #[resource] webgl: &mut WebGl,
     #[resource] shader: &ShaderBind,
     #[resource] camera: &Camera,
 ) {
     webgl.send_model_matrix(transform.build().clone(), shader.get_bind());
-    webgl.send_view_matrix(camera.get_matrix(), shader.get_bind());
+    webgl.send_view_matrix(camera.get_matrix(settings.screen_size), shader.get_bind());
     webgl.draw_lines(&model.mesh);
 }
 #[system(for_each)]

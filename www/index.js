@@ -80,8 +80,17 @@ document.getElementById("canvas").onresize = resize;
 document.onkeypress = press_putton;
 document.getElementById("canvas").onmousedown = on_mouse_down;
 document.getElementById("canvas").onmouseup = on_mouse_up;
+let screen_x = document.body.clientWidth;
+let screen_y = document.body.clientHeight;
+document.getElementById("canvas").width = screen_x;
+document.getElementById("canvas").height = screen_y;
 console.log("loading game")
-let game = rust.init_game();
+let resolution_map = new Map();
+resolution_map.set("x", screen_x);
+resolution_map.set("y", screen_y);
+
+let game = rust.init_game(resolution_map);
+
 console.log("loaded game")
 function render() {
     let event_state = new Map();

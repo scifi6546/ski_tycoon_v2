@@ -24,7 +24,7 @@ use camera::Camera;
 use asset_manager::AssetManager;
 use events::{Event, MouseButton};
 use graph::graph_debug;
-use graphics_system::{insert_terrain, RuntimeModel};
+use graphics_system::{insert_terrain, GraphicsSettings, RuntimeModel};
 use gui::GuiModel;
 use legion::*;
 use lift::insert_lift;
@@ -63,12 +63,8 @@ struct Game {
 }
 impl Game {
     const DEFAULT_SCREEN_RESOLUTION: [u32; 2] = [1000, 1000];
-    pub fn new() -> Result<Game, JsValue> {
+    pub fn new(screen_size: Vector2<u32>) -> Result<Game, JsValue> {
         utils::set_panic_hook();
-        let screen_size = Vector2::new(
-            Self::DEFAULT_SCREEN_RESOLUTION[0],
-            Self::DEFAULT_SCREEN_RESOLUTION[1],
-        );
         let mut resources = Resources::default();
         let mut world = World::default();
         let mut webgl = WebGl::new()?;
@@ -144,6 +140,9 @@ impl Game {
         webgl.get_error();
         resources.insert(webgl);
         resources.insert(shader_bind);
+        resources.insert(GraphicsSettings {
+            screen_size: screen_size.clone(),
+        });
         resources.insert(Camera::new(Vector3::new(0.0, 0.0, 0.0), 20.0, 1.0, 1.0));
         let (egui_context, egui_adaptor) = gui::init_gui(screen_size);
         resources.insert(egui_context);
@@ -297,12 +296,27 @@ impl WebGame {
 static ALLOC: wee_alloc::WeeAlloc = wee_alloc::WeeAlloc::INIT;
 use log::Level;
 #[wasm_bindgen]
-pub fn init_game() -> WebGame {
+pub struct ScreenResolution {
+    pub x: u32,
+    pub y: u32,
+}
+#[wasm_bindgen]
+impl ScreenResolution {
+    pub fn new(x: u32, y: u32) -> Self {
+        Self { x, y }
+    }
+}
+use js_sys::Map as JsMap;
+#[wasm_bindgen]
+pub fn init_game(resolution: JsMap) -> WebGame {
     console_log::init_with_level(Level::Info).expect("filed to init console_log");
-    let r = Game::new();
+    let r = Game::new(Vector2::new(
+        resolution.get(&("x".into())).as_f64().unwrap() as u32,
+        resolution.get(&("y".into())).as_f64().unwrap() as u32,
+    ));
     if r.is_ok() {
         WebGame {
-            game: Game::new().ok().unwrap(),
+            game: r.ok().unwrap(),
         }
     } else {
         debug!("create failed");
