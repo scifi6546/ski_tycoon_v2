@@ -69,7 +69,7 @@ pub fn draw_gui(
     context.begin_frame(adaptor.process_events(input, screen_size));
     let (_, commands) = context.end_frame();
     let paint_jobs = context.tesselate(commands);
-    draw_egui(&paint_jobs, &context.texture(), gl, shader)?;
+    draw_egui(&paint_jobs, &context.texture(), gl, shader, &screen_size)?;
     Ok(())
 }
 pub fn insert_ui(context: &mut CtxRef) {

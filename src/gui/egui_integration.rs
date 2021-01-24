@@ -19,6 +19,7 @@ pub struct EguiRawInputAdaptor {
 impl EguiRawInputAdaptor {
     pub fn process_events(&mut self, events: &Vec<Event>, screen_size: Vector2<u32>) -> RawInput {
         self.frame_scroll = 0.0;
+        info!("screen size: {}", screen_size);
         for e in events.iter() {
             match e {
                 Event::MouseDown { .. } => {
@@ -64,6 +65,7 @@ pub fn draw_egui(
     texture: &Arc<Texture>,
     gl: &mut WebGl,
     shader: &ShaderBind,
+    screen_size: &Vector2<u32>,
 ) -> Result<(), ErrorType> {
     let pixels = texture
         .srgba_pixels()
@@ -82,6 +84,7 @@ pub fn draw_egui(
                 .map(|i| triangles.vertices[*i as usize])
                 .collect(),
             depth,
+            screen_size,
         );
         let mut runtime_mesh = gl.build_mesh(
             Mesh {
@@ -101,12 +104,14 @@ pub fn draw_egui(
     gl.delete_texture(&mut render_texture);
     Ok(())
 }
-fn to_vertex(vertex_list: &Vec<EguiVertex>, depth: f32) -> Vec<Vertex> {
+fn to_vertex(vertex_list: &Vec<EguiVertex>, depth: f32, screen_size: &Vector2<u32>) -> Vec<Vertex> {
     let mut vertices = vec![];
+    let screen_x = screen_size.x as f32 / 2.0;
+    let screen_y = screen_size.y as f32 / 2.0;
     for vertex in vertex_list.iter() {
         let position = Vector3::new(
-            vertex.pos.x / 400.0 - 1.0,
-            -1.0 * vertex.pos.y / 400.0 + 1.0,
+            vertex.pos.x / screen_x - 1.0,
+            -1.0 * vertex.pos.y / screen_y + 1.0,
             depth,
         );
         let uv = Vector2::new(vertex.uv.x, vertex.uv.y);

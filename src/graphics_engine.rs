@@ -86,6 +86,11 @@ impl WebGl {
         context.enable(WebGl2RenderingContext::DEPTH_TEST);
         Ok(Self { context })
     }
+    pub fn change_viewport(&self, screen_size: Vector2<u32>) -> Result<(), ErrorType> {
+        self.context
+            .viewport(0, 0, screen_size.x as i32, screen_size.y as i32);
+        Ok(())
+    }
     pub fn build_world_shader(&mut self) -> Result<Shader, ErrorType> {
         Ok(self.build_shader(shader_library::WORLD_SHADER)?)
     }

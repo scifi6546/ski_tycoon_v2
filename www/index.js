@@ -4,6 +4,8 @@ let last_y = null;
 let last_time = new Date();
 let wheel_last_time = new Date();
 let events = []
+let SCREEN_X_SIZE = 0;
+let SCREEN_Y_SIZE = 0;
 function canvas_click() {
     console.log("clicked??")
     //document.getElementById("canvas").requestPointerLock();
@@ -80,14 +82,14 @@ document.getElementById("canvas").onresize = resize;
 document.onkeypress = press_putton;
 document.getElementById("canvas").onmousedown = on_mouse_down;
 document.getElementById("canvas").onmouseup = on_mouse_up;
-let screen_x = document.body.clientWidth;
-let screen_y = document.body.clientHeight;
-document.getElementById("canvas").width = screen_x;
-document.getElementById("canvas").height = screen_y;
+SCREEN_X_SIZE = document.body.clientWidth;
+SCREEN_Y_SIZE = document.body.clientHeight;
+document.getElementById("canvas").width = SCREEN_X_SIZE;
+document.getElementById("canvas").height = SCREEN_Y_SIZE;
 console.log("loading game")
 let resolution_map = new Map();
-resolution_map.set("x", screen_x);
-resolution_map.set("y", screen_y);
+resolution_map.set("x", SCREEN_X_SIZE);
+resolution_map.set("y", SCREEN_Y_SIZE);
 
 let game = rust.init_game(resolution_map);
 
