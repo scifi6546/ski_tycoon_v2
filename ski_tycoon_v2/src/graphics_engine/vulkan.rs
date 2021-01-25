@@ -59,6 +59,43 @@ impl RenderingContext {
                 .create_instance(&create_info, None)
                 .expect("Error in creating instance")
         };
+
+        let surface = unsafe {
+            ash_window::create_surface(&entry, &instance, window, None)
+                .expect("could not create surface")
+        };
+        let surface_loader = Surface::new(&entry, &instance);
+        unsafe {
+            let (physical_device, queue_family_index) = instance
+                .enumerate_physical_devices()
+                .expect("Could not find physical device")
+                .iter()
+                .filter_map(|pdevice| {
+                    instance
+                        .get_physical_device_queue_family_properties(*pdevice)
+                        .iter()
+                        .enumerate()
+                        .filter_map(|(index, ref info)| {
+                            let supports_graphic_and_surface =
+                                info.queue_flags.contains(vk::QueueFlags::GRAPHICS)
+                                    && surface_loader
+                                        .get_physical_device_surface_support(
+                                            *pdevice,
+                                            index as u32,
+                                            surface,
+                                        )
+                                        .unwrap();
+                            if supports_graphic_and_surface {
+                                Some((*pdevice, index))
+                            } else {
+                                None
+                            }
+                        })
+                        .next()
+                })
+                .next()
+                .expect("Could Not find a sutioble device");
+        }
         Ok(Self { entry, instance })
     }
     pub fn change_viewport(&self, screen_size: &Vector2<u32>) -> Result<(), ErrorType> {
