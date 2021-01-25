@@ -9,7 +9,9 @@ pub use super::shader::{Shader, ShaderText};
 use super::Mesh;
 use ash::version::{DeviceV1_0, EntryV1_0, InstanceV1_0};
 use ash::{vk, Device, Entry, Instance};
+
 use nalgebra::{Matrix4, Vector2, Vector3, Vector4};
+use std::ffi::{CStr, CString};
 use winit::window::Window;
 #[derive(Clone)]
 pub struct RuntimeMesh {}
@@ -22,11 +24,42 @@ pub struct Framebuffer {}
 pub struct RuntimeDepthTexture {
     texture: RuntimeTexture,
 }
-pub struct RenderingContext {}
+pub struct RenderingContext {
+    entry: Entry,
+    instance: Instance,
+}
 pub type InitContext = Window;
 impl RenderingContext {
-    pub fn new(context: &Window) -> Result<Self, ErrorType> {
-        todo!()
+    const APP_NAME: &'static str = "Ski Tycoon";
+    const LAYER_NAMES: &'static [&'static [u8]] = &[b"VK_LAYER_KHRONOS_validation\0"];
+    pub fn new(window: &Window) -> Result<Self, ErrorType> {
+        let entry = Entry::new().unwrap();
+        let app_name = CString::new(Self::APP_NAME).expect("created app name");
+        let application_info = vk::ApplicationInfo::builder()
+            .application_name(&app_name)
+            .application_version(0)
+            .engine_name(&app_name)
+            .engine_version(0)
+            .api_version(vk::make_version(1, 0, 0));
+        let required_extensions: Vec<*const i8> = ash_window::enumerate_required_extensions(window)
+            .unwrap()
+            .iter()
+            .map(|ext| ext.as_ptr())
+            .collect();
+        let layers: Vec<*const i8> = Self::LAYER_NAMES
+            .iter()
+            .map(|s| s.as_ptr() as *const i8)
+            .collect();
+        let create_info = vk::InstanceCreateInfo::builder()
+            .application_info(&application_info)
+            .enabled_layer_names(&layers)
+            .enabled_extension_names(&required_extensions);
+        let instance = unsafe {
+            entry
+                .create_instance(&create_info, None)
+                .expect("Error in creating instance")
+        };
+        Ok(Self { entry, instance })
     }
     pub fn change_viewport(&self, screen_size: &Vector2<u32>) -> Result<(), ErrorType> {
         todo!()
