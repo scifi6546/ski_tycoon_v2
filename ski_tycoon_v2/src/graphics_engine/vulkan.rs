@@ -46,6 +46,15 @@ impl RenderingContext {
             .iter()
             .map(|ext| ext.as_ptr())
             .collect();
+        for e in ash_window::enumerate_required_extensions(window)
+            .unwrap()
+            .iter()
+        {
+            println!(
+                "requires extension: {}",
+                e.to_str().expect("extension invalid utf")
+            );
+        }
         let layers: Vec<*const i8> = Self::LAYER_NAMES
             .iter()
             .map(|s| s.as_ptr() as *const i8)
@@ -95,7 +104,25 @@ impl RenderingContext {
                 })
                 .next()
                 .expect("Could Not find a sutioble device");
+            let priorities = [1.0];
+            let queue_info = [vk::DeviceQueueCreateInfo::builder()
+                .queue_family_index(queue_family_index as u32)
+                .queue_priorities(&priorities)
+                .build()];
+            let features = vk::PhysicalDeviceFeatures {
+                shader_clip_distance: 1,
+                ..Default::default()
+            };
+            let device_create_info = vk::DeviceCreateInfo::builder()
+                .queue_create_infos(&queue_info)
+                .enabled_extension_names(&required_extensions)
+                .enabled_features(&features);
+            let logical_device = instance
+                .create_device(physical_device, &device_create_info, None)
+                .expect("failed to create logical device");
+            let present_queue = logical_device.get_device_queue(queue_family_index as u32, 0);
         }
+
         Ok(Self { entry, instance })
     }
     pub fn change_viewport(&self, screen_size: &Vector2<u32>) -> Result<(), ErrorType> {
