@@ -1,9 +1,10 @@
 use super::super::prelude::Texture;
-use super::shader::{shader_library, RuntimeAttribute};
-pub use super::shader::{Shader, ShaderText};
+use shader::{shader_library, RuntimeAttribute};
+mod shader;
 use super::Mesh;
 use log::{debug, error, info};
 use nalgebra::{Matrix4, Vector2, Vector3, Vector4};
+pub use shader::{Shader, ShaderText};
 use std::collections::HashMap;
 use wasm_bindgen::{JsCast, JsValue};
 use web_sys::{

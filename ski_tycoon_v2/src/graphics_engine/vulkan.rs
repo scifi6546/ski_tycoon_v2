@@ -5,7 +5,6 @@ use ash::extensions::{
     khr::{Surface, Swapchain},
 };
 
-pub use super::shader::{Shader, ShaderText};
 use super::Mesh;
 use ash::version::{DeviceV1_0, EntryV1_0, InstanceV1_0};
 use ash::{vk, Device, Entry, Instance};
@@ -28,6 +27,7 @@ pub struct RenderingContext {
     entry: Entry,
     instance: Instance,
 }
+pub struct Shader {}
 pub type InitContext = Window;
 impl RenderingContext {
     const APP_NAME: &'static str = "Ski Tycoon";
@@ -41,15 +41,10 @@ impl RenderingContext {
             .engine_name(&app_name)
             .engine_version(0)
             .api_version(vk::make_version(1, 0, 0));
-        let required_extensions: Vec<*const i8> = ash_window::enumerate_required_extensions(window)
-            .unwrap()
-            .iter()
-            .map(|ext| ext.as_ptr())
-            .collect();
-        for e in ash_window::enumerate_required_extensions(window)
-            .unwrap()
-            .iter()
-        {
+        let required_extensions = ash_window::enumerate_required_extensions(window).unwrap();
+        let required_extensions_raw: Vec<*const i8> =
+            required_extensions.iter().map(|ext| ext.as_ptr()).collect();
+        for e in required_extensions.iter() {
             println!(
                 "requires extension: {}",
                 e.to_str().expect("extension invalid utf")
@@ -62,7 +57,7 @@ impl RenderingContext {
         let create_info = vk::InstanceCreateInfo::builder()
             .application_info(&application_info)
             .enabled_layer_names(&layers)
-            .enabled_extension_names(&required_extensions);
+            .enabled_extension_names(&required_extensions_raw);
         let instance = unsafe {
             entry
                 .create_instance(&create_info, None)
@@ -113,9 +108,10 @@ impl RenderingContext {
                 shader_clip_distance: 1,
                 ..Default::default()
             };
+            let device_extension_names_raw = [Swapchain::name().as_ptr()];
             let device_create_info = vk::DeviceCreateInfo::builder()
                 .queue_create_infos(&queue_info)
-                .enabled_extension_names(&required_extensions)
+                .enabled_extension_names(&device_extension_names_raw)
                 .enabled_features(&features);
             let logical_device = instance
                 .create_device(physical_device, &device_create_info, None)
