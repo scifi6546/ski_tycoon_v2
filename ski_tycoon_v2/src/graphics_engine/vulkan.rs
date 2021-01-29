@@ -1,4 +1,5 @@
 // Vulkan frontent rendering engine
+mod shader;
 use super::super::prelude::Texture;
 use ash::extensions::{
     ext::DebugUtils,
@@ -7,7 +8,7 @@ use ash::extensions::{
 
 use super::Mesh;
 use ash::version::{DeviceV1_0, EntryV1_0, InstanceV1_0};
-use ash::{vk, Device, Entry, Instance};
+use ash::{vk, Device,Surface, Entry, Instance};
 
 use nalgebra::{Matrix4, Vector2, Vector3, Vector4};
 use std::ffi::{CStr, CString};
@@ -16,8 +17,7 @@ use winit::window::Window;
 pub struct RuntimeMesh {}
 #[derive(Clone)]
 pub struct RuntimeTexture {}
-#[derive(Debug)]
-pub struct ErrorType {}
+pub type ErrorType = ash::vk::Result;
 pub struct Framebuffer {}
 
 pub struct RuntimeDepthTexture {
@@ -26,6 +26,8 @@ pub struct RuntimeDepthTexture {
 pub struct RenderingContext {
     entry: Entry,
     instance: Instance,
+    logical_device: Device,
+    surface, Surface,
 }
 pub struct Shader {}
 pub type InitContext = Window;
@@ -117,14 +119,31 @@ impl RenderingContext {
                 .create_device(physical_device, &device_create_info, None)
                 .expect("failed to create logical device");
             let present_queue = logical_device.get_device_queue(queue_family_index as u32, 0);
-        }
 
-        Ok(Self { entry, instance })
+
+            Ok(Self {
+                entry,
+                instance,
+                logical_device,
+            })
+        }
     }
     pub fn change_viewport(&self, screen_size: &Vector2<u32>) -> Result<(), ErrorType> {
         todo!()
     }
     pub fn build_world_shader(&mut self) -> Result<Shader, ErrorType> {
+        let world_shader = shader::get_world();
+        let frag_create_info =
+            vk::ShaderModuleCreateInfo::builder().code(&world_shader.fragment_shader_data);
+        let vert_create_info =
+            vk::ShaderModuleCreateInfo::builder().code(&world_shader.vertex_shader_data);
+
+        unsafe {
+            self.logical_device
+                .create_shader_module(&frag_create_info, None)?;
+            self.logical_device
+                .create_shader_module(&vert_create_info, None)?;
+        }
         todo!()
     }
     /// Builds shader used for screenspace
