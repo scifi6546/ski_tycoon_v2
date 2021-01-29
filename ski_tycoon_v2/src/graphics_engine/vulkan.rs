@@ -1,14 +1,14 @@
 // Vulkan frontent rendering engine
 mod shader;
 use super::super::prelude::Texture;
+use super::Mesh;
 use ash::extensions::{
     ext::DebugUtils,
     khr::{Surface, Swapchain},
 };
-
-use super::Mesh;
 use ash::version::{DeviceV1_0, EntryV1_0, InstanceV1_0};
-use ash::{vk, Device,Surface, Entry, Instance};
+use ash::{vk, Device, Entry, Instance};
+use std::cmp::min;
 
 use nalgebra::{Matrix4, Vector2, Vector3, Vector4};
 use std::ffi::{CStr, CString};
@@ -27,7 +27,9 @@ pub struct RenderingContext {
     entry: Entry,
     instance: Instance,
     logical_device: Device,
-    surface, Surface,
+    surface: vk::SurfaceKHR,
+    swapchain: vk::SwapchainKHR,
+    present_queue: vk::Queue,
 }
 pub struct Shader {}
 pub type InitContext = Window;
@@ -119,12 +121,63 @@ impl RenderingContext {
                 .create_device(physical_device, &device_create_info, None)
                 .expect("failed to create logical device");
             let present_queue = logical_device.get_device_queue(queue_family_index as u32, 0);
-
-
+            let surface_format = surface_loader
+                .get_physical_device_surface_formats(physical_device, surface)
+                .unwrap()[0];
+            let surface_capabilities = surface_loader
+                .get_physical_device_surface_capabilities(physical_device, surface)?;
+            let desired_image_count = min(
+                surface_capabilities.min_image_count + 1,
+                surface_capabilities.max_image_count,
+            );
+            let surface_resolution = match surface_capabilities.current_extent.width {
+                std::u32::MAX => vk::Extent2D {
+                    width: window.inner_size().width,
+                    height: window.inner_size().height,
+                },
+                _ => surface_capabilities.current_extent,
+            };
+            let pre_transform = if surface_capabilities
+                .supported_transforms
+                .contains(vk::SurfaceTransformFlagsKHR::IDENTITY)
+            {
+                vk::SurfaceTransformFlagsKHR::IDENTITY
+            } else {
+                surface_capabilities.current_transform
+            };
+            let present_modes = surface_loader
+                .get_physical_device_surface_present_modes(physical_device, surface)
+                .unwrap();
+            let present_mode = present_modes
+                .iter()
+                .cloned()
+                .find(|&mode| mode == vk::PresentModeKHR::MAILBOX)
+                .unwrap_or(vk::PresentModeKHR::FIFO);
+            let swapchain_loader = Swapchain::new(&instance, &logical_device);
+            let swapchain_create_info = vk::SwapchainCreateInfoKHR::builder()
+                .surface(surface)
+                .min_image_count(desired_image_count)
+                .image_color_space(surface_format.color_space)
+                .image_format(surface_format.format)
+                .image_extent(surface_resolution)
+                .image_usage(vk::ImageUsageFlags::COLOR_ATTACHMENT)
+                .image_sharing_mode(vk::SharingMode::EXCLUSIVE)
+                .pre_transform(pre_transform)
+                .composite_alpha(vk::CompositeAlphaFlagsKHR::OPAQUE)
+                .present_mode(present_mode)
+                .clipped(true)
+                .image_array_layers(1);
+            let swapchain = swapchain_loader
+                .create_swapchain(&swapchain_create_info, None)
+                .unwrap();
+            println!("desired image count: {}", desired_image_count);
             Ok(Self {
                 entry,
                 instance,
                 logical_device,
+                surface,
+                swapchain,
+                present_queue,
             })
         }
     }

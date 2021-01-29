@@ -17,7 +17,7 @@ fn main() {
         ))
         .build(&event_loop)
         .unwrap();
-    let game = Game::new(Vector2::new(DEFAULT_SIZE[0], DEFAULT_SIZE[1]), &window);
+    let _game = Game::new(Vector2::new(DEFAULT_SIZE[0], DEFAULT_SIZE[1]), &window);
     event_loop.run(move |event, _, control_flow| {
         *control_flow = ControlFlow::Wait;
 
