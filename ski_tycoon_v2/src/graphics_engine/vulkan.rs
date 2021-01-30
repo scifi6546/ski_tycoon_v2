@@ -31,7 +31,10 @@ pub struct RenderingContext {
     swapchain: vk::SwapchainKHR,
     present_queue: vk::Queue,
 }
-pub struct Shader {}
+pub struct Shader {
+    fragment_shader: vk::ShaderModule,
+    vertex_shader: vk::ShaderModule,
+}
 pub type InitContext = Window;
 impl RenderingContext {
     unsafe fn is_device_sutible(
@@ -206,13 +209,18 @@ impl RenderingContext {
         let vert_create_info =
             vk::ShaderModuleCreateInfo::builder().code(&world_shader.vertex_shader_data);
 
-        unsafe {
-            self.logical_device
-                .create_shader_module(&frag_create_info, None)?;
-            self.logical_device
-                .create_shader_module(&vert_create_info, None)?;
-        }
-        todo!()
+        let (vertex_shader, fragment_shader) = unsafe {
+            (
+                self.logical_device
+                    .create_shader_module(&frag_create_info, None)?,
+                self.logical_device
+                    .create_shader_module(&vert_create_info, None)?,
+            )
+        };
+        Ok(Shader {
+            vertex_shader,
+            fragment_shader,
+        })
     }
     /// Builds shader used for screenspace
     pub fn build_screen_shader(&mut self) -> Result<Shader, ErrorType> {
