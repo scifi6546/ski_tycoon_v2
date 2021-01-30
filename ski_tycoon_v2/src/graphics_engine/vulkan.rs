@@ -30,6 +30,7 @@ pub struct RenderingContext {
     surface: vk::SurfaceKHR,
     swapchain: vk::SwapchainKHR,
     present_queue: vk::Queue,
+    pipeline: vk::PipelineLayout,
 }
 pub struct Shader {
     fragment_shader: vk::ShaderModule,
@@ -74,6 +75,8 @@ impl RenderingContext {
     const APP_NAME: &'static str = "Ski Tycoon";
     const LAYER_NAMES: &'static [&'static [u8]] = &[b"VK_LAYER_KHRONOS_validation\0"];
     pub fn new(window: &Window) -> Result<Self, ErrorType> {
+        let width = window.inner_size().width;
+        let height = window.inner_size().height;
         let entry = Entry::new().unwrap();
         let app_name = CString::new(Self::APP_NAME).expect("created app name");
         let application_info = vk::ApplicationInfo::builder()
@@ -188,6 +191,84 @@ impl RenderingContext {
             let swapchain = swapchain_loader
                 .create_swapchain(&swapchain_create_info, None)
                 .unwrap();
+            let create_pipeline = |width, height, logical_device: &Device| {
+                let vertex_input = vk::PipelineVertexInputStateCreateInfo::builder()
+                    .vertex_attribute_descriptions(&[])
+                    .vertex_attribute_descriptions(&[]);
+                let input_assembly = vk::PipelineInputAssemblyStateCreateInfo::builder()
+                    .topology(vk::PrimitiveTopology::TRIANGLE_LIST)
+                    .primitive_restart_enable(false);
+                let viewport = vk::Viewport {
+                    x: 0.0,
+                    y: 0.0,
+                    width,
+                    height,
+                    min_depth: 0.0,
+                    max_depth: 0.0,
+                };
+                let scissor = vk::Rect2D {
+                    offset: vk::Offset2D { x: 0, y: 0 },
+                    extent: surface_resolution,
+                };
+                let viewport_state = vk::PipelineViewportStateCreateInfo::builder()
+                    .viewports(&[viewport])
+                    .scissors(&[scissor]);
+                let rasterizer = vk::PipelineRasterizationStateCreateInfo::builder()
+                    .depth_clamp_enable(false)
+                    .rasterizer_discard_enable(false)
+                    .polygon_mode(vk::PolygonMode::FILL)
+                    .line_width(1.0)
+                    .cull_mode(vk::CullModeFlags::BACK)
+                    .front_face(vk::FrontFace::CLOCKWISE)
+                    .depth_bias_enable(false)
+                    .depth_bias_constant_factor(0.0)
+                    .depth_bias_clamp(0.0)
+                    .depth_bias_slope_factor(0.0);
+                let multi_sampling = vk::PipelineMultisampleStateCreateInfo::builder()
+                    .sample_shading_enable(false)
+                    .rasterization_samples(vk::SampleCountFlags::TYPE_1);
+                let color_blend_attachment = vk::PipelineColorBlendAttachmentState::builder()
+                    .color_write_mask(
+                        vk::ColorComponentFlags::R
+                            | vk::ColorComponentFlags::G
+                            | vk::ColorComponentFlags::B
+                            | vk::ColorComponentFlags::A,
+                    )
+                    .blend_enable(false);
+                let color_blending = vk::PipelineColorBlendStateCreateInfo::builder()
+                    .logic_op_enable(false)
+                    .attachments(&[color_blend_attachment.build()]);
+                let pipeline_layout = vk::PipelineLayoutCreateInfo::builder();
+                logical_device.create_pipeline_layout(&pipeline_layout, None)
+            };
+            let pipeline = create_pipeline(width as f32, height as f32, &logical_device)?;
+            let create_render_pass = |logical_device: &Device| {
+                let color_attachment = [vk::AttachmentDescription::builder()
+                    .format(surface_format.format)
+                    .samples(vk::SampleCountFlags::TYPE_1)
+                    .load_op(vk::AttachmentLoadOp::CLEAR)
+                    .store_op(vk::AttachmentStoreOp::STORE)
+                    .stencil_load_op(vk::AttachmentLoadOp::DONT_CARE)
+                    .stencil_store_op(vk::AttachmentStoreOp::DONT_CARE)
+                    .initial_layout(vk::ImageLayout::UNDEFINED)
+                    .final_layout(vk::ImageLayout::PRESENT_SRC_KHR)
+                    .build()];
+                let color_attachment_ref = vk::AttachmentReference::builder()
+                    .attachment(0)
+                    .layout(vk::ImageLayout::COLOR_ATTACHMENT_OPTIMAL)
+                    .build();
+                let subpass = [vk::SubpassDescription::builder()
+                    .pipeline_bind_point(vk::PipelineBindPoint::GRAPHICS)
+                    .color_attachments(&[color_attachment_ref])
+                    .build()];
+                let render_pass_info = vk::RenderPassCreateInfo::builder()
+                    .attachments(&color_attachment)
+                    .subpasses(&subpass);
+                logical_device.create_render_pass(&render_pass_info, None)
+            };
+            let render_pass = create_render_pass(&logical_device)?;
+            let create_graphics_pipeline = || {};
+            let graphics_pipeline = create_graphics_pipeline();
             println!("desired image count: {}", desired_image_count);
             Ok(Self {
                 entry,
@@ -196,6 +277,7 @@ impl RenderingContext {
                 surface,
                 swapchain,
                 present_queue,
+                pipeline,
             })
         }
     }
