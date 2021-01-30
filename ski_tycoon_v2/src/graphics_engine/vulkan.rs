@@ -34,6 +34,40 @@ pub struct RenderingContext {
 pub struct Shader {}
 pub type InitContext = Window;
 impl RenderingContext {
+    unsafe fn is_device_sutible(
+        physical_device: &vk::PhysicalDevice,
+        instance: &Instance,
+        surface: &vk::SurfaceKHR,
+        surface_loader: &Surface,
+    ) -> Option<(vk::PhysicalDevice, usize)> {
+        instance
+            .get_physical_device_queue_family_properties(*physical_device)
+            .iter()
+            .enumerate()
+            .filter_map(|(index, ref info)| {
+                let max_image_count = surface_loader
+                    .get_physical_device_surface_capabilities(*physical_device, *surface)
+                    .expect("failed get capabilities")
+                    .max_image_count;
+
+                let is_sutible = info.queue_flags.contains(vk::QueueFlags::GRAPHICS)
+                    && surface_loader
+                        .get_physical_device_surface_support(
+                            *physical_device,
+                            index as u32,
+                            *surface,
+                        )
+                        .unwrap()
+                    && max_image_count > 0;
+
+                if is_sutible {
+                    Some((*physical_device, index))
+                } else {
+                    None
+                }
+            })
+            .next()
+    }
     const APP_NAME: &'static str = "Ski Tycoon";
     const LAYER_NAMES: &'static [&'static [u8]] = &[b"VK_LAYER_KHRONOS_validation\0"];
     pub fn new(window: &Window) -> Result<Self, ErrorType> {
@@ -79,27 +113,7 @@ impl RenderingContext {
                 .expect("Could not find physical device")
                 .iter()
                 .filter_map(|pdevice| {
-                    instance
-                        .get_physical_device_queue_family_properties(*pdevice)
-                        .iter()
-                        .enumerate()
-                        .filter_map(|(index, ref info)| {
-                            let supports_graphic_and_surface =
-                                info.queue_flags.contains(vk::QueueFlags::GRAPHICS)
-                                    && surface_loader
-                                        .get_physical_device_surface_support(
-                                            *pdevice,
-                                            index as u32,
-                                            surface,
-                                        )
-                                        .unwrap();
-                            if supports_graphic_and_surface {
-                                Some((*pdevice, index))
-                            } else {
-                                None
-                            }
-                        })
-                        .next()
+                    Self::is_device_sutible(pdevice, &instance, &surface, &surface_loader)
                 })
                 .next()
                 .expect("Could Not find a sutioble device");
@@ -130,6 +144,7 @@ impl RenderingContext {
                 surface_capabilities.min_image_count + 1,
                 surface_capabilities.max_image_count,
             );
+            println!("max image count: {}", surface_capabilities.max_image_count);
             let surface_resolution = match surface_capabilities.current_extent.width {
                 std::u32::MAX => vk::Extent2D {
                     width: window.inner_size().width,
