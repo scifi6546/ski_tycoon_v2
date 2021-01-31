@@ -9,6 +9,7 @@ use ash::extensions::{
 use ash::version::{DeviceV1_0, EntryV1_0, InstanceV1_0};
 use ash::{vk, Device, Entry, Instance};
 use std::cmp::min;
+use std::collections::HashMap;
 
 use nalgebra::{Matrix4, Vector2, Vector3, Vector4};
 use std::ffi::{CStr, CString};
@@ -31,13 +32,42 @@ pub struct RenderingContext {
     swapchain: vk::SwapchainKHR,
     present_queue: vk::Queue,
     pipeline: vk::PipelineLayout,
+    shaders: HashMap<String, IntShader>,
 }
 pub struct Shader {
-    fragment_shader: vk::ShaderModule,
-    vertex_shader: vk::ShaderModule,
+    key: String,
+}
+pub struct IntShader {
+    vertex_shader_stage_info: vk::PipelineShaderStageCreateInfo,
+    fragment_shader_stage_info: vk::PipelineShaderStageCreateInfo,
 }
 pub type InitContext = Window;
 impl RenderingContext {
+    unsafe fn build_shader(
+        logical_device: &Device,
+        shader: shader::ShaderData,
+    ) -> Result<IntShader, ErrorType> {
+        let frag_create_info =
+            vk::ShaderModuleCreateInfo::builder().code(&shader.fragment_shader_data);
+        let vert_create_info =
+            vk::ShaderModuleCreateInfo::builder().code(&shader.vertex_shader_data);
+        let vertex_shader = logical_device.create_shader_module(&frag_create_info, None)?;
+        let fragment_shader = logical_device.create_shader_module(&vert_create_info, None)?;
+        let vertex_shader_stage_info = vk::PipelineShaderStageCreateInfo::builder()
+            .stage(vk::ShaderStageFlags::VERTEX)
+            .module(vertex_shader)
+            .name(&CString::new("main").expect("should never happen"))
+            .build();
+        let fragment_shader_stage_info = vk::PipelineShaderStageCreateInfo::builder()
+            .stage(vk::ShaderStageFlags::FRAGMENT)
+            .module(fragment_shader)
+            .name(&CString::new("main").expect("should never happen"))
+            .build();
+        Ok(IntShader {
+            vertex_shader_stage_info,
+            fragment_shader_stage_info,
+        })
+    }
     unsafe fn is_device_sutible(
         physical_device: &vk::PhysicalDevice,
         instance: &Instance,
@@ -278,6 +308,7 @@ impl RenderingContext {
                 swapchain,
                 present_queue,
                 pipeline,
+                shaders: HashMap::new(),
             })
         }
     }
@@ -285,23 +316,11 @@ impl RenderingContext {
         todo!()
     }
     pub fn build_world_shader(&mut self) -> Result<Shader, ErrorType> {
-        let world_shader = shader::get_world();
-        let frag_create_info =
-            vk::ShaderModuleCreateInfo::builder().code(&world_shader.fragment_shader_data);
-        let vert_create_info =
-            vk::ShaderModuleCreateInfo::builder().code(&world_shader.vertex_shader_data);
-
-        let (vertex_shader, fragment_shader) = unsafe {
-            (
-                self.logical_device
-                    .create_shader_module(&frag_create_info, None)?,
-                self.logical_device
-                    .create_shader_module(&vert_create_info, None)?,
-            )
-        };
+        self.shaders.insert("world".to_string(), unsafe {
+            Self::build_shader(&self.logical_device, shader::get_world())?
+        });
         Ok(Shader {
-            vertex_shader,
-            fragment_shader,
+            key: "world".to_string(),
         })
     }
     /// Builds shader used for screenspace
@@ -400,3 +419,5 @@ impl RenderingContext {
         todo!()
     }
 }
+//should be fine
+unsafe impl Send for RenderingContext {}
