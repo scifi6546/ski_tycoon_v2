@@ -167,7 +167,7 @@ impl RenderingContext {
                 .queue_create_infos(&queue_info)
                 .enabled_extension_names(&device_extension_names_raw)
                 .enabled_features(&features);
-            let logical_device = instance
+            let mut logical_device = instance
                 .create_device(physical_device, &device_create_info, None)
                 .expect("failed to create logical device");
             let present_queue = logical_device.get_device_queue(queue_family_index as u32, 0);
@@ -222,56 +222,12 @@ impl RenderingContext {
                 .create_swapchain(&swapchain_create_info, None)
                 .unwrap();
             let create_pipeline = |width, height, logical_device: &Device| {
-                let vertex_input = vk::PipelineVertexInputStateCreateInfo::builder()
-                    .vertex_attribute_descriptions(&[])
-                    .vertex_attribute_descriptions(&[]);
-                let input_assembly = vk::PipelineInputAssemblyStateCreateInfo::builder()
-                    .topology(vk::PrimitiveTopology::TRIANGLE_LIST)
-                    .primitive_restart_enable(false);
-                let viewport = vk::Viewport {
-                    x: 0.0,
-                    y: 0.0,
-                    width,
-                    height,
-                    min_depth: 0.0,
-                    max_depth: 0.0,
-                };
-                let scissor = vk::Rect2D {
-                    offset: vk::Offset2D { x: 0, y: 0 },
-                    extent: surface_resolution,
-                };
-                let viewport_state = vk::PipelineViewportStateCreateInfo::builder()
-                    .viewports(&[viewport])
-                    .scissors(&[scissor]);
-                let rasterizer = vk::PipelineRasterizationStateCreateInfo::builder()
-                    .depth_clamp_enable(false)
-                    .rasterizer_discard_enable(false)
-                    .polygon_mode(vk::PolygonMode::FILL)
-                    .line_width(1.0)
-                    .cull_mode(vk::CullModeFlags::BACK)
-                    .front_face(vk::FrontFace::CLOCKWISE)
-                    .depth_bias_enable(false)
-                    .depth_bias_constant_factor(0.0)
-                    .depth_bias_clamp(0.0)
-                    .depth_bias_slope_factor(0.0);
-                let multi_sampling = vk::PipelineMultisampleStateCreateInfo::builder()
-                    .sample_shading_enable(false)
-                    .rasterization_samples(vk::SampleCountFlags::TYPE_1);
-                let color_blend_attachment = vk::PipelineColorBlendAttachmentState::builder()
-                    .color_write_mask(
-                        vk::ColorComponentFlags::R
-                            | vk::ColorComponentFlags::G
-                            | vk::ColorComponentFlags::B
-                            | vk::ColorComponentFlags::A,
-                    )
-                    .blend_enable(false);
-                let color_blending = vk::PipelineColorBlendStateCreateInfo::builder()
-                    .logic_op_enable(false)
-                    .attachments(&[color_blend_attachment.build()]);
                 let pipeline_layout = vk::PipelineLayoutCreateInfo::builder();
+
                 logical_device.create_pipeline_layout(&pipeline_layout, None)
             };
             let pipeline = create_pipeline(width as f32, height as f32, &logical_device)?;
+
             let create_render_pass = |logical_device: &Device| {
                 let color_attachment = [vk::AttachmentDescription::builder()
                     .format(surface_format.format)
@@ -297,8 +253,85 @@ impl RenderingContext {
                 logical_device.create_render_pass(&render_pass_info, None)
             };
             let render_pass = create_render_pass(&logical_device)?;
-            let create_graphics_pipeline = || {};
-            let graphics_pipeline = create_graphics_pipeline();
+            let shaders = Self::build_shader(&logical_device, shader::get_world())?;
+            let create_graphics_pipeline =
+                |logical_device: &mut Device,
+                 pipeline: vk::PipelineLayout,
+                 render_pass: vk::RenderPass| {
+                    let vertex_input = vk::PipelineVertexInputStateCreateInfo::builder()
+                        .vertex_attribute_descriptions(&[])
+                        .vertex_attribute_descriptions(&[])
+                        .build();
+                    let input_assembly = vk::PipelineInputAssemblyStateCreateInfo::builder()
+                        .topology(vk::PrimitiveTopology::TRIANGLE_LIST)
+                        .primitive_restart_enable(false)
+                        .build();
+                    let viewport = vk::Viewport {
+                        x: 0.0,
+                        y: 0.0,
+                        width: width as f32,
+                        height: height as f32,
+                        min_depth: 0.0,
+                        max_depth: 0.0,
+                    };
+                    let scissor = vk::Rect2D {
+                        offset: vk::Offset2D { x: 0, y: 0 },
+                        extent: surface_resolution,
+                    };
+                    let viewport_state = vk::PipelineViewportStateCreateInfo::builder()
+                        .viewports(&[viewport])
+                        .scissors(&[scissor])
+                        .build();
+                    let rasterizer = vk::PipelineRasterizationStateCreateInfo::builder()
+                        .depth_clamp_enable(false)
+                        .rasterizer_discard_enable(false)
+                        .polygon_mode(vk::PolygonMode::FILL)
+                        .line_width(1.0)
+                        .cull_mode(vk::CullModeFlags::BACK)
+                        .front_face(vk::FrontFace::CLOCKWISE)
+                        .depth_bias_enable(false)
+                        .depth_bias_constant_factor(0.0)
+                        .depth_bias_clamp(0.0)
+                        .depth_bias_slope_factor(0.0)
+                        .build();
+                    let multi_sampling = vk::PipelineMultisampleStateCreateInfo::builder()
+                        .sample_shading_enable(false)
+                        .rasterization_samples(vk::SampleCountFlags::TYPE_1)
+                        .build();
+                    let color_blend_attachment = vk::PipelineColorBlendAttachmentState::builder()
+                        .color_write_mask(
+                            vk::ColorComponentFlags::R
+                                | vk::ColorComponentFlags::G
+                                | vk::ColorComponentFlags::B
+                                | vk::ColorComponentFlags::A,
+                        )
+                        .blend_enable(false);
+                    let color_blending = vk::PipelineColorBlendStateCreateInfo::builder()
+                        .logic_op_enable(false)
+                        .attachments(&[color_blend_attachment.build()])
+                        .build();
+                    let graphics_pipeline_info = vk::GraphicsPipelineCreateInfo::builder()
+                        .stages(&[
+                            shaders.fragment_shader_stage_info,
+                            shaders.vertex_shader_stage_info,
+                        ])
+                        .vertex_input_state(&vertex_input)
+                        .input_assembly_state(&input_assembly)
+                        .viewport_state(&viewport_state)
+                        .rasterization_state(&rasterizer)
+                        .multisample_state(&multi_sampling)
+                        .color_blend_state(&color_blending)
+                        .layout(pipeline)
+                        .render_pass(render_pass)
+                        .build();
+                    logical_device.create_graphics_pipelines(
+                        vk::PipelineCache::null(),
+                        &[graphics_pipeline_info],
+                        None,
+                    )
+                };
+            let graphics_pipeline =
+                create_graphics_pipeline(&mut logical_device, pipeline, render_pass);
             println!("desired image count: {}", desired_image_count);
             Ok(Self {
                 entry,
