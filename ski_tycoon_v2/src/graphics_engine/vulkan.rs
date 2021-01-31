@@ -40,9 +40,12 @@ pub struct Shader {
 pub struct IntShader {
     vertex_shader_stage_info: vk::PipelineShaderStageCreateInfo,
     fragment_shader_stage_info: vk::PipelineShaderStageCreateInfo,
+    //pointer to underlieng data is used in info structs therefore needed to keep name around
+    name: CString,
 }
 pub type InitContext = Window;
 impl RenderingContext {
+    const name: &'static str = "name";
     unsafe fn build_shader(
         logical_device: &Device,
         shader: shader::ShaderData,
@@ -53,19 +56,23 @@ impl RenderingContext {
             vk::ShaderModuleCreateInfo::builder().code(&shader.vertex_shader_data);
         let vertex_shader = logical_device.create_shader_module(&frag_create_info, None)?;
         let fragment_shader = logical_device.create_shader_module(&vert_create_info, None)?;
+        let name = CString::new("main").unwrap();
+        println!("name: {:?}", name);
         let vertex_shader_stage_info = vk::PipelineShaderStageCreateInfo::builder()
             .stage(vk::ShaderStageFlags::VERTEX)
             .module(vertex_shader)
-            .name(&CString::new("main").expect("should never happen"))
+            .name(&name)
             .build();
+        println!("shader stage name: {:?}", vertex_shader_stage_info.p_name);
         let fragment_shader_stage_info = vk::PipelineShaderStageCreateInfo::builder()
             .stage(vk::ShaderStageFlags::FRAGMENT)
             .module(fragment_shader)
-            .name(&CString::new("main").expect("should never happen"))
+            .name(&name)
             .build();
         Ok(IntShader {
             vertex_shader_stage_info,
             fragment_shader_stage_info,
+            name,
         })
     }
     unsafe fn is_device_sutible(
