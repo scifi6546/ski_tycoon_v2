@@ -17,7 +17,7 @@ fn get_vec(data: &'static [u8]) -> Vec<u32> {
 }
 pub fn get_world() -> ShaderData {
     ShaderData {
-        fragment_shader_data: get_vec(include_bytes!("compiled_shader/world.frag")),
-        vertex_shader_data: get_vec(include_bytes!("compiled_shader/world.vert")),
+        fragment_shader_data: get_vec(include_bytes!("compiled_shader/world.frag.spv")),
+        vertex_shader_data: get_vec(include_bytes!("compiled_shader/world.vert.spv")),
     }
 }
