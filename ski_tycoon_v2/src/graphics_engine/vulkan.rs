@@ -267,7 +267,6 @@ impl RenderingContext {
                  render_pass: vk::RenderPass| {
                     let vertex_input = vk::PipelineVertexInputStateCreateInfo::builder()
                         .vertex_attribute_descriptions(&[])
-                        .vertex_attribute_descriptions(&[])
                         .build();
                     let input_assembly = vk::PipelineInputAssemblyStateCreateInfo::builder()
                         .topology(vk::PrimitiveTopology::TRIANGLE_LIST)
@@ -337,8 +336,11 @@ impl RenderingContext {
                         None,
                     )
                 };
+            println!("creating graphics pipeline");
             let graphics_pipeline =
-                create_graphics_pipeline(&mut logical_device, pipeline, render_pass);
+                create_graphics_pipeline(&mut logical_device, pipeline, render_pass)
+                    .expect("broke");
+            println!("done creating pipeline");
             println!("desired image count: {}", desired_image_count);
             Ok(Self {
                 entry,
