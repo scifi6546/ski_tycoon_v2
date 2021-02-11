@@ -1,0 +1,20 @@
+[package]
+name = "gfx_renderer"
+version = "0.1.0"
+authors = ["Nicholas Alexeev <nickalexeev@protonmail.com>"]
+edition = "2018"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+gfx-hal = "0.7"
+gfx-auxil = "0.8"
+gfx-backend-empty = "0.7"
+gfx-backend-gl = {version="0.7",optional=true}
+gfx-backend-dx11 = {version="0.7",optional=true}
+gfx-backend-dx12 = {version="0.7",optional=true}
+gfx-backend-metal = {version="0.7",optional=true}
+gfx-backend-vulkan = {version="0.7",optional=true}
+winit = { version = "0.24", features = ["web-sys"] }
+ski_tycoon_v2={path="../ski_tycoon_v2"}
+nalgebra = "0.23.1"

@@ -1,12 +1,12 @@
-mod mesh;
 #[cfg(not(target_arch = "wasm32"))]
-mod vulkan;
+mod gfx;
+mod mesh;
 #[cfg(target_arch = "wasm32")]
 mod webgl;
+#[cfg(not(target_arch = "wasm32"))]
+pub use gfx::*;
 pub use mesh::{ItemDesc, Mesh, Vertex};
 use nalgebra::{Matrix4, Vector3};
-#[cfg(not(target_arch = "wasm32"))]
-pub use vulkan::*;
 #[cfg(target_arch = "wasm32")]
 pub use webgl::*;
 #[derive(Debug, Clone)]
