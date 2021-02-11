@@ -89,7 +89,7 @@ const QUAD: [Vertex; 6] = [
 pub struct Window<B: gfx_hal::Backend> {
     instance: B::Instance,
     surface: B::Surface,
-    adaptor: gfx_hal::adapter::Adapter<B>,
+    adapter: gfx_hal::adapter::Adapter<B>,
     window_dimensions: window::Extent2D,
 }
 pub struct GfxRenderingContext<B: gfx_hal::Backend> {
@@ -134,9 +134,14 @@ const DIMS: window::Extent2D = window::Extent2D {
 impl<B: gfx_hal::Backend> GfxRenderingContext<B> {
     pub fn new(window: &Window<B>) -> Result<Self, ErrorType> {
         let window_dimensions = DIMS;
-        let memory_types = adapter.physical_device.memory_properties().memory_types;
-        let limits = adapter.physical_device.limits();
-        let family = adapter
+        let memory_types = window
+            .adapter
+            .physical_device
+            .memory_properties()
+            .memory_types;
+        let limits = window.adapter.physical_device.limits();
+        let family = window
+            .adapter
             .queue_families
             .iter()
             .find(|family| {
