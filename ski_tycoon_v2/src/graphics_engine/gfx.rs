@@ -87,10 +87,10 @@ const QUAD: [Vertex; 6] = [
     },
 ];
 pub struct Window<B: gfx_hal::Backend> {
-    instance: B::Instance,
-    surface: B::Surface,
-    adapter: gfx_hal::adapter::Adapter<B>,
-    window_dimensions: window::Extent2D,
+    pub instance: B::Instance,
+    pub surface: B::Surface,
+    pub adapter: gfx_hal::adapter::Adapter<B>,
+    pub window_dimensions: window::Extent2D,
 }
 pub struct GfxRenderingContext<B: gfx_hal::Backend> {
     desc_pool: ManuallyDrop<B::DescriptorPool>,
@@ -126,13 +126,13 @@ pub struct GfxRenderingContext<B: gfx_hal::Backend> {
 }
 pub struct Shader {}
 pub type RenderingContext = GfxRenderingContext<back::Backend>;
-pub type InitContext = Window;
+pub type InitContext = Window<back::Backend>;
 const DIMS: window::Extent2D = window::Extent2D {
     width: 1024,
     height: 768,
 };
 impl<B: gfx_hal::Backend> GfxRenderingContext<B> {
-    pub fn new(window: &Window<B>) -> Result<Self, ErrorType> {
+    pub fn new(mut window: Window<B>) -> Result<Self, ErrorType> {
         let window_dimensions = DIMS;
         let memory_types = window
             .adapter
@@ -145,11 +145,13 @@ impl<B: gfx_hal::Backend> GfxRenderingContext<B> {
             .queue_families
             .iter()
             .find(|family| {
-                surface.supports_queue_family(family) && family.queue_type().supports_graphics()
+                window.surface.supports_queue_family(family)
+                    && family.queue_type().supports_graphics()
             })
             .expect("No queue family supports presentation");
         let mut gpu = unsafe {
-            adapter
+            window
+                .adapter
                 .physical_device
                 .open(&[(family, &[1.0])], gfx_hal::Features::empty())
                 .unwrap()
@@ -455,8 +457,10 @@ impl<B: gfx_hal::Backend> GfxRenderingContext<B> {
                 .expect("failed to wait for fence");
             device.destroy_fence(copy_fence);
         }
-        let caps = surface.capabilities(&adapter.physical_device);
-        let formats = surface.supported_formats(&adapter.physical_device);
+        let caps = window.surface.capabilities(&window.adapter.physical_device);
+        let formats = window
+            .surface
+            .supported_formats(&window.adapter.physical_device);
         println!("formats: {:?}", formats);
         //checking supported formats
         let format = formats.map_or(gfx_hal::format::Format::Rgba8Srgb, |formats| {
@@ -470,7 +474,8 @@ impl<B: gfx_hal::Backend> GfxRenderingContext<B> {
         let fat = swap_config.framebuffer_attachment();
         let extent = swap_config.extent;
         unsafe {
-            surface
+            window
+                .surface
                 .configure_swapchain(&device, swap_config)
                 .expect("Can not config swapchain")
         };
@@ -660,7 +665,7 @@ impl<B: gfx_hal::Backend> GfxRenderingContext<B> {
         };
 
         Ok(Self {
-            adapter,
+            adapter: window.adapter,
             buffer_memory,
             cmd_buffers,
             cmd_pools,
@@ -677,7 +682,7 @@ impl<B: gfx_hal::Backend> GfxRenderingContext<B> {
             device,
             desc_pool,
             format,
-            instance,
+            instance: window.instance,
             dimensions: window_dimensions.clone(),
             viewport,
             framebuffer,
@@ -689,7 +694,7 @@ impl<B: gfx_hal::Backend> GfxRenderingContext<B> {
             submission_complete_semaphores,
             submission_complete_fences,
 
-            surface: ManuallyDrop::new(surface),
+            surface: ManuallyDrop::new(window.surface),
         })
     }
     pub fn change_viewport(&self, screen_size: &Vector2<u32>) -> Result<(), ErrorType> {

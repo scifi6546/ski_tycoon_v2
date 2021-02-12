@@ -1,6 +1,6 @@
 use gfx_hal::{prelude::*, window};
 use nalgebra::Vector2;
-use ski_tycoon_v2::Game;
+use ski_tycoon_v2::{Game, Window as GameWindow};
 #[cfg(feature = "dx11")]
 extern crate gfx_backend_dx11 as back;
 #[cfg(feature = "dx12")]
@@ -54,8 +54,16 @@ fn main() {
             .expect("Failed to create a surface!")
     };
 
-    let mut game = Game::new(Vector2::new(DEFAULT_SIZE[0], DEFAULT_SIZE[1]), &window)
-        .expect("failed to create game");
+    let mut game = Game::new(
+        Vector2::new(DEFAULT_SIZE[0], DEFAULT_SIZE[1]),
+        GameWindow {
+            instance,
+            adapter,
+            surface,
+            window_dimensions: DIMS,
+        },
+    )
+    .expect("failed to create game");
 
     event_loop.run(move |event, _, control_flow| {
         *control_flow = winit::event_loop::ControlFlow::Wait;

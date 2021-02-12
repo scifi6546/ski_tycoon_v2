@@ -26,6 +26,7 @@ use camera::Camera;
 use asset_manager::AssetManager;
 use events::{Event, MouseButton};
 use graph::graph_debug;
+pub use graphics_engine::Window;
 use graphics_system::{insert_terrain, GraphicsSettings, RuntimeModel};
 use gui::GuiModel;
 use legion::*;
@@ -62,7 +63,7 @@ pub struct Game {
     world_render_surface: RuntimeModel,
 }
 impl Game {
-    pub fn new(screen_size: Vector2<u32>, init_context: &InitContext) -> Result<Game, ErrorType> {
+    pub fn new(screen_size: Vector2<u32>, init_context: InitContext) -> Result<Game, ErrorType> {
         utils::set_panic_hook();
         let mut resources = Resources::default();
         let mut world = World::default();
