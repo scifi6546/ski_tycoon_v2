@@ -16,5 +16,20 @@ gfx-backend-dx12 = {version="0.7",optional=true}
 gfx-backend-metal = {version="0.7",optional=true}
 gfx-backend-vulkan = {version="0.7",optional=true}
 winit = { version = "0.24", features = ["web-sys"] }
-ski_tycoon_v2={path="../ski_tycoon_v2"}
+ski_tycoon_v2={path="../ski_tycoon_v2",optional=true}
+# platform specific
+ski_tycoon_metal={path="../ski_tycoon_v2",optional=true,package="ski_tycoon_v2",features=["metal"]}
+ski_tycoon_gl={path="../ski_tycoon_v2",optional=true,package="ski_tycoon_v2",features=["gl"]}
+ski_tycoon_dx11={path="../ski_tycoon_v2",optional=true,package="ski_tycoon_v2",features=["dx11"]}
+ski_tycoon_dx12={path="../ski_tycoon_v2",optional=true,package="ski_tycoon_v2",features=["dx12"]}
+ski_tycoon_vulkan={path="../ski_tycoon_v2",optional=true,package="ski_tycoon_v2",features=["vulkan"]}
 nalgebra = "0.23.1"
+
+[features]
+default = []
+metal = ["gfx-backend-metal","ski_tycoon_metal"]
+gl = ["gfx-backend-gl","ski_tycoon_gl"]
+dx11 = ["gfx-backend-dx11","ski_tycoon_dx11"]
+dx12 = ["gfx-backend-dx12","ski_tycoon_dx12"]
+vulkan = ["gfx-backend-vulkan","ski_tycoon_vulkan"]
+unstable = []

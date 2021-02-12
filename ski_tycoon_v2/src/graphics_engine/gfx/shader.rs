@@ -1,3 +1,4 @@
+use std::io::Cursor;
 pub enum ShaderTypes {
     WORLD_SHADER = 0,
 }
@@ -17,5 +18,14 @@ fn get_vec(data: &'static [u8]) -> Vec<u32> {
     out
 }
 pub fn get_world() -> ShaderData {
-    todo!()
+    ShaderData {
+        fragment_shader_data: gfx_auxil::read_spirv(Cursor::new(&include_bytes!(
+            "./data/shader.frag.spv"
+        )))
+        .unwrap(),
+        vertex_shader_data: gfx_auxil::read_spirv(Cursor::new(&include_bytes!(
+            "./data/shader.vert.spv"
+        )))
+        .unwrap(),
+    }
 }

@@ -1,10 +1,37 @@
 use gfx_hal::{prelude::*, window};
 use nalgebra::Vector2;
+#[cfg(not(any(
+    feature = "vulkan",
+    feature = "dx11",
+    feature = "dx12",
+    feature = "metal",
+    feature = "gl",
+)))]
 use ski_tycoon_v2::{Game, Window as GameWindow};
 #[cfg(feature = "dx11")]
 extern crate gfx_backend_dx11 as back;
+#[cfg(feature = "dx11")]
+use ski_tycoon_dx11::{Game, Window as GameWindow};
+
 #[cfg(feature = "dx12")]
 extern crate gfx_backend_dx12 as back;
+#[cfg(feature = "dx12")]
+use ski_tycoon_dx12::{Game, Window as GameWindow};
+
+#[cfg(feature = "gl")]
+extern crate gfx_backend_gl as back;
+
+#[cfg(feature = "gl")]
+use ski_tycoon_gl::{Game, Window as GameWindow};
+#[cfg(feature = "metal")]
+extern crate gfx_backend_metal as back;
+#[cfg(feature = "metal")]
+use ski_tycoon_metal::{Game, Window as GameWindow};
+
+#[cfg(feature = "vulkan")]
+extern crate gfx_backend_vulkan as back;
+#[cfg(feature = "vulkan")]
+use ski_tycoon_vulkan::{Game, Window as GameWindow};
 #[cfg(not(any(
     feature = "vulkan",
     feature = "dx11",
@@ -13,12 +40,7 @@ extern crate gfx_backend_dx12 as back;
     feature = "gl",
 )))]
 extern crate gfx_backend_empty as back;
-#[cfg(feature = "gl")]
-extern crate gfx_backend_gl as back;
-#[cfg(feature = "metal")]
-extern crate gfx_backend_metal as back;
-#[cfg(feature = "vulkan")]
-extern crate gfx_backend_vulkan as back;
+
 const DIMS: window::Extent2D = window::Extent2D {
     width: 1024,
     height: 768,

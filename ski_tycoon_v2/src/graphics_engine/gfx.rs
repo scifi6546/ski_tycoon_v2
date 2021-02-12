@@ -25,7 +25,8 @@ use std::{cmp::min, io::Cursor, iter, mem, mem::ManuallyDrop, ptr};
 
 use nalgebra::{Matrix4, Vector2, Vector3, Vector4};
 use std::ffi::{CStr, CString};
-
+mod circular_buffer;
+use circular_buffer::CircularBuffer;
 #[cfg(feature = "dx11")]
 extern crate gfx_backend_dx11 as back;
 #[cfg(feature = "dx12")]
@@ -106,8 +107,7 @@ pub struct GfxRenderingContext<B: gfx_hal::Backend> {
     set_layout: ManuallyDrop<B::DescriptorSetLayout>,
     submission_complete_semaphores: Vec<B::Semaphore>,
     submission_complete_fences: Vec<B::Fence>,
-    cmd_pools: Vec<B::CommandPool>,
-    cmd_buffers: Vec<B::CommandBuffer>,
+    cmd_buffer: CircularBuffer<(B::CommandPool, B::CommandBuffer)>,
     vertex_buffer: ManuallyDrop<B::Buffer>,
     image_upload_buffer: ManuallyDrop<B::Buffer>,
     image_logo: ManuallyDrop<B::Image>,
@@ -124,7 +124,10 @@ pub struct GfxRenderingContext<B: gfx_hal::Backend> {
     queue_group: QueueGroup<B>,
     instance: B::Instance,
 }
-pub struct Shader {}
+pub type Shader = GfxShader<back::Backend>;
+pub struct GfxShader<B: gfx_hal::Backend> {
+    pipeline: B::GraphicsPipeline,
+}
 pub type RenderingContext = GfxRenderingContext<back::Backend>;
 pub type InitContext = Window<back::Backend>;
 const DIMS: window::Extent2D = window::Extent2D {
@@ -526,7 +529,6 @@ impl<B: gfx_hal::Backend> GfxRenderingContext<B> {
         let frames_in_flight = 3;
         let mut submission_complete_semaphores = Vec::with_capacity(frames_in_flight);
         let mut submission_complete_fences = Vec::with_capacity(frames_in_flight);
-
         // Note: We don't really need a different command pool per frame in such a simple demo like this,
         // but in a more 'real' application, it's generally seen as optimal to have one command pool per
         // thread per frame. There is a flag that lets a command pool reset individual command buffers
@@ -536,31 +538,19 @@ impl<B: gfx_hal::Backend> GfxRenderingContext<B> {
         // usually best to just make a command pool for each set of buffers which need to be reset at the
         // same time (each frame). In our case, each pool will only have one command buffer created from it,
         // though.
-        let mut cmd_pools = Vec::with_capacity(frames_in_flight);
-        let mut cmd_buffers = Vec::with_capacity(frames_in_flight);
-        cmd_pools.push(command_pool);
-        for _ in 1..frames_in_flight {
-            unsafe {
-                cmd_pools.push(
-                    device
-                        .create_command_pool(
-                            queue_group.family,
-                            pool::CommandPoolCreateFlags::empty(),
-                        )
-                        .expect("failed to create command pool"),
-                );
-            }
-        }
-        for i in 0..frames_in_flight {
-            submission_complete_semaphores.push(
+        let mut cmd_vec = Vec::with_capacity(frames_in_flight);
+        let command_buffer = unsafe { command_pool.allocate_one(command::Level::Primary) };
+        cmd_vec.push((command_pool, command_buffer));
+        for i in 1..frames_in_flight {
+            let mut pool = unsafe {
                 device
-                    .create_semaphore()
-                    .expect("failed to create semaphore"),
-            );
-            submission_complete_fences
-                .push(device.create_fence(true).expect("failed to create fence"));
-            cmd_buffers.push(unsafe { cmd_pools[i].allocate_one(command::Level::Primary) });
+                    .create_command_pool(queue_group.family, pool::CommandPoolCreateFlags::empty())
+                    .expect("failed to create command pool")
+            };
+            let buffer = unsafe { pool.allocate_one(command::Level::Primary) };
+            cmd_vec.push((pool, buffer));
         }
+
         let pipeline_layout = ManuallyDrop::new(
             unsafe { device.create_pipeline_layout(iter::once(&*set_layout), iter::empty()) }
                 .expect("failed to create pipeline layout"),
@@ -573,6 +563,7 @@ impl<B: gfx_hal::Backend> GfxRenderingContext<B> {
                 .unwrap();
                 unsafe { device.create_shader_module(&spirv).unwrap() }
             };
+
             let fs_module = {
                 let spirv = gfx_auxil::read_spirv(Cursor::new(&include_bytes!(
                     "./gfx/data/shader.frag.spv"
@@ -667,8 +658,7 @@ impl<B: gfx_hal::Backend> GfxRenderingContext<B> {
         Ok(Self {
             adapter: window.adapter,
             buffer_memory,
-            cmd_buffers,
-            cmd_pools,
+            cmd_buffer: CircularBuffer::new(cmd_vec),
             frame: 0,
             image_logo,
             image_srv,
@@ -700,8 +690,87 @@ impl<B: gfx_hal::Backend> GfxRenderingContext<B> {
     pub fn change_viewport(&self, screen_size: &Vector2<u32>) -> Result<(), ErrorType> {
         todo!()
     }
-    pub fn build_world_shader(&mut self) -> Result<Shader, ErrorType> {
-        todo!()
+    pub fn build_world_shader(&mut self) -> Result<GfxShader<B>, ErrorType> {
+        let shaders = shader::get_world();
+        let fragment_shader = unsafe {
+            self.device
+                .create_shader_module(&shaders.fragment_shader_data)
+                .unwrap()
+        };
+        let vertex_shader = unsafe {
+            self.device
+                .create_shader_module(&shaders.vertex_shader_data)
+                .unwrap()
+        };
+        let vs_entry = pso::EntryPoint {
+            entry: "main",
+            module: &vertex_shader,
+            specialization: gfx_hal::spec_const_list![0.8f32],
+        };
+        let fs_entry = pso::EntryPoint {
+            entry: "main",
+            module: &fragment_shader,
+            specialization: pso::Specialization::default(),
+        };
+        let subpass = Subpass {
+            index: 0,
+            main_pass: &*self.render_pass,
+        };
+        let vertex_buffers = vec![pso::VertexBufferDesc {
+            binding: 0,
+            stride: mem::size_of::<Vertex>() as u32,
+            rate: VertexInputRate::Vertex,
+        }];
+        let attributes = vec![
+            pso::AttributeDesc {
+                location: 0,
+                binding: 0,
+                element: pso::Element {
+                    format: gfx_hal::format::Format::Rg32Sfloat,
+                    offset: 0,
+                },
+            },
+            pso::AttributeDesc {
+                location: 1,
+                binding: 0,
+                element: pso::Element {
+                    format: gfx_hal::format::Format::Rg32Sfloat,
+                    offset: (std::mem::size_of::<f32>() * 3) as u32,
+                },
+            },
+        ];
+        let mut pipeline_desc = pso::GraphicsPipelineDesc::new(
+            pso::PrimitiveAssemblerDesc::Vertex {
+                buffers: &vertex_buffers,
+                attributes: &attributes,
+                input_assembler: pso::InputAssemblerDesc {
+                    primitive: pso::Primitive::TriangleList,
+                    with_adjacency: false,
+                    restart_index: None,
+                },
+                vertex: vs_entry,
+                geometry: None,
+                tessellation: None,
+            },
+            pso::Rasterizer::FILL,
+            Some(fs_entry),
+            &*self.pipeline_layout,
+            subpass,
+        );
+        pipeline_desc.blender.targets.push(pso::ColorBlendDesc {
+            mask: pso::ColorMask::ALL,
+            blend: Some(pso::BlendState::ALPHA),
+        });
+        let pipeline = unsafe {
+            self.device
+                .create_graphics_pipeline(&pipeline_desc, None)
+                .unwrap()
+        };
+        unsafe {
+            self.device.destroy_shader_module(fragment_shader);
+            self.device.destroy_shader_module(vertex_shader);
+        }
+        Ok(GfxShader { pipeline })
     }
     /// Builds shader used for screenspace
     pub fn build_screen_shader(&mut self) -> Result<Shader, ErrorType> {
@@ -710,8 +779,14 @@ impl<B: gfx_hal::Backend> GfxRenderingContext<B> {
     pub fn build_gui_shader(&mut self) -> Result<Shader, ErrorType> {
         todo!()
     }
-    pub fn bind_shader(&mut self, shader: &Shader) -> Result<(), ErrorType> {
-        todo!()
+    pub fn bind_shader(&mut self, shader: &GfxShader<B>) -> Result<(), ErrorType> {
+        unsafe {
+            self.cmd_buffer
+                .get_mut()
+                .1
+                .bind_graphics_pipeline(&shader.pipeline);
+        }
+        Ok(())
     }
     pub fn build_mesh(&mut self, mesh: Mesh, shader: &Shader) -> Result<RuntimeMesh, ErrorType> {
         todo!()
@@ -821,7 +896,7 @@ impl<B: gfx_hal::Backend> Drop for GfxRenderingContext<B> {
                 .destroy_image_view(ManuallyDrop::into_inner(ptr::read(&self.image_srv)));
             self.device
                 .destroy_sampler(ManuallyDrop::into_inner(ptr::read(&self.sampler)));
-            for pool in self.cmd_pools.drain(..) {
+            for (pool, buffer) in self.cmd_buffer.data.drain(..) {
                 self.device.destroy_command_pool(pool);
             }
 
