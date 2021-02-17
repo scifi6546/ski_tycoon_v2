@@ -1,5 +1,5 @@
 use std::collections::HashMap;
-use std::ops::Index;
+use std::ops::{Index, IndexMut};
 ///Used to toggle between bindable resources
 pub struct Bindable<T> {
     data: HashMap<String, T>,
@@ -31,6 +31,11 @@ impl<T> Index<&str> for Bindable<T> {
     type Output = T;
     fn index(&self, key: &str) -> &Self::Output {
         &self.data[key]
+    }
+}
+impl<T> IndexMut<&str> for Bindable<T> {
+    fn index_mut(&mut self, index: &str) -> &mut Self::Output {
+        self.data.get_mut(index).unwrap()
     }
 }
 #[cfg(test)]

@@ -4,11 +4,33 @@ use std::io::Cursor;
 pub enum ShaderTypes {
     WORLD_SHADER = 0,
 }
+#[derive(Clone)]
+pub enum UniformDataType {
+    Vec3,
+    Vec4,
+    Mat3,
+    Mat4,
+}
+impl UniformDataType {
+    pub fn size(&self) -> usize {
+        match self {
+            Self::Vec3 => 3 * std::mem::size_of::<f32>(),
+            Self::Vec4 => 4 * std::mem::size_of::<f32>(),
+            Self::Mat3 => 3 * 3 * std::mem::size_of::<f32>(),
+            Self::Mat4 => 4 * 4 * std::mem::size_of::<f32>(),
+        }
+    }
+}
+#[derive(Clone)]
+pub struct UniformData {
+    pub layout_binding: DescriptorSetLayoutBinding,
+    pub data_type: UniformDataType,
+}
 pub struct ShaderData {
     pub fragment_shader_data: Vec<u32>,
     pub vertex_shader_data: Vec<u32>,
-    pub vertex_uniform_layout: HashMap<String, DescriptorSetLayoutBinding>,
-    pub fragment_uniform_layout: HashMap<String, DescriptorSetLayoutBinding>,
+    pub vertex_uniform_layout: HashMap<String, UniformData>,
+    pub fragment_uniform_layout: HashMap<String, UniformData>,
 }
 fn get_vec(data: &'static [u8]) -> Vec<u32> {
     assert_eq!(data.len() % 4, 0);
@@ -34,32 +56,38 @@ pub fn get_world() -> ShaderData {
         vertex_uniform_layout: [
             (
                 "camera".to_string(),
-                DescriptorSetLayoutBinding {
-                    binding: 0,
-                    ty: pso::DescriptorType::Buffer {
-                        ty: pso::BufferDescriptorType::Uniform,
-                        format: pso::BufferDescriptorFormat::Structured {
-                            dynamic_offset: false,
+                UniformData {
+                    layout_binding: DescriptorSetLayoutBinding {
+                        binding: 0,
+                        ty: pso::DescriptorType::Buffer {
+                            ty: pso::BufferDescriptorType::Uniform,
+                            format: pso::BufferDescriptorFormat::Structured {
+                                dynamic_offset: false,
+                            },
                         },
+                        count: 1,
+                        stage_flags: pso::ShaderStageFlags::VERTEX,
+                        immutable_samplers: false,
                     },
-                    count: 1,
-                    stage_flags: pso::ShaderStageFlags::FRAGMENT,
-                    immutable_samplers: false,
+                    data_type: UniformDataType::Mat4,
                 },
             ),
             (
                 "model".to_string(),
-                DescriptorSetLayoutBinding {
-                    binding: 1,
-                    ty: pso::DescriptorType::Buffer {
-                        ty: pso::BufferDescriptorType::Uniform,
-                        format: pso::BufferDescriptorFormat::Structured {
-                            dynamic_offset: false,
+                UniformData {
+                    layout_binding: DescriptorSetLayoutBinding {
+                        binding: 1,
+                        ty: pso::DescriptorType::Buffer {
+                            ty: pso::BufferDescriptorType::Uniform,
+                            format: pso::BufferDescriptorFormat::Structured {
+                                dynamic_offset: false,
+                            },
                         },
+                        count: 1,
+                        stage_flags: pso::ShaderStageFlags::VERTEX,
+                        immutable_samplers: false,
                     },
-                    count: 1,
-                    stage_flags: pso::ShaderStageFlags::FRAGMENT,
-                    immutable_samplers: false,
+                    data_type: UniformDataType::Mat4,
                 },
             ),
         ]
@@ -69,32 +97,38 @@ pub fn get_world() -> ShaderData {
         fragment_uniform_layout: [
             (
                 "sun_direction".to_string(),
-                DescriptorSetLayoutBinding {
-                    binding: 2,
-                    ty: pso::DescriptorType::Buffer {
-                        ty: pso::BufferDescriptorType::Uniform,
-                        format: pso::BufferDescriptorFormat::Structured {
-                            dynamic_offset: false,
+                UniformData {
+                    layout_binding: DescriptorSetLayoutBinding {
+                        binding: 2,
+                        ty: pso::DescriptorType::Buffer {
+                            ty: pso::BufferDescriptorType::Uniform,
+                            format: pso::BufferDescriptorFormat::Structured {
+                                dynamic_offset: false,
+                            },
                         },
+                        count: 1,
+                        stage_flags: pso::ShaderStageFlags::FRAGMENT,
+                        immutable_samplers: false,
                     },
-                    count: 1,
-                    stage_flags: pso::ShaderStageFlags::FRAGMENT,
-                    immutable_samplers: false,
+                    data_type: UniformDataType::Vec3,
                 },
             ),
             (
                 "sun_color".to_string(),
-                DescriptorSetLayoutBinding {
-                    binding: 3,
-                    ty: pso::DescriptorType::Buffer {
-                        ty: pso::BufferDescriptorType::Uniform,
-                        format: pso::BufferDescriptorFormat::Structured {
-                            dynamic_offset: false,
+                UniformData {
+                    layout_binding: DescriptorSetLayoutBinding {
+                        binding: 3,
+                        ty: pso::DescriptorType::Buffer {
+                            ty: pso::BufferDescriptorType::Uniform,
+                            format: pso::BufferDescriptorFormat::Structured {
+                                dynamic_offset: false,
+                            },
                         },
+                        count: 1,
+                        stage_flags: pso::ShaderStageFlags::FRAGMENT,
+                        immutable_samplers: false,
                     },
-                    count: 1,
-                    stage_flags: pso::ShaderStageFlags::FRAGMENT,
-                    immutable_samplers: false,
+                    data_type: UniformDataType::Vec4,
                 },
             ),
         ]

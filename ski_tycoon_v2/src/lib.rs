@@ -75,7 +75,7 @@ impl Game {
         webgl.bind_shader(shader_bind.get_bind()).ok().unwrap();
         webgl
             .send_vec3_uniform(
-                &shader_bind["world"],
+                &mut shader_bind["world"],
                 "sun_direction",
                 Vector3::new(1.0, -1.0, 0.0).normalize(),
             )
@@ -83,7 +83,7 @@ impl Game {
             .unwrap();
         webgl
             .send_vec4_uniform(
-                &shader_bind["world"],
+                &mut shader_bind["world"],
                 "sun_color",
                 Vector4::new(1.0, 1.0, 1.0, 1.0),
             )

@@ -125,8 +125,14 @@ pub struct GfxRenderingContext<B: gfx_hal::Backend> {
     instance: B::Instance,
 }
 pub type Shader = GfxShader<back::Backend>;
+struct RuntimeUniform<B: gfx_hal::Backend> {
+    buffer: B::Buffer,
+    memory: B::Memory,
+}
 pub struct GfxShader<B: gfx_hal::Backend> {
     pipeline: B::GraphicsPipeline,
+    fragment_shader_uniform_buffers: HashMap<String, RuntimeUniform<B>>,
+    vertex_shader_uniform_buffers: HashMap<String, RuntimeUniform<B>>,
 }
 pub type RenderingContext = GfxRenderingContext<back::Backend>;
 pub type InitContext = Window<back::Backend>;
@@ -770,7 +776,64 @@ impl<B: gfx_hal::Backend> GfxRenderingContext<B> {
             self.device.destroy_shader_module(fragment_shader);
             self.device.destroy_shader_module(vertex_shader);
         }
-        Ok(GfxShader { pipeline })
+        let fragment_shader_uniform_buffers = shaders
+            .fragment_uniform_layout
+            .iter()
+            .map(|(name, uniform)| {
+                let buffer = unsafe {
+                    self.device
+                        .create_buffer(uniform.data_type.size() as u64, buffer::Usage::UNIFORM)
+                        .expect("failed to create buffer")
+                };
+                let memory = self.allocate_memory(&buffer);
+                (name.clone(), RuntimeUniform { buffer, memory })
+            })
+            .collect();
+        let vertex_shader_uniform_buffers = shaders
+            .vertex_uniform_layout
+            .iter()
+            .map(|(name, uniform)| {
+                let buffer = unsafe {
+                    self.device
+                        .create_buffer(uniform.data_type.size() as u64, buffer::Usage::UNIFORM)
+                        .expect("failed to create buffer")
+                };
+                let memory = self.allocate_memory(&buffer);
+                (name.clone(), RuntimeUniform { buffer, memory })
+            })
+            .collect();
+        Ok(GfxShader {
+            pipeline,
+            fragment_shader_uniform_buffers,
+            vertex_shader_uniform_buffers,
+        })
+    }
+    fn allocate_memory(&mut self, buffer: &B::Buffer) -> B::Memory {
+        let memory_types = self
+            .adapter
+            .physical_device
+            .memory_properties()
+            .memory_types;
+        let buffer_reqs = unsafe { self.device.get_buffer_requirements(buffer) };
+        let upload_type = memory_types
+            .iter()
+            .enumerate()
+            .position(|(id, mem_type)| {
+                // type_mask is a bit field where each bit represents a memory type. If the bit is set
+                // to 1 it means we can use that type for our buffer. So this code finds the first
+                // memory type that has a `1` (or, is allowed), and is visible to the CPU.
+                buffer_reqs.type_mask & (1 << id) != 0
+                    && mem_type
+                        .properties
+                        .contains(memory::Properties::CPU_VISIBLE)
+            })
+            .unwrap()
+            .into();
+        unsafe {
+            self.device
+                .allocate_memory(upload_type, buffer_reqs.size)
+                .unwrap()
+        }
     }
     /// Builds shader used for screenspace
     pub fn build_screen_shader(&mut self) -> Result<Shader, ErrorType> {
@@ -794,21 +857,78 @@ impl<B: gfx_hal::Backend> GfxRenderingContext<B> {
     pub fn delete_mesh(&mut self, mesh: &mut RuntimeMesh) -> Result<(), ErrorType> {
         todo!()
     }
+    unsafe fn send_uniform(
+        &self,
+        shader: &mut GfxShader<B>,
+        uniform_name: &str,
+        data: *const u8,
+        data_size: usize,
+    ) {
+        let memory = if shader
+            .fragment_shader_uniform_buffers
+            .contains_key(uniform_name)
+        {
+            &mut shader
+                .fragment_shader_uniform_buffers
+                .get_mut(uniform_name)
+                .unwrap()
+                .memory
+        } else if shader
+            .vertex_shader_uniform_buffers
+            .contains_key(uniform_name)
+        {
+            &mut shader
+                .vertex_shader_uniform_buffers
+                .get_mut(uniform_name)
+                .unwrap()
+                .memory
+        } else {
+            panic!("uniform: {} not found", uniform_name)
+        };
+        let memory_ptr = self
+            .device
+            .map_memory(
+                memory,
+                gfx_hal::memory::Segment {
+                    offset: 0,
+                    size: None,
+                },
+            )
+            .expect("failed to map memory");
+        std::ptr::copy_nonoverlapping(data, memory_ptr, data_size);
+        self.device.unmap_memory(memory);
+    }
     pub fn send_vec3_uniform(
         &self,
-        shader: &Shader,
+        shader: &mut GfxShader<B>,
         uniform_name: &str,
         data: Vector3<f32>,
     ) -> Result<(), ErrorType> {
-        todo!()
+        unsafe {
+            self.send_uniform(
+                shader,
+                uniform_name,
+                data.as_ptr() as *const u8,
+                3 * std::mem::size_of::<f32>(),
+            )
+        };
+        Ok(())
     }
     pub fn send_vec4_uniform(
         &self,
-        shader: &Shader,
+        shader: &mut GfxShader<B>,
         uniform_name: &str,
         data: Vector4<f32>,
     ) -> Result<(), ErrorType> {
-        todo!()
+        unsafe {
+            self.send_uniform(
+                shader,
+                uniform_name,
+                data.as_ptr() as *const u8,
+                4 * std::mem::size_of::<f32>(),
+            )
+        };
+        Ok(())
     }
     pub fn build_depth_texture(
         &mut self,
@@ -871,7 +991,7 @@ impl<B: gfx_hal::Backend> GfxRenderingContext<B> {
         todo!()
     }
     pub fn get_error(&self) {
-        todo!()
+        //nothing to do here
     }
 }
 impl<B: gfx_hal::Backend> Drop for GfxRenderingContext<B> {
