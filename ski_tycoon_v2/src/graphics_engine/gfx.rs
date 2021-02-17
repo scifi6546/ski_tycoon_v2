@@ -19,6 +19,7 @@ use gfx_hal::{
     window::{PresentationSurface, Surface},
     Instance,
 };
+use shader::ShaderData;
 
 use std::collections::HashMap;
 use std::{cmp::min, io::Cursor, iter, mem, mem::ManuallyDrop, ptr};
@@ -268,7 +269,7 @@ impl<B: gfx_hal::Backend> GfxRenderingContext<B> {
             device.unmap_memory(&mut memory);
             ManuallyDrop::new(memory)
         };
-        let img_data = include_bytes!("./gfx/data/logo.png");
+        let img_data = include_bytes!("./gfx/png/Untitled.png");
         let img = image::load(Cursor::new(&img_data[..]), image::ImageFormat::Png)
             .unwrap()
             .to_rgba8();
@@ -564,7 +565,7 @@ impl<B: gfx_hal::Backend> GfxRenderingContext<B> {
         let pipeline = {
             let vs_module = {
                 let spirv = gfx_auxil::read_spirv(Cursor::new(&include_bytes!(
-                    "./gfx/data/shader.vert.spv"
+                    "./gfx/compiled_shader/shader.vert.spv"
                 )))
                 .unwrap();
                 unsafe { device.create_shader_module(&spirv).unwrap() }
@@ -572,7 +573,7 @@ impl<B: gfx_hal::Backend> GfxRenderingContext<B> {
 
             let fs_module = {
                 let spirv = gfx_auxil::read_spirv(Cursor::new(&include_bytes!(
-                    "./gfx/data/shader.frag.spv"
+                    "./gfx/compiled_shader/shader.frag.spv"
                 )))
                 .unwrap();
                 unsafe { device.create_shader_module(&spirv).unwrap() }
@@ -696,8 +697,7 @@ impl<B: gfx_hal::Backend> GfxRenderingContext<B> {
     pub fn change_viewport(&self, screen_size: &Vector2<u32>) -> Result<(), ErrorType> {
         todo!()
     }
-    pub fn build_world_shader(&mut self) -> Result<GfxShader<B>, ErrorType> {
-        let shaders = shader::get_world();
+    fn build_shader(&mut self, shaders: ShaderData) -> Result<GfxShader<B>, ErrorType> {
         let fragment_shader = unsafe {
             self.device
                 .create_shader_module(&shaders.fragment_shader_data)
@@ -808,6 +808,10 @@ impl<B: gfx_hal::Backend> GfxRenderingContext<B> {
             vertex_shader_uniform_buffers,
         })
     }
+    pub fn build_world_shader(&mut self) -> Result<GfxShader<B>, ErrorType> {
+        let shaders = shader::get_world();
+        self.build_shader(shaders)
+    }
     fn allocate_memory(&mut self, buffer: &B::Buffer) -> B::Memory {
         let memory_types = self
             .adapter
@@ -836,8 +840,9 @@ impl<B: gfx_hal::Backend> GfxRenderingContext<B> {
         }
     }
     /// Builds shader used for screenspace
-    pub fn build_screen_shader(&mut self) -> Result<Shader, ErrorType> {
-        todo!()
+    pub fn build_screen_shader(&mut self) -> Result<GfxShader<B>, ErrorType> {
+        let shaders = shader::get_screen();
+        self.build_shader(shaders)
     }
     pub fn build_gui_shader(&mut self) -> Result<Shader, ErrorType> {
         todo!()

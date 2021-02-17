@@ -46,11 +46,11 @@ fn get_vec(data: &'static [u8]) -> Vec<u32> {
 pub fn get_world() -> ShaderData {
     ShaderData {
         fragment_shader_data: gfx_auxil::read_spirv(Cursor::new(&include_bytes!(
-            "./data/shader.frag.spv"
+            "./compiled_shader/shader.frag.spv"
         )))
         .unwrap(),
         vertex_shader_data: gfx_auxil::read_spirv(Cursor::new(&include_bytes!(
-            "./data/shader.vert.spv"
+            "./compiled_shader/shader.vert.spv"
         )))
         .unwrap(),
         vertex_uniform_layout: [
@@ -135,5 +135,59 @@ pub fn get_world() -> ShaderData {
         .iter()
         .map(|i| i.clone())
         .collect(),
+    }
+}
+pub fn get_screen() -> ShaderData {
+    ShaderData {
+        fragment_shader_data: gfx_auxil::read_spirv(Cursor::new(&include_bytes!(
+            "./compiled_shader/screen.frag.spv"
+        )))
+        .unwrap(),
+        vertex_shader_data: gfx_auxil::read_spirv(Cursor::new(&include_bytes!(
+            "./compiled_shader/screen.vert.spv"
+        )))
+        .unwrap(),
+        vertex_uniform_layout: [
+            (
+                "camera".to_string(),
+                UniformData {
+                    layout_binding: DescriptorSetLayoutBinding {
+                        binding: 0,
+                        ty: pso::DescriptorType::Buffer {
+                            ty: pso::BufferDescriptorType::Uniform,
+                            format: pso::BufferDescriptorFormat::Structured {
+                                dynamic_offset: false,
+                            },
+                        },
+                        count: 1,
+                        stage_flags: pso::ShaderStageFlags::VERTEX,
+                        immutable_samplers: false,
+                    },
+                    data_type: UniformDataType::Mat4,
+                },
+            ),
+            (
+                "model".to_string(),
+                UniformData {
+                    layout_binding: DescriptorSetLayoutBinding {
+                        binding: 1,
+                        ty: pso::DescriptorType::Buffer {
+                            ty: pso::BufferDescriptorType::Uniform,
+                            format: pso::BufferDescriptorFormat::Structured {
+                                dynamic_offset: false,
+                            },
+                        },
+                        count: 1,
+                        stage_flags: pso::ShaderStageFlags::VERTEX,
+                        immutable_samplers: false,
+                    },
+                    data_type: UniformDataType::Mat4,
+                },
+            ),
+        ]
+        .iter()
+        .map(|i| i.clone())
+        .collect(),
+        fragment_uniform_layout: HashMap::new(),
     }
 }
