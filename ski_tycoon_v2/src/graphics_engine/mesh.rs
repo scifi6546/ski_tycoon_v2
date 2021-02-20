@@ -101,4 +101,33 @@ impl Mesh {
             description: vec![],
         }
     }
+    pub fn to_bytes(&self) -> Vec<f32> {
+        let data_size = (3 + 2 + 3) * std::mem::size_of::<f32>() as i32 + {
+            {
+                let s: usize = self
+                    .description
+                    .iter()
+                    .map(|d| d.number_components * d.size_component)
+                    .sum();
+                s as i32
+            }
+        };
+        let mut array: Vec<f32> = vec![];
+        array.reserve(data_size as usize / 3);
+        for vertex in self.vertices.iter() {
+            array.push(vertex.position.x);
+            array.push(vertex.position.y);
+            array.push(vertex.position.z);
+            array.push(vertex.uv.x);
+            array.push(vertex.uv.y);
+            array.push(vertex.normal.x);
+            array.push(vertex.normal.y);
+            array.push(vertex.normal.z);
+            for f in vertex.extra_custom.iter() {
+                //info!("f: {}",f);
+                array.push(*f);
+            }
+        }
+        return array;
+    }
 }

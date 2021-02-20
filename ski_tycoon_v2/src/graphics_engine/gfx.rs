@@ -47,13 +47,16 @@ extern crate gfx_backend_metal as back;
 #[cfg(feature = "vulkan")]
 extern crate gfx_backend_vulkan as back;
 
-#[derive(Clone)]
-pub struct RuntimeMesh {}
+pub type RuntimeMesh = RuntimeGfxMesh<back::Backend>;
 #[derive(Clone)]
 pub struct RuntimeTexture {}
 pub type ErrorType = ();
 pub struct Framebuffer {}
-
+#[derive(Clone)]
+pub struct RuntimeGfxMesh<B: gfx_hal::Backend> {
+    vertex_buffer: B::Buffer,
+    vertex_memory: B::Memory,
+}
 pub struct RuntimeDepthTexture {
     texture: RuntimeTexture,
 }
@@ -844,8 +847,9 @@ impl<B: gfx_hal::Backend> GfxRenderingContext<B> {
         let shaders = shader::get_screen();
         self.build_shader(shaders)
     }
-    pub fn build_gui_shader(&mut self) -> Result<Shader, ErrorType> {
-        todo!()
+    pub fn build_gui_shader(&mut self) -> Result<GfxShader<B>, ErrorType> {
+        let shaders = shader::get_screen();
+        self.build_shader(shaders)
     }
     pub fn bind_shader(&mut self, shader: &GfxShader<B>) -> Result<(), ErrorType> {
         unsafe {
@@ -856,8 +860,44 @@ impl<B: gfx_hal::Backend> GfxRenderingContext<B> {
         }
         Ok(())
     }
-    pub fn build_mesh(&mut self, mesh: Mesh, shader: &Shader) -> Result<RuntimeMesh, ErrorType> {
-        todo!()
+    pub fn build_mesh(
+        &mut self,
+        mesh: Mesh,
+        shader: &Shader,
+    ) -> Result<RuntimeGfxMesh<B>, ErrorType> {
+        let data = mesh.to_bytes();
+        let buffer = unsafe {
+            self.device.create_buffer(
+                data.len() as u64 * std::mem::size_of::<f32>() as u64,
+                gfx_hal::buffer::Usage::VERTEX,
+            )
+        }
+        .expect("failed to create buffer");
+        let mut memory = unsafe { self.allocate_memory(&buffer) };
+        let memory_ptr = unsafe {
+            self.device.map_memory(
+                &mut memory,
+                gfx_hal::memory::Segment {
+                    offset: 0,
+                    size: None,
+                },
+            )
+        }
+        .expect("failed to map memory");
+        unsafe {
+            std::ptr::copy_nonoverlapping(
+                data.as_ptr() as *const u8,
+                memory_ptr,
+                data.len() * std::mem::size_of::<f32>(),
+            )
+        };
+        unsafe {
+            self.device.unmap_memory(&mut memory);
+        }
+        Ok(RuntimeGfxMesh {
+            vertex_buffer: buffer,
+            vertex_memory: memory,
+        })
     }
     pub fn delete_mesh(&mut self, mesh: &mut RuntimeMesh) -> Result<(), ErrorType> {
         todo!()

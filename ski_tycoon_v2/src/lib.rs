@@ -12,6 +12,8 @@ mod skiier;
 mod terrain;
 mod texture;
 mod utils;
+#[cfg(not(target_arch = "wasm32"))]
+pub use graphics_engine::Window;
 use graphics_engine::{
     ErrorType, Framebuffer, InitContext, Mesh, RenderingContext, RuntimeDepthTexture, Transform,
 };
@@ -26,7 +28,7 @@ use camera::Camera;
 use asset_manager::AssetManager;
 use events::{Event, MouseButton};
 use graph::graph_debug;
-pub use graphics_engine::Window;
+//
 use graphics_system::{insert_terrain, GraphicsSettings, RuntimeModel};
 use gui::GuiModel;
 use legion::*;
@@ -46,7 +48,7 @@ pub mod prelude {
     };
     pub type ShaderBind = super::Bindable<Shader>;
     pub use super::events::{Event, MouseButton};
-    pub use super::graphics_system::{RuntimeDebugMesh, RuntimeModel};
+    pub use super::graphics_system::{RuntimeDebugMesh, RuntimeModel, RuntimeModelId};
     pub use super::grid::Grid;
     pub use super::gui::{GuiModel, GuiRuntimeModel, GuiTransform};
     pub use super::model::Model;
@@ -354,14 +356,14 @@ impl ScreenResolution {
 }
 #[wasm_bindgen]
 #[cfg(target_arch = "wasm32")]
-pub fn init_game(resolution: JsMap) -> WebGame {
+pub fn init_game(resolution: js_sys::Map) -> WebGame {
     console_log::init_with_level(Level::Info).expect("filed to init console_log");
     let r = Game::new(
         Vector2::new(
             resolution.get(&("x".into())).as_f64().unwrap() as u32,
             resolution.get(&("y".into())).as_f64().unwrap() as u32,
         ),
-        &(),
+        (),
     );
     if r.is_ok() {
         WebGame {

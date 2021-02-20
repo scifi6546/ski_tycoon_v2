@@ -43,7 +43,7 @@ pub struct RenderingContext {
 }
 #[allow(dead_code)]
 impl RenderingContext {
-    pub fn new(_context: &InitContext) -> Result<Self, ErrorType> {
+    pub fn new(_context: InitContext) -> Result<Self, ErrorType> {
         debug!("creating webgl2 instance");
         let window = web_sys::window().unwrap();
         let document = window.document().unwrap();

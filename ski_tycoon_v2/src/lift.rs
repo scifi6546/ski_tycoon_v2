@@ -1,10 +1,11 @@
 use super::prelude::{
     AssetManager, ErrorType, GraphLayer, GraphWeight, LiftLayer, Model, Node, RenderingContext,
-    RuntimeModel, ShaderBind, Texture, Transform,
+    RuntimeModel, RuntimeModelId, ShaderBind, Texture, Transform,
 };
 use legion::*;
 use log::info;
 use nalgebra::{Vector2, Vector3, Vector4};
+use std::{cell::RefCell, sync::RwLock};
 pub fn insert_lift(
     world: &mut World,
     graphics: &mut RenderingContext,
@@ -20,22 +21,19 @@ pub fn insert_lift(
         0.0,
         start_position.y as f32,
     ));
-    let runtime_model = if asset_manager.contains("lift") {
-        asset_manager.get("lift").unwrap().clone()
-    } else {
+    if !asset_manager.contains("lift") {
         let model = Model::from_obj(
             include_bytes!["../../assets/obj/skilift.obj"],
             include_bytes!["../../assets/obj/skilift.obj"],
             transform.clone(),
             Texture::constant_color(Vector4::new(255, 255, 0, 255), Vector2::new(10, 10)),
         );
-        asset_manager
-            .get_or_create(
-                "lift",
-                RuntimeModel::new(&model, graphics, bound_shader.get_bind())?,
-            )
-            .clone()
-    };
+        asset_manager.get_or_create(
+            "lift",
+            RuntimeModel::new(&model, graphics, bound_shader.get_bind())?,
+        );
+    }
+    let runtime_model = RuntimeModelId::new("lift".to_string());
     let start = Node {
         node: start_position,
     };

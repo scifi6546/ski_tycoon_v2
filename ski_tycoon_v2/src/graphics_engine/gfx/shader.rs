@@ -191,3 +191,57 @@ pub fn get_screen() -> ShaderData {
         fragment_uniform_layout: HashMap::new(),
     }
 }
+pub fn get_gui() -> ShaderData {
+    ShaderData {
+        fragment_shader_data: gfx_auxil::read_spirv(Cursor::new(&include_bytes!(
+            "./compiled_shader/gui.frag.spv"
+        )))
+        .unwrap(),
+        vertex_shader_data: gfx_auxil::read_spirv(Cursor::new(&include_bytes!(
+            "./compiled_shader/gui.vert.spv"
+        )))
+        .unwrap(),
+        vertex_uniform_layout: [
+            (
+                "camera".to_string(),
+                UniformData {
+                    layout_binding: DescriptorSetLayoutBinding {
+                        binding: 0,
+                        ty: pso::DescriptorType::Buffer {
+                            ty: pso::BufferDescriptorType::Uniform,
+                            format: pso::BufferDescriptorFormat::Structured {
+                                dynamic_offset: false,
+                            },
+                        },
+                        count: 1,
+                        stage_flags: pso::ShaderStageFlags::VERTEX,
+                        immutable_samplers: false,
+                    },
+                    data_type: UniformDataType::Mat4,
+                },
+            ),
+            (
+                "model".to_string(),
+                UniformData {
+                    layout_binding: DescriptorSetLayoutBinding {
+                        binding: 1,
+                        ty: pso::DescriptorType::Buffer {
+                            ty: pso::BufferDescriptorType::Uniform,
+                            format: pso::BufferDescriptorFormat::Structured {
+                                dynamic_offset: false,
+                            },
+                        },
+                        count: 1,
+                        stage_flags: pso::ShaderStageFlags::VERTEX,
+                        immutable_samplers: false,
+                    },
+                    data_type: UniformDataType::Mat4,
+                },
+            ),
+        ]
+        .iter()
+        .map(|i| i.clone())
+        .collect(),
+        fragment_uniform_layout: HashMap::new(),
+    }
+}

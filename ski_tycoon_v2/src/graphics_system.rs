@@ -5,7 +5,7 @@ use super::prelude::{
 use legion::*;
 use log::debug;
 use nalgebra::Vector2;
-#[derive(Clone)]
+use std::cell::RefCell;
 pub struct RuntimeModel {
     pub mesh: RuntimeMesh,
     pub texture: RuntimeTexture,
@@ -16,6 +16,15 @@ pub struct RuntimeDebugMesh {
 }
 pub struct GraphicsSettings {
     pub screen_size: Vector2<u32>,
+}
+#[derive(Clone)]
+pub struct RuntimeModelId {
+    id: String,
+}
+impl RuntimeModelId {
+    pub fn new(id: String) -> Self {
+        Self { id }
+    }
 }
 impl RuntimeModel {
     pub fn new(
@@ -47,17 +56,17 @@ pub fn insert_terrain(
 ) -> Result<(), ErrorType> {
     let model = terrain.model();
     let transform = model.transform.clone();
-    let runtime_model: RuntimeModel = asset_manager
-        .get_or_create(
-            "game_terrain",
-            RuntimeModel::new(&model, graphics, bound_shader).expect("created model"),
-        )
-        .clone();
+    asset_manager.get_or_create(
+        "game_terrain",
+        RuntimeModel::new(&model, graphics, bound_shader).expect("created model"),
+    );
     world.push((
         terrain.build_graph(),
         terrain,
         transform.clone(),
-        runtime_model,
+        RuntimeModelId {
+            id: "game_terrain".to_string(),
+        },
     ));
     Ok(())
 }
@@ -65,13 +74,15 @@ pub fn insert_terrain(
 #[system(for_each)]
 pub fn render_object(
     transform: &Transform,
-    model: &RuntimeModel,
+    model: &RuntimeModelId,
     #[resource] settings: &GraphicsSettings,
     #[resource] webgl: &mut RenderingContext,
     #[resource] shader: &ShaderBind,
     #[resource] camera: &Camera,
+    #[resource] asset_manager: &mut AssetManager<RuntimeModel>,
 ) {
     debug!("running render object");
+    let model = asset_manager.get(&model.id).unwrap();
     webgl.bind_texture(&model.texture, shader.get_bind());
     webgl.send_view_matrix(camera.get_matrix(settings.screen_size), shader.get_bind());
     webgl.send_model_matrix(transform.build().clone(), shader.get_bind());
