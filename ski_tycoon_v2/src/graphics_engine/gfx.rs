@@ -9,6 +9,7 @@ use gfx_hal::{
     device::Device,
     format,
     format::{AsFormat, ChannelType, Rgba8Srgb as ColorFormat, Swizzle},
+    image::{SubresourceRange, ViewKind},
     memory, pass,
     pass::Subpass,
     pool,
@@ -54,16 +55,25 @@ pub type RuntimeTexture = RuntimeGfxTexture<back::Backend>;
 pub struct RuntimeGfxTexture<B: gfx_hal::Backend> {
     image_buffer: B::Buffer,
     image_memory: B::Memory,
+    image_logo: B::Image,
+    extent: gfx_hal::image::Extent,
 }
 pub type ErrorType = ();
-pub struct Framebuffer {}
+pub struct GfxFramebuffer<B: gfx_hal::Backend> {
+    framebuffer: B::Framebuffer,
+}
+pub type Framebuffer = GfxFramebuffer<back::Backend>;
 #[derive(Clone)]
 pub struct RuntimeGfxMesh<B: gfx_hal::Backend> {
     vertex_buffer: B::Buffer,
     vertex_memory: B::Memory,
 }
-pub struct RuntimeDepthTexture {
-    texture: RuntimeTexture,
+pub type RuntimeDepthTexture = RuntimeGfxDepthTexture<back::Backend>;
+pub struct RuntimeGfxDepthTexture<B: gfx_hal::Backend> {
+    image_logo: B::Image,
+    image_buffer: B::Buffer,
+    image_memory: B::Memory,
+    extent: gfx_hal::image::Extent,
 }
 #[allow(dead_code)]
 struct Vertex {
@@ -992,8 +1002,22 @@ impl<B: gfx_hal::Backend> GfxRenderingContext<B> {
         &mut self,
         dimensions: Vector2<u32>,
         shader: &Shader,
-    ) -> Result<RuntimeDepthTexture, ErrorType> {
-        todo!()
+    ) -> Result<RuntimeGfxDepthTexture<B>, ErrorType> {
+        let (image_logo, image_buffer, image_memory) = self.allocate_texture(
+            Vector2::new(dimensions.x as usize, dimensions.y as usize),
+            gfx_hal::image::Usage::DEPTH_STENCIL_ATTACHMENT,
+        );
+        let extent = gfx_hal::image::Extent {
+            width: dimensions.x,
+            height: dimensions.y,
+            depth: 1,
+        };
+        Ok(RuntimeGfxDepthTexture {
+            image_logo,
+            image_buffer,
+            image_memory,
+            extent,
+        })
     }
     pub fn delete_depth_buffer(
         &mut self,
@@ -1001,18 +1025,49 @@ impl<B: gfx_hal::Backend> GfxRenderingContext<B> {
     ) -> Result<(), ErrorType> {
         todo!()
     }
-    pub fn build_texture(
+    fn allocate_texture(
         &mut self,
-        texture: Texture,
-        shader: &Shader,
-    ) -> Result<RuntimeGfxTexture<B>, ErrorType> {
-        let length = texture.pixels.len() * 4;
+        dimensions: Vector2<usize>,
+        usage: gfx_hal::image::Usage,
+    ) -> (B::Image, B::Buffer, B::Memory) {
+        let length = dimensions.x * dimensions.y * 4;
         let image_buffer = unsafe {
             self.device
                 .create_buffer(length as u64, gfx_hal::buffer::Usage::TRANSFER_SRC)
         }
         .expect("failed to create buffer");
-        let mut memory = unsafe { self.allocate_memory(&image_buffer) };
+        let memory = self.allocate_memory(&image_buffer);
+        let kind = gfx_hal::image::Kind::D2(
+            dimensions.x as gfx_hal::image::Size,
+            dimensions.y as gfx_hal::image::Size,
+            1,
+            1,
+        );
+        let image_logo = unsafe {
+            self.device.create_image(
+                kind,
+                1,
+                ColorFormat::SELF,
+                gfx_hal::image::Tiling::Optimal,
+                gfx_hal::image::Usage::TRANSFER_DST | usage,
+                gfx_hal::image::ViewCapabilities::empty(),
+            )
+        }
+        .unwrap();
+
+        (image_logo, image_buffer, memory)
+    }
+    pub fn build_texture(
+        &mut self,
+        texture: Texture,
+        shader: &Shader,
+    ) -> Result<RuntimeGfxTexture<B>, ErrorType> {
+        let (mut image_logo, image_buffer, mut memory) = self.allocate_texture(
+            Vector2::new(texture.width() as usize, texture.height() as usize),
+            gfx_hal::image::Usage::SAMPLED,
+        );
+        let length = texture.pixels.len() * 4;
+
         let memory_ptr = unsafe {
             self.device.map_memory(
                 &mut memory,
@@ -1029,24 +1084,6 @@ impl<B: gfx_hal::Backend> GfxRenderingContext<B> {
         unsafe {
             self.device.unmap_memory(&mut memory);
         }
-        let kind = gfx_hal::image::Kind::D2(
-            texture.width() as gfx_hal::image::Size,
-            texture.height() as gfx_hal::image::Size,
-            1,
-            1,
-        );
-        let mut image_logo = unsafe {
-            self.device.create_image(
-                kind,
-                1,
-                ColorFormat::SELF,
-                gfx_hal::image::Tiling::Optimal,
-                gfx_hal::image::Usage::TRANSFER_DST | gfx_hal::image::Usage::SAMPLED,
-                gfx_hal::image::ViewCapabilities::empty(),
-            )
-        }
-        .unwrap();
-
         let find_image_memory = |image: &B::Image| {
             let memory_types = self
                 .adapter
@@ -1176,9 +1213,16 @@ impl<B: gfx_hal::Backend> GfxRenderingContext<B> {
             self.device.destroy_command_pool(command_pool);
             self.device.free_memory(memory);
         }
+        let extent = gfx_hal::image::Extent {
+            width: texture.dimensions.x,
+            height: texture.dimensions.y,
+            depth: 1,
+        };
         Ok(RuntimeGfxTexture {
             image_buffer,
             image_memory,
+            image_logo,
+            extent,
         })
     }
     pub fn delete_texture(&mut self, texture: &mut RuntimeTexture) {
@@ -1186,10 +1230,60 @@ impl<B: gfx_hal::Backend> GfxRenderingContext<B> {
     }
     pub fn build_framebuffer(
         &mut self,
-        texture_attachment: &mut RuntimeTexture,
-        depth_attachment: &mut RuntimeDepthTexture,
-    ) -> Result<Framebuffer, ErrorType> {
-        todo!()
+        texture_attachment: &mut RuntimeGfxTexture<B>,
+        depth_attachment: &mut RuntimeGfxDepthTexture<B>,
+    ) -> Result<GfxFramebuffer<B>, ErrorType> {
+        assert_eq!(texture_attachment.extent, depth_attachment.extent);
+        let texture_attachment_view = unsafe {
+            self.device.create_image_view(
+                &texture_attachment.image_logo,
+                ViewKind::D2,
+                ColorFormat::SELF,
+                Swizzle::NO,
+                SubresourceRange {
+                    aspects: gfx_hal::format::Aspects::COLOR,
+                    ..Default::default()
+                },
+            )
+        }
+        .expect("failed to create color view");
+        let depth_attachment_view = unsafe {
+            self.device.create_image_view(
+                &texture_attachment.image_logo,
+                ViewKind::D2,
+                ColorFormat::SELF,
+                Swizzle::NO,
+                SubresourceRange {
+                    aspects: gfx_hal::format::Aspects::DEPTH,
+                    ..Default::default()
+                },
+            )
+        }
+        .expect("failed to create depth view");
+        let framebuffer = unsafe {
+            self.device.create_framebuffer(
+                &self.render_pass,
+                [
+                    gfx_hal::image::FramebufferAttachment {
+                        usage: gfx_hal::image::Usage::TRANSFER_DST
+                            | gfx_hal::image::Usage::COLOR_ATTACHMENT,
+                        view_caps: gfx_hal::image::ViewCapabilities::empty(),
+                        format: ColorFormat::SELF,
+                    },
+                    gfx_hal::image::FramebufferAttachment {
+                        usage: gfx_hal::image::Usage::TRANSFER_DST
+                            | gfx_hal::image::Usage::DEPTH_STENCIL_ATTACHMENT,
+                        view_caps: gfx_hal::image::ViewCapabilities::empty(),
+                        format: ColorFormat::SELF,
+                    },
+                ]
+                .iter()
+                .cloned(),
+                texture_attachment.extent,
+            )
+        }
+        .expect("failed to create framebuffer");
+        Ok(GfxFramebuffer { framebuffer })
     }
     pub fn delete_framebuffer(&mut self, framebuffer: &mut Framebuffer) -> Result<(), ErrorType> {
         todo!()
