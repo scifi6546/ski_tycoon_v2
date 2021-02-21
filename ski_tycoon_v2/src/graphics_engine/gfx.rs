@@ -7,6 +7,7 @@ use gfx_hal::{
     buffer, command,
     command::CommandBuffer,
     device::Device,
+    format,
     format::{AsFormat, ChannelType, Rgba8Srgb as ColorFormat, Swizzle},
     memory, pass,
     pass::Subpass,
@@ -107,6 +108,7 @@ pub struct GfxRenderingContext<B: gfx_hal::Backend> {
     format: gfx_hal::format::Format,
     dimensions: window::Extent2D,
     viewport: pso::Viewport,
+    supported_formats: std::vec::Vec<format::Format>,
     render_pass: ManuallyDrop<B::RenderPass>,
     framebuffer: ManuallyDrop<B::Framebuffer>,
     pipeline: ManuallyDrop<B::GraphicsPipeline>,
@@ -475,18 +477,21 @@ impl<B: gfx_hal::Backend> GfxRenderingContext<B> {
             device.destroy_fence(copy_fence);
         }
         let caps = window.surface.capabilities(&window.adapter.physical_device);
-        let formats = window
+        let supported_formats = window
             .surface
             .supported_formats(&window.adapter.physical_device);
-        println!("formats: {:?}", formats);
+        println!("formats: {:?}", supported_formats);
         //checking supported formats
-        let format = formats.map_or(gfx_hal::format::Format::Rgba8Srgb, |formats| {
-            formats
-                .iter()
-                .find(|format| format.base_format().1 == ChannelType::Srgb)
-                .map(|format| *format)
-                .unwrap_or(formats[0])
-        });
+        let format =
+            supported_formats
+                .clone()
+                .map_or(gfx_hal::format::Format::Rgba8Srgb, |formats| {
+                    formats
+                        .iter()
+                        .find(|format| format.base_format().1 == ChannelType::Srgb)
+                        .map(|format| *format)
+                        .unwrap_or(formats[0])
+                });
         let swap_config = window::SwapchainConfig::from_caps(&caps, format, window_dimensions);
         let fat = swap_config.framebuffer_attachment();
         let extent = swap_config.extent;
@@ -672,6 +677,7 @@ impl<B: gfx_hal::Backend> GfxRenderingContext<B> {
         Ok(Self {
             adapter: window.adapter,
             buffer_memory,
+            supported_formats: supported_formats.unwrap(),
             cmd_buffer: CircularBuffer::new(cmd_vec),
             frame: 0,
             image_logo,
