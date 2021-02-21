@@ -22,4 +22,10 @@ impl RGBATexture {
             .collect();
         Self { dimensions, pixels }
     }
+    pub fn width(&self) -> u32 {
+        self.dimensions.x
+    }
+    pub fn height(&self) -> u32 {
+        self.dimensions.y
+    }
 }

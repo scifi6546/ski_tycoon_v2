@@ -48,8 +48,12 @@ extern crate gfx_backend_metal as back;
 extern crate gfx_backend_vulkan as back;
 
 pub type RuntimeMesh = RuntimeGfxMesh<back::Backend>;
+pub type RuntimeTexture = RuntimeGfxTexture<back::Backend>;
 #[derive(Clone)]
-pub struct RuntimeTexture {}
+pub struct RuntimeGfxTexture<B: gfx_hal::Backend> {
+    image_buffer: B::Buffer,
+    image_memory: B::Memory,
+}
 pub type ErrorType = ();
 pub struct Framebuffer {}
 #[derive(Clone)]
@@ -693,7 +697,6 @@ impl<B: gfx_hal::Backend> GfxRenderingContext<B> {
             set_layout,
             submission_complete_semaphores,
             submission_complete_fences,
-
             surface: ManuallyDrop::new(window.surface),
         })
     }
@@ -815,7 +818,11 @@ impl<B: gfx_hal::Backend> GfxRenderingContext<B> {
         let shaders = shader::get_world();
         self.build_shader(shaders)
     }
-    fn allocate_memory(&mut self, buffer: &B::Buffer) -> B::Memory {
+    fn allocate_memory_properties(
+        &mut self,
+        buffer: &B::Buffer,
+        properties: memory::Properties,
+    ) -> B::Memory {
         let memory_types = self
             .adapter
             .physical_device
@@ -829,10 +836,7 @@ impl<B: gfx_hal::Backend> GfxRenderingContext<B> {
                 // type_mask is a bit field where each bit represents a memory type. If the bit is set
                 // to 1 it means we can use that type for our buffer. So this code finds the first
                 // memory type that has a `1` (or, is allowed), and is visible to the CPU.
-                buffer_reqs.type_mask & (1 << id) != 0
-                    && mem_type
-                        .properties
-                        .contains(memory::Properties::CPU_VISIBLE)
+                buffer_reqs.type_mask & (1 << id) != 0 && mem_type.properties.contains(properties)
             })
             .unwrap()
             .into();
@@ -841,6 +845,9 @@ impl<B: gfx_hal::Backend> GfxRenderingContext<B> {
                 .allocate_memory(upload_type, buffer_reqs.size)
                 .unwrap()
         }
+    }
+    fn allocate_memory(&mut self, buffer: &B::Buffer) -> B::Memory {
+        self.allocate_memory_properties(buffer, memory::Properties::CPU_VISIBLE)
     }
     /// Builds shader used for screenspace
     pub fn build_screen_shader(&mut self) -> Result<GfxShader<B>, ErrorType> {
@@ -992,8 +999,181 @@ impl<B: gfx_hal::Backend> GfxRenderingContext<B> {
         &mut self,
         texture: Texture,
         shader: &Shader,
-    ) -> Result<RuntimeTexture, ErrorType> {
-        todo!()
+    ) -> Result<RuntimeGfxTexture<B>, ErrorType> {
+        let length = texture.pixels.len() * 4;
+        let image_buffer = unsafe {
+            self.device
+                .create_buffer(length as u64, gfx_hal::buffer::Usage::TRANSFER_SRC)
+        }
+        .expect("failed to create buffer");
+        let mut memory = unsafe { self.allocate_memory(&image_buffer) };
+        let memory_ptr = unsafe {
+            self.device.map_memory(
+                &mut memory,
+                gfx_hal::memory::Segment {
+                    offset: 0,
+                    size: None,
+                },
+            )
+        }
+        .expect("failed to map memory");
+        unsafe {
+            std::ptr::copy_nonoverlapping(texture.pixels.as_ptr() as *const u8, memory_ptr, length);
+        };
+        unsafe {
+            self.device.unmap_memory(&mut memory);
+        }
+        let kind = gfx_hal::image::Kind::D2(
+            texture.width() as gfx_hal::image::Size,
+            texture.height() as gfx_hal::image::Size,
+            1,
+            1,
+        );
+        let mut image_logo = unsafe {
+            self.device.create_image(
+                kind,
+                1,
+                ColorFormat::SELF,
+                gfx_hal::image::Tiling::Optimal,
+                gfx_hal::image::Usage::TRANSFER_DST | gfx_hal::image::Usage::SAMPLED,
+                gfx_hal::image::ViewCapabilities::empty(),
+            )
+        }
+        .unwrap();
+
+        let find_image_memory = |image: &B::Image| {
+            let memory_types = self
+                .adapter
+                .physical_device
+                .memory_properties()
+                .memory_types;
+            let buffer_reqs = unsafe { self.device.get_image_requirements(image) };
+            let upload_type = memory_types
+                .iter()
+                .enumerate()
+                .position(|(id, mem_type)| {
+                    // type_mask is a bit field where each bit represents a memory type. If the bit is set
+                    // to 1 it means we can use that type for our buffer. So this code finds the first
+                    // memory type that has a `1` (or, is allowed), and is visible to the CPU.
+                    buffer_reqs.type_mask & (1 << id) != 0
+                        && mem_type
+                            .properties
+                            .contains(memory::Properties::DEVICE_LOCAL)
+                })
+                .unwrap()
+                .into();
+            unsafe {
+                self.device
+                    .allocate_memory(upload_type, buffer_reqs.size)
+                    .unwrap()
+            }
+        };
+        let image_memory = find_image_memory(&image_logo);
+        unsafe {
+            self.device
+                .bind_image_memory(&image_memory, 0, &mut image_logo)
+                .expect("failed to bind image memory");
+        }
+
+        let mut copy_fence = self
+            .device
+            .create_fence(false)
+            .expect("failed to create fence");
+        //copying image
+        let mut command_pool = unsafe {
+            self.device
+                .create_command_pool(
+                    self.queue_group.family,
+                    pool::CommandPoolCreateFlags::empty(),
+                )
+                .expect("failed to create command pool")
+        };
+        unsafe {
+            let mut cmd_buffer = command_pool.allocate_one(command::Level::Primary);
+            cmd_buffer.begin_primary(command::CommandBufferFlags::ONE_TIME_SUBMIT);
+            let image_barrier = gfx_hal::memory::Barrier::Image {
+                states: (
+                    gfx_hal::image::Access::empty(),
+                    gfx_hal::image::Layout::Undefined,
+                )
+                    ..(
+                        gfx_hal::image::Access::TRANSFER_WRITE,
+                        gfx_hal::image::Layout::TransferDstOptimal,
+                    ),
+                target: &image_logo,
+                families: None,
+                range: gfx_hal::image::SubresourceRange {
+                    aspects: gfx_hal::format::Aspects::COLOR,
+                    ..Default::default()
+                },
+            };
+            cmd_buffer.pipeline_barrier(
+                PipelineStage::TOP_OF_PIPE..PipelineStage::TRANSFER,
+                gfx_hal::memory::Dependencies::empty(),
+                iter::once(image_barrier),
+            );
+            cmd_buffer.copy_buffer_to_image(
+                &image_buffer,
+                &image_logo,
+                gfx_hal::image::Layout::TransferDstOptimal,
+                iter::once(command::BufferImageCopy {
+                    buffer_offset: 0,
+                    buffer_width: texture.width() * 4,
+                    buffer_height: texture.height(),
+                    image_layers: gfx_hal::image::SubresourceLayers {
+                        aspects: gfx_hal::format::Aspects::COLOR,
+                        level: 0,
+                        layers: 0..1,
+                    },
+                    image_offset: gfx_hal::image::Offset { x: 0, y: 0, z: 0 },
+                    image_extent: gfx_hal::image::Extent {
+                        width: texture.width(),
+                        height: texture.height(),
+                        depth: 1,
+                    },
+                }),
+            );
+            let image_barrier = gfx_hal::memory::Barrier::Image {
+                states: (
+                    gfx_hal::image::Access::TRANSFER_WRITE,
+                    gfx_hal::image::Layout::TransferDstOptimal,
+                )
+                    ..(
+                        gfx_hal::image::Access::SHADER_READ,
+                        gfx_hal::image::Layout::ShaderReadOnlyOptimal,
+                    ),
+                target: &image_logo,
+                families: None,
+                range: gfx_hal::image::SubresourceRange {
+                    aspects: gfx_hal::format::Aspects::COLOR,
+                    ..Default::default()
+                },
+            };
+            cmd_buffer.pipeline_barrier(
+                PipelineStage::TRANSFER..PipelineStage::FRAGMENT_SHADER,
+                gfx_hal::memory::Dependencies::empty(),
+                iter::once(image_barrier),
+            );
+            cmd_buffer.finish();
+            self.queue_group.queues[0].submit(
+                iter::once(&cmd_buffer),
+                iter::empty(),
+                iter::empty(),
+                Some(&mut copy_fence),
+            );
+            self.device
+                .wait_for_fence(&copy_fence, !0)
+                .expect("failed to wait for fence");
+            self.device.destroy_fence(copy_fence);
+        }
+        unsafe {
+            self.device.destroy_command_pool(command_pool);
+            self.device.free_memory(memory);
+        }
+        Ok(RuntimeGfxTexture {
+            image_buffer,
+            image_memory,
+        })
     }
     pub fn delete_texture(&mut self, texture: &mut RuntimeTexture) {
         todo!()
