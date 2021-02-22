@@ -3,6 +3,7 @@ mod bind_arena;
 mod shader;
 use super::super::prelude::Texture;
 use super::Mesh;
+use bind_arena::{BindArena, BindArenaIndex};
 use gfx_hal::{
     adapter::PhysicalDevice,
     buffer, command,
@@ -25,7 +26,7 @@ use gfx_hal::{
 use shader::ShaderData;
 
 use std::collections::HashMap;
-use std::{cmp::min, io::Cursor, iter, mem, mem::ManuallyDrop, ptr};
+use std::{cmp::max, io::Cursor, iter, mem, mem::ManuallyDrop, ptr};
 
 use nalgebra::{Matrix4, Vector2, Vector3, Vector4};
 use std::ffi::{CStr, CString};
@@ -144,8 +145,11 @@ pub struct GfxRenderingContext<B: gfx_hal::Backend> {
     adapter: gfx_hal::adapter::Adapter<B>,
     queue_group: QueueGroup<B>,
     instance: B::Instance,
+    shaders: BindArena<GfxShader<B>>,
 }
-pub type Shader = GfxShader<back::Backend>;
+pub struct Shader {
+    index: BindArenaIndex,
+}
 struct RuntimeUniform<B: gfx_hal::Backend> {
     buffer: B::Buffer,
     memory: B::Memory,
@@ -273,8 +277,9 @@ impl<B: gfx_hal::Backend> GfxRenderingContext<B> {
             .unwrap()
             .into();
         let buffer_memory = unsafe {
+            println!("buffer_len: {} spirv len: {}", buffer_req.size, buffer_len);
             let mut memory = device
-                .allocate_memory(upload_type, buffer_req.size)
+                .allocate_memory(upload_type, max(buffer_req.size, buffer_len))
                 .unwrap();
             device
                 .bind_buffer_memory(&memory, 0, &mut vertex_buffer)
@@ -706,12 +711,14 @@ impl<B: gfx_hal::Backend> GfxRenderingContext<B> {
             submission_complete_semaphore,
             submission_complete_fence,
             surface: ManuallyDrop::new(window.surface),
+            shaders: BindArena::default(),
         })
     }
     pub fn change_viewport(&self, screen_size: &Vector2<u32>) -> Result<(), ErrorType> {
         todo!()
     }
-    fn build_shader(&mut self, shaders: ShaderData) -> Result<GfxShader<B>, ErrorType> {
+    ///Builds shader and inserts the shaer into self.shaders
+    fn build_shader(&mut self, shaders: ShaderData) -> Result<Shader, ErrorType> {
         let fragment_shader = unsafe {
             self.device
                 .create_shader_module(&shaders.fragment_shader_data)
@@ -816,13 +823,16 @@ impl<B: gfx_hal::Backend> GfxRenderingContext<B> {
                 (name.clone(), RuntimeUniform { buffer, memory })
             })
             .collect();
-        Ok(GfxShader {
+        let shader = GfxShader {
             pipeline,
             fragment_shader_uniform_buffers,
             vertex_shader_uniform_buffers,
+        };
+        Ok(Shader {
+            index: self.shaders.insert(shader),
         })
     }
-    pub fn build_world_shader(&mut self) -> Result<GfxShader<B>, ErrorType> {
+    pub fn build_world_shader(&mut self) -> Result<Shader, ErrorType> {
         let shaders = shader::get_world();
         self.build_shader(shaders)
     }
@@ -858,18 +868,16 @@ impl<B: gfx_hal::Backend> GfxRenderingContext<B> {
         self.allocate_memory_properties(buffer, memory::Properties::CPU_VISIBLE)
     }
     /// Builds shader used for screenspace
-    pub fn build_screen_shader(&mut self) -> Result<GfxShader<B>, ErrorType> {
+    pub fn build_screen_shader(&mut self) -> Result<Shader, ErrorType> {
         let shaders = shader::get_screen();
         self.build_shader(shaders)
     }
-    pub fn build_gui_shader(&mut self) -> Result<GfxShader<B>, ErrorType> {
+    pub fn build_gui_shader(&mut self) -> Result<Shader, ErrorType> {
         let shaders = shader::get_screen();
         self.build_shader(shaders)
     }
-    pub fn bind_shader(&mut self, shader: &GfxShader<B>) -> Result<(), ErrorType> {
-        unsafe {
-            self.command_buffer.bind_graphics_pipeline(&shader.pipeline);
-        }
+    pub fn bind_shader(&mut self, shader: &Shader) -> Result<(), ErrorType> {
+        self.shaders.bind(shader.index.clone());
         Ok(())
     }
     pub fn build_mesh(
@@ -915,12 +923,13 @@ impl<B: gfx_hal::Backend> GfxRenderingContext<B> {
         todo!()
     }
     unsafe fn send_uniform(
-        &self,
-        shader: &mut GfxShader<B>,
+        &mut self,
+        shader: &mut Shader,
         uniform_name: &str,
         data: *const u8,
         data_size: usize,
     ) {
+        let shader = self.shaders.get_mut(shader.index.clone()).unwrap();
         let memory = if shader
             .fragment_shader_uniform_buffers
             .contains_key(uniform_name)
@@ -956,8 +965,8 @@ impl<B: gfx_hal::Backend> GfxRenderingContext<B> {
         self.device.unmap_memory(memory);
     }
     pub fn send_vec3_uniform(
-        &self,
-        shader: &mut GfxShader<B>,
+        &mut self,
+        shader: &mut Shader,
         uniform_name: &str,
         data: Vector3<f32>,
     ) -> Result<(), ErrorType> {
@@ -972,8 +981,8 @@ impl<B: gfx_hal::Backend> GfxRenderingContext<B> {
         Ok(())
     }
     pub fn send_vec4_uniform(
-        &self,
-        shader: &mut GfxShader<B>,
+        &mut self,
+        shader: &mut Shader,
         uniform_name: &str,
         data: Vector4<f32>,
     ) -> Result<(), ErrorType> {

@@ -1,14 +1,23 @@
 use generational_arena::{Arena, Index};
+#[derive(Clone)]
+pub struct BindArenaIndex {
+    index: Index,
+}
 pub struct BindArena<T> {
     arena: Arena<T>,
     currently_bound: Option<Index>,
 }
 impl<T> BindArena<T> {
-    pub fn insert(&mut self, data: T) -> Index {
-        self.arena.insert(data)
+    pub fn insert(&mut self, data: T) -> BindArenaIndex {
+        BindArenaIndex {
+            index: self.arena.insert(data),
+        }
     }
-    pub fn get(&self, idx: Index) -> Option<&T> {
-        self.arena.get(idx)
+    pub fn get(&self, idx: BindArenaIndex) -> Option<&T> {
+        self.arena.get(idx.index)
+    }
+    pub fn get_mut(&mut self, idx: BindArenaIndex) -> Option<&mut T> {
+        self.arena.get_mut(idx.index)
     }
     pub fn get_bound(&self) -> Option<&T> {
         if let Some(idx) = self.currently_bound {
@@ -17,8 +26,8 @@ impl<T> BindArena<T> {
             None
         }
     }
-    pub fn bind(&mut self, idx: Index) {
-        self.currently_bound = Some(idx);
+    pub fn bind(&mut self, idx: BindArenaIndex) {
+        self.currently_bound = Some(idx.index);
     }
 }
 impl<T> Default for BindArena<T> {
