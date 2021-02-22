@@ -1116,19 +1116,7 @@ impl<B: gfx_hal::Backend> GfxRenderingContext<B> {
                 .expect("failed to bind image memory");
         }
 
-        let mut copy_fence = self
-            .device
-            .create_fence(false)
-            .expect("failed to create fence");
         //copying image
-        let mut command_pool = unsafe {
-            self.device
-                .create_command_pool(
-                    self.queue_group.family,
-                    pool::CommandPoolCreateFlags::empty(),
-                )
-                .expect("failed to create command pool")
-        };
         unsafe {
             self.command_buffer
                 .begin_primary(command::CommandBufferFlags::ONE_TIME_SUBMIT);
@@ -1200,15 +1188,13 @@ impl<B: gfx_hal::Backend> GfxRenderingContext<B> {
                 iter::once(&self.command_buffer),
                 iter::empty(),
                 iter::empty(),
-                Some(&mut copy_fence),
+                Some(&mut self.submission_complete_fence),
             );
             self.device
-                .wait_for_fence(&copy_fence, !0)
+                .wait_for_fence(&self.submission_complete_fence, !0)
                 .expect("failed to wait for fence");
-            self.device.destroy_fence(copy_fence);
         }
         unsafe {
-            self.device.destroy_command_pool(command_pool);
             self.device.free_memory(memory);
         }
         let extent = gfx_hal::image::Extent {
