@@ -1,4 +1,5 @@
 // gfx frontent rendering engine
+mod bind_arena;
 mod shader;
 use super::super::prelude::Texture;
 use super::Mesh;
@@ -125,9 +126,10 @@ pub struct GfxRenderingContext<B: gfx_hal::Backend> {
     pipeline_layout: ManuallyDrop<B::PipelineLayout>,
     desc_set: Option<B::DescriptorSet>,
     set_layout: ManuallyDrop<B::DescriptorSetLayout>,
-    submission_complete_semaphores: Vec<B::Semaphore>,
-    submission_complete_fences: Vec<B::Fence>,
-    cmd_buffer: CircularBuffer<(B::CommandPool, B::CommandBuffer)>,
+    submission_complete_semaphore: B::Semaphore,
+    submission_complete_fence: B::Fence,
+    command_pool: B::CommandPool,
+    command_buffer: B::CommandBuffer,
     vertex_buffer: ManuallyDrop<B::Buffer>,
     image_upload_buffer: ManuallyDrop<B::Buffer>,
     image_logo: ManuallyDrop<B::Image>,
@@ -136,7 +138,6 @@ pub struct GfxRenderingContext<B: gfx_hal::Backend> {
     image_memory: ManuallyDrop<B::Memory>,
     image_upload_memory: ManuallyDrop<B::Memory>,
     sampler: ManuallyDrop<B::Sampler>,
-    frames_in_flight: usize,
     frame: u64,
     //should be dropped in decleration order
     device: B::Device,
@@ -555,9 +556,11 @@ impl<B: gfx_hal::Backend> GfxRenderingContext<B> {
             .expect("failed to create framebuffer"),
         );
         //maximum number of frames that can be computed at the same time
-        let frames_in_flight = 3;
-        let mut submission_complete_semaphores = Vec::with_capacity(frames_in_flight);
-        let mut submission_complete_fences = Vec::with_capacity(frames_in_flight);
+        let mut submission_complete_semaphore = device
+            .create_semaphore()
+            .expect("failed to create semaphore");
+        let mut submission_complete_fence =
+            device.create_fence(false).expect("failed to create fence");
         // Note: We don't really need a different command pool per frame in such a simple demo like this,
         // but in a more 'real' application, it's generally seen as optimal to have one command pool per
         // thread per frame. There is a flag that lets a command pool reset individual command buffers
@@ -567,18 +570,7 @@ impl<B: gfx_hal::Backend> GfxRenderingContext<B> {
         // usually best to just make a command pool for each set of buffers which need to be reset at the
         // same time (each frame). In our case, each pool will only have one command buffer created from it,
         // though.
-        let mut cmd_vec = Vec::with_capacity(frames_in_flight);
         let command_buffer = unsafe { command_pool.allocate_one(command::Level::Primary) };
-        cmd_vec.push((command_pool, command_buffer));
-        for i in 1..frames_in_flight {
-            let mut pool = unsafe {
-                device
-                    .create_command_pool(queue_group.family, pool::CommandPoolCreateFlags::empty())
-                    .expect("failed to create command pool")
-            };
-            let buffer = unsafe { pool.allocate_one(command::Level::Primary) };
-            cmd_vec.push((pool, buffer));
-        }
 
         let pipeline_layout = ManuallyDrop::new(
             unsafe { device.create_pipeline_layout(iter::once(&*set_layout), iter::empty()) }
@@ -688,11 +680,11 @@ impl<B: gfx_hal::Backend> GfxRenderingContext<B> {
             adapter: window.adapter,
             buffer_memory,
             supported_formats: supported_formats.unwrap(),
-            cmd_buffer: CircularBuffer::new(cmd_vec),
+            command_buffer,
+            command_pool,
             frame: 0,
             image_logo,
             image_srv,
-            frames_in_flight,
             image_memory,
             image_upload_buffer,
             image_upload_memory,
@@ -711,8 +703,8 @@ impl<B: gfx_hal::Backend> GfxRenderingContext<B> {
             render_pass,
             desc_set: Some(desc_set),
             set_layout,
-            submission_complete_semaphores,
-            submission_complete_fences,
+            submission_complete_semaphore,
+            submission_complete_fence,
             surface: ManuallyDrop::new(window.surface),
         })
     }
@@ -876,10 +868,7 @@ impl<B: gfx_hal::Backend> GfxRenderingContext<B> {
     }
     pub fn bind_shader(&mut self, shader: &GfxShader<B>) -> Result<(), ErrorType> {
         unsafe {
-            self.cmd_buffer
-                .get_mut()
-                .1
-                .bind_graphics_pipeline(&shader.pipeline);
+            self.command_buffer.bind_graphics_pipeline(&shader.pipeline);
         }
         Ok(())
     }
@@ -1132,8 +1121,8 @@ impl<B: gfx_hal::Backend> GfxRenderingContext<B> {
                 .expect("failed to create command pool")
         };
         unsafe {
-            let mut cmd_buffer = command_pool.allocate_one(command::Level::Primary);
-            cmd_buffer.begin_primary(command::CommandBufferFlags::ONE_TIME_SUBMIT);
+            self.command_buffer
+                .begin_primary(command::CommandBufferFlags::ONE_TIME_SUBMIT);
             let image_barrier = gfx_hal::memory::Barrier::Image {
                 states: (
                     gfx_hal::image::Access::empty(),
@@ -1150,12 +1139,12 @@ impl<B: gfx_hal::Backend> GfxRenderingContext<B> {
                     ..Default::default()
                 },
             };
-            cmd_buffer.pipeline_barrier(
+            self.command_buffer.pipeline_barrier(
                 PipelineStage::TOP_OF_PIPE..PipelineStage::TRANSFER,
                 gfx_hal::memory::Dependencies::empty(),
                 iter::once(image_barrier),
             );
-            cmd_buffer.copy_buffer_to_image(
+            self.command_buffer.copy_buffer_to_image(
                 &image_buffer,
                 &image_logo,
                 gfx_hal::image::Layout::TransferDstOptimal,
@@ -1192,14 +1181,14 @@ impl<B: gfx_hal::Backend> GfxRenderingContext<B> {
                     ..Default::default()
                 },
             };
-            cmd_buffer.pipeline_barrier(
+            self.command_buffer.pipeline_barrier(
                 PipelineStage::TRANSFER..PipelineStage::FRAGMENT_SHADER,
                 gfx_hal::memory::Dependencies::empty(),
                 iter::once(image_barrier),
             );
-            cmd_buffer.finish();
+            self.command_buffer.finish();
             self.queue_group.queues[0].submit(
-                iter::once(&cmd_buffer),
+                iter::once(&self.command_buffer),
                 iter::empty(),
                 iter::empty(),
                 Some(&mut copy_fence),
@@ -1341,16 +1330,11 @@ impl<B: gfx_hal::Backend> Drop for GfxRenderingContext<B> {
                 .destroy_image_view(ManuallyDrop::into_inner(ptr::read(&self.image_srv)));
             self.device
                 .destroy_sampler(ManuallyDrop::into_inner(ptr::read(&self.sampler)));
-            for (pool, buffer) in self.cmd_buffer.data.drain(..) {
-                self.device.destroy_command_pool(pool);
-            }
+            // self.device.destroy_command_pool(self.cmd_buffer.0);
 
-            for s in self.submission_complete_semaphores.drain(..) {
-                self.device.destroy_semaphore(s);
-            }
-            for fence in self.submission_complete_fences.drain(..) {
-                self.device.destroy_fence(fence);
-            }
+            //self.device
+            //    .destroy_semaphore(self.submission_complete_semaphore);
+            //self.device.destroy_fence(self.submission_complete_fence);
             self.device
                 .destroy_render_pass(ManuallyDrop::into_inner(ptr::read(&self.render_pass)));
 

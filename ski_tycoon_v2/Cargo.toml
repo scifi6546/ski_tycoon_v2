@@ -56,6 +56,7 @@ gfx-backend-dx12 = {version="0.7",optional=true}
 gfx-backend-metal = {version="0.7",optional=true}
 gfx-backend-vulkan = {version="0.7",optional=true}
 winit = { version = "0.24", features = ["web-sys"] }
+generational-arena="0.2.8"
 [dependencies.web-sys]
 version = "0.3.4"
 features = [
