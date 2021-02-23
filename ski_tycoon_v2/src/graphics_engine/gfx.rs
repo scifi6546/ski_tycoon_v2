@@ -132,14 +132,7 @@ pub struct GfxRenderingContext<B: gfx_hal::Backend> {
     command_pool: B::CommandPool,
     command_buffer: B::CommandBuffer,
     vertex_buffer: ManuallyDrop<B::Buffer>,
-    image_upload_buffer: ManuallyDrop<B::Buffer>,
-    image_logo: ManuallyDrop<B::Image>,
-    image_srv: ManuallyDrop<B::ImageView>,
     buffer_memory: ManuallyDrop<B::Memory>,
-    image_memory: ManuallyDrop<B::Memory>,
-    image_upload_memory: ManuallyDrop<B::Memory>,
-    sampler: ManuallyDrop<B::Sampler>,
-    frame: u64,
     //should be dropped in decleration order
     device: B::Device,
     adapter: gfx_hal::adapter::Adapter<B>,
@@ -412,86 +405,6 @@ impl<B: gfx_hal::Backend> GfxRenderingContext<B> {
                 .into_iter(),
             });
         }
-        let mut copy_fence = device.create_fence(false).expect("failed to create fence");
-        //copying image
-        unsafe {
-            let mut cmd_buffer = command_pool.allocate_one(command::Level::Primary);
-            cmd_buffer.begin_primary(command::CommandBufferFlags::ONE_TIME_SUBMIT);
-            let image_barrier = gfx_hal::memory::Barrier::Image {
-                states: (
-                    gfx_hal::image::Access::empty(),
-                    gfx_hal::image::Layout::Undefined,
-                )
-                    ..(
-                        gfx_hal::image::Access::TRANSFER_WRITE,
-                        gfx_hal::image::Layout::TransferDstOptimal,
-                    ),
-                target: &*image_logo,
-                families: None,
-                range: gfx_hal::image::SubresourceRange {
-                    aspects: gfx_hal::format::Aspects::COLOR,
-                    ..Default::default()
-                },
-            };
-            cmd_buffer.pipeline_barrier(
-                PipelineStage::TOP_OF_PIPE..PipelineStage::TRANSFER,
-                gfx_hal::memory::Dependencies::empty(),
-                iter::once(image_barrier),
-            );
-            cmd_buffer.copy_buffer_to_image(
-                &image_upload_buffer,
-                &image_logo,
-                gfx_hal::image::Layout::TransferDstOptimal,
-                iter::once(command::BufferImageCopy {
-                    buffer_offset: 0,
-                    buffer_width: row_pitch / (image_stride as u32),
-                    buffer_height: height,
-                    image_layers: gfx_hal::image::SubresourceLayers {
-                        aspects: gfx_hal::format::Aspects::COLOR,
-                        level: 0,
-                        layers: 0..1,
-                    },
-                    image_offset: gfx_hal::image::Offset { x: 0, y: 0, z: 0 },
-                    image_extent: gfx_hal::image::Extent {
-                        width,
-                        height,
-                        depth: 1,
-                    },
-                }),
-            );
-            let image_barrier = gfx_hal::memory::Barrier::Image {
-                states: (
-                    gfx_hal::image::Access::TRANSFER_WRITE,
-                    gfx_hal::image::Layout::TransferDstOptimal,
-                )
-                    ..(
-                        gfx_hal::image::Access::SHADER_READ,
-                        gfx_hal::image::Layout::ShaderReadOnlyOptimal,
-                    ),
-                target: &*image_logo,
-                families: None,
-                range: gfx_hal::image::SubresourceRange {
-                    aspects: gfx_hal::format::Aspects::COLOR,
-                    ..Default::default()
-                },
-            };
-            cmd_buffer.pipeline_barrier(
-                PipelineStage::TRANSFER..PipelineStage::FRAGMENT_SHADER,
-                gfx_hal::memory::Dependencies::empty(),
-                iter::once(image_barrier),
-            );
-            cmd_buffer.finish();
-            queue_group.queues[0].submit(
-                iter::once(&cmd_buffer),
-                iter::empty(),
-                iter::empty(),
-                Some(&mut copy_fence),
-            );
-            device
-                .wait_for_fence(&copy_fence, !0)
-                .expect("failed to wait for fence");
-            device.destroy_fence(copy_fence);
-        }
         let caps = window.surface.capabilities(&window.adapter.physical_device);
         let supported_formats = window
             .surface
@@ -687,14 +600,7 @@ impl<B: gfx_hal::Backend> GfxRenderingContext<B> {
             supported_formats: supported_formats.unwrap(),
             command_buffer,
             command_pool,
-            frame: 0,
-            image_logo,
-            image_srv,
-            image_memory,
-            image_upload_buffer,
-            image_upload_memory,
             queue_group,
-            sampler,
             vertex_buffer,
             device,
             desc_pool,
@@ -1029,12 +935,12 @@ impl<B: gfx_hal::Backend> GfxRenderingContext<B> {
         usage: gfx_hal::image::Usage,
     ) -> (B::Image, B::Buffer, B::Memory) {
         let length = dimensions.x * dimensions.y * 4;
-        let image_buffer = unsafe {
+        let image_upload_buffer = unsafe {
             self.device
                 .create_buffer(length as u64, gfx_hal::buffer::Usage::TRANSFER_SRC)
         }
         .expect("failed to create buffer");
-        let memory = self.allocate_memory(&image_buffer);
+        let memory = self.allocate_memory(&image_upload_buffer);
         let kind = gfx_hal::image::Kind::D2(
             dimensions.x as gfx_hal::image::Size,
             dimensions.y as gfx_hal::image::Size,
@@ -1053,7 +959,7 @@ impl<B: gfx_hal::Backend> GfxRenderingContext<B> {
         }
         .unwrap();
 
-        (image_logo, image_buffer, memory)
+        (image_logo, image_upload_buffer, memory)
     }
     pub fn build_texture(
         &mut self,
@@ -1184,6 +1090,16 @@ impl<B: gfx_hal::Backend> GfxRenderingContext<B> {
                 iter::once(image_barrier),
             );
             self.command_buffer.finish();
+            if self
+                .device
+                .get_fence_status(&self.submission_complete_fence)
+                .expect("failed to get fence")
+                != false
+            {
+                panic!("fence not reset at submission of command queue");
+            } else {
+                println!("fence properly reset");
+            }
             self.queue_group.queues[0].submit(
                 iter::once(&self.command_buffer),
                 iter::empty(),
@@ -1193,6 +1109,9 @@ impl<B: gfx_hal::Backend> GfxRenderingContext<B> {
             self.device
                 .wait_for_fence(&self.submission_complete_fence, !0)
                 .expect("failed to wait for fence");
+            self.device
+                .reset_fence(&mut self.submission_complete_fence)
+                .expect("failed to reset fence");
         }
         unsafe {
             self.device.free_memory(memory);
@@ -1218,32 +1137,6 @@ impl<B: gfx_hal::Backend> GfxRenderingContext<B> {
         depth_attachment: &mut RuntimeGfxDepthTexture<B>,
     ) -> Result<GfxFramebuffer<B>, ErrorType> {
         assert_eq!(texture_attachment.extent, depth_attachment.extent);
-        let texture_attachment_view = unsafe {
-            self.device.create_image_view(
-                &texture_attachment.image_logo,
-                ViewKind::D2,
-                ColorFormat::SELF,
-                Swizzle::NO,
-                SubresourceRange {
-                    aspects: gfx_hal::format::Aspects::COLOR,
-                    ..Default::default()
-                },
-            )
-        }
-        .expect("failed to create color view");
-        let depth_attachment_view = unsafe {
-            self.device.create_image_view(
-                &texture_attachment.image_logo,
-                ViewKind::D2,
-                ColorFormat::SELF,
-                Swizzle::NO,
-                SubresourceRange {
-                    aspects: gfx_hal::format::Aspects::DEPTH,
-                    ..Default::default()
-                },
-            )
-        }
-        .expect("failed to create depth view");
         let framebuffer = unsafe {
             self.device.create_framebuffer(
                 &self.render_pass,
@@ -1299,7 +1192,17 @@ impl<B: gfx_hal::Backend> GfxRenderingContext<B> {
     pub fn send_view_matrix(&mut self, matrix: Matrix4<f32>, shader: &Shader) {
         todo!()
     }
-    pub fn get_error(&self) {
+    /// Checks all preconditions,
+    /// currently the only precondition is that the fence must always be unsignaled
+    pub fn get_error(&mut self) {
+        assert_eq!(
+            unsafe {
+                self.device
+                    .get_fence_status(&mut self.submission_complete_fence)
+            }
+            .expect("failed to get fence status"),
+            false
+        );
         //nothing to do here
     }
 }
@@ -1315,16 +1218,6 @@ impl<B: gfx_hal::Backend> Drop for GfxRenderingContext<B> {
                 )));
             self.device
                 .destroy_buffer(ManuallyDrop::into_inner(ptr::read(&self.vertex_buffer)));
-            self.device
-                .destroy_buffer(ManuallyDrop::into_inner(ptr::read(
-                    &self.image_upload_buffer,
-                )));
-            self.device
-                .destroy_image(ManuallyDrop::into_inner(ptr::read(&self.image_logo)));
-            self.device
-                .destroy_image_view(ManuallyDrop::into_inner(ptr::read(&self.image_srv)));
-            self.device
-                .destroy_sampler(ManuallyDrop::into_inner(ptr::read(&self.sampler)));
             // self.device.destroy_command_pool(self.cmd_buffer.0);
 
             //self.device
@@ -1339,8 +1232,6 @@ impl<B: gfx_hal::Backend> Drop for GfxRenderingContext<B> {
 
             self.device
                 .free_memory(ManuallyDrop::into_inner(ptr::read(&self.buffer_memory)));
-            self.device
-                .free_memory(ManuallyDrop::into_inner(ptr::read(&self.image_memory)));
             self.device
                 .destroy_graphics_pipeline(ManuallyDrop::into_inner(ptr::read(&self.pipeline)));
             self.device
