@@ -115,32 +115,27 @@ pub fn draw_egui(
     gl.delete_texture(&mut render_texture);
     Ok(())
 }
-fn to_vertex(vertex_list: &Vec<EguiVertex>, depth: f32, screen_size: &Vector2<u32>) -> Vec<Vertex> {
+fn to_vertex(vertex_list: &Vec<EguiVertex>, depth: f32, screen_size: &Vector2<u32>) -> Vec<f32> {
     let mut vertices = vec![];
     let screen_x = screen_size.x as f32 / 2.0;
     let screen_y = screen_size.y as f32 / 2.0;
+    vertices.reserve(vertex_list.len() * (3 + 2 + 4));
     for vertex in vertex_list.iter() {
         let position = Vector3::new(
             vertex.pos.x / screen_x - 1.0,
             -1.0 * vertex.pos.y / screen_y + 1.0,
             depth,
         );
-        let uv = Vector2::new(vertex.uv.x, vertex.uv.y);
-        let normal = Vector3::new(0.0, 0.0, 1.0);
         let color: egui::paint::Rgba = vertex.color.into();
-        let extra_custom = vec![color.r(), color.g(), color.b(), color.a()];
-        let data = vec![
-            position.x,
-            position.y,
-            position.z,
-            uv.x,
-            uv.y,
-            color.r(),
-            color.g(),
-            color.b(),
-            color.a(),
-        ];
-        vertices.push(Vertex { data });
+        vertices.push(position.x);
+        vertices.push(position.y);
+        vertices.push(position.z);
+        vertices.push(vertex.uv.x);
+        vertices.push(vertex.uv.y);
+        vertices.push(color.r());
+        vertices.push(color.g());
+        vertices.push(color.b());
+        vertices.push(color.a());
     }
     vertices
 }

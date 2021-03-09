@@ -136,29 +136,16 @@ impl RenderingContext {
             WebGl2RenderingContext::ARRAY_BUFFER,
             (&position_buffer).as_ref(),
         );
-        let data_size = {
-            {
-                let s: usize = mesh
-                    .description
-                    .iter()
-                    .map(|d| d.number_components * d.size_component)
-                    .sum();
-                s as i32
-            }
-        };
-        for vertex in mesh.vertices.iter() {
-            for f in vertex.data.iter() {
-                //info!("f: {}",f);
-                array.push(*f);
-            }
-        }
+        let data_size = mesh.vertex_size();
+        let vao = self.context.create_vertex_array();
+        self.context.bind_vertex_array(vao.as_ref());
         //  Note that `Float32Array::view` is somewhat dangerous (hence the
         // `unsafe`!). This is creating a raw view into our module's
         // `WebAssembly.Memory` buffer, but if we allocate more pages for ourself
         // (aka do a memory allocation in Rust) it'll cause the buffer to change,
         // causing the `Float32Array` to be invalid.
         unsafe {
-            let vert_array = js_sys::Float32Array::view(&array);
+            let vert_array = js_sys::Float32Array::view(&mesh.vertices);
 
             self.context.buffer_data_with_array_buffer_view(
                 WebGl2RenderingContext::ARRAY_BUFFER,
@@ -166,8 +153,6 @@ impl RenderingContext {
                 WebGl2RenderingContext::STATIC_DRAW,
             );
         }
-        let vao = self.context.create_vertex_array();
-        self.context.bind_vertex_array(vao.as_ref());
         let mut addn: usize = 0;
         for desc in mesh.description.iter() {
             if !shader.attributes.contains_key(&desc.name) {
@@ -186,7 +171,7 @@ impl RenderingContext {
                 desc.number_components as i32,
                 WebGl2RenderingContext::FLOAT,
                 false,
-                data_size,
+                data_size as i32,
                 addn as i32,
             );
             addn += desc.number_components * desc.size_component;
@@ -197,7 +182,7 @@ impl RenderingContext {
         Ok(WebGlMesh {
             vertex_array_object: vao,
             position_buffer,
-            count: mesh.vertices.len() as i32,
+            count: mesh.num_vertices() as i32,
         })
     }
     pub fn delete_mesh(&mut self, mesh: &mut WebGlMesh) -> Result<(), ErrorType> {

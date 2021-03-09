@@ -121,7 +121,7 @@ impl Model {
         }
         Model {
             mesh: Mesh {
-                vertices,
+                vertices: vertices.iter().map(|v| v.data.clone()).flatten().collect(),
                 description: ItemDesc::default_model(),
             },
             texture: Texture::constant_color(Vector4::new(200, 200, 200, 255), Vector2::new(8, 8)),
@@ -540,7 +540,7 @@ impl Model {
         ];
         Model {
             mesh: Mesh {
-                vertices,
+                vertices: vertices.iter().map(|v| v.data.clone()).flatten().collect(),
                 description: ItemDesc::default_model(),
             },
             texture: Texture::constant_color(Vector4::new(255, 0, 0, 255), Vector2::new(8, 8)),
