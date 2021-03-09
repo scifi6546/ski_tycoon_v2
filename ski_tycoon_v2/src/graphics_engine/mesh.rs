@@ -3,16 +3,36 @@ use std::io::Cursor;
 use tobj::{load_mtl_buf, load_obj_buf};
 #[derive(Clone, Debug)]
 pub struct Vertex {
-    pub position: Vector3<f32>,
-    pub uv: Vector2<f32>,
-    pub normal: Vector3<f32>,
-    pub extra_custom: Vec<f32>,
+    pub data: Vec<f32>,
 }
+/// Description of certicies for a mesh
 #[derive(Clone, Debug)]
 pub struct ItemDesc {
     pub number_components: usize,
     pub size_component: usize,
     pub name: String,
+}
+impl ItemDesc {
+    /// Returns default for a model
+    pub fn default_model() -> Vec<ItemDesc> {
+        vec![
+            ItemDesc {
+                number_components: 3,
+                size_component: std::mem::size_of::<f32>(),
+                name: "position".to_string(),
+            },
+            ItemDesc {
+                number_components: 2,
+                size_component: std::mem::size_of::<f32>(),
+                name: "uv".to_string(),
+            },
+            ItemDesc {
+                number_components: 3,
+                size_component: std::mem::size_of::<f32>(),
+                name: "normal".to_string(),
+            },
+        ]
+    }
 }
 #[derive(Clone, Debug)]
 pub struct Mesh {
@@ -33,24 +53,19 @@ impl Mesh {
             .indices
             .iter()
             .map(|i| Vertex {
-                position: Vector3::new(
+                data: vec![
                     loaded_obj.positions[*i as usize * 3],
                     loaded_obj.positions[*i as usize * 3 + 1],
                     loaded_obj.positions[*i as usize * 3 + 2],
-                ),
-                uv: Vector2::new(
                     loaded_obj.texcoords[*i as usize * 2],
                     loaded_obj.texcoords[*i as usize * 2 + 1],
-                ),
-                normal: Vector3::new(
                     loaded_obj.normals[*i as usize],
                     loaded_obj.normals[*i as usize + 1],
                     loaded_obj.normals[*i as usize + 2],
-                ),
-                extra_custom: vec![],
+                ],
             })
             .collect();
-        let description = vec![];
+        let description = ItemDesc::default_model();
         Self {
             vertices,
             description,
@@ -61,44 +76,75 @@ impl Mesh {
         Self {
             vertices: vec![
                 Vertex {
-                    position: Vector3::new(1.0, 1.0, -0.5),
-                    uv: Vector2::new(1.0, 1.0),
-                    normal: Vector3::new(0.0, 0.0, 1.0),
-                    extra_custom: vec![],
+                    #[rustfmt::skip]
+                    data: vec![
+                        //position
+                        1.0,1.0,-0.5,
+                        //uv
+                        1.0,1.0,
+                        //normal
+                        0.0,0.0,1.0
+
+                    ],
                 },
                 Vertex {
-                    position: Vector3::new(1.0, -1.0, -0.5),
-                    uv: Vector2::new(1.0, 0.0),
-                    normal: Vector3::new(0.0, 0.0, 1.0),
-                    extra_custom: vec![],
+                    #[rustfmt::skip]
+                    data: vec![
+                        //position
+                        1.0,-1.0,-0.5,
+                        //uv
+                        1.0,0.0,
+                        //normal
+                        0.0,0.0,1.0
+                    ],
                 },
                 Vertex {
-                    position: Vector3::new(-1.0, -1.0, -0.5),
-                    uv: Vector2::new(0.0, 0.0),
-                    normal: Vector3::new(0.0, 0.0, 1.0),
-                    extra_custom: vec![],
+                    #[rustfmt::skip]
+                    data: vec![
+                        //position
+                        -1.0,-1.0,-0.5,
+                        //uv
+                        0.0,0.0,
+                        //normal
+                        0.0,0.0,1.0
+                    ],
                 },
                 //Second Triangle
                 Vertex {
-                    position: Vector3::new(1.0, 1.0, -0.5),
-                    uv: Vector2::new(1.0, 1.0),
-                    normal: Vector3::new(0.0, 0.0, 1.0),
-                    extra_custom: vec![],
+                    #[rustfmt::skip]
+                    data: vec![
+                        //position
+                        1.0,1.0,-0.5,
+                        //uv
+                        1.0,1.0,
+                        //normal
+                        0.0,0.0,1.0
+                    ],
                 },
                 Vertex {
-                    position: Vector3::new(-1.0, -1.0, -0.5),
-                    uv: Vector2::new(0.0, 0.0),
-                    normal: Vector3::new(0.0, 0.0, 1.0),
-                    extra_custom: vec![],
+                    #[rustfmt::skip]
+                    data: vec![
+                        //position
+                        -1.0,-1.0,-0.5,
+                        //uv
+                        0.0,0.0,
+                        //normal
+                        0.0,0.0,1.0
+                    ],
                 },
                 Vertex {
-                    position: Vector3::new(-1.0, 1.0, -0.5),
-                    uv: Vector2::new(0.0, 1.0),
-                    normal: Vector3::new(0.0, 0.0, 1.0),
-                    extra_custom: vec![],
+                    #[rustfmt::skip]
+                    data: vec![
+                        //position
+                        -1.0,1.0,-0.5,
+                        //uv
+                        0.0,1.0,
+                        //normal
+                        0.0,0.0,1.0
+                    ],
                 },
             ],
-            description: vec![],
+            description: ItemDesc::default_model(),
         }
     }
     pub fn to_bytes(&self) -> Vec<f32> {
@@ -115,17 +161,8 @@ impl Mesh {
         let mut array: Vec<f32> = vec![];
         array.reserve(data_size as usize / 3);
         for vertex in self.vertices.iter() {
-            array.push(vertex.position.x);
-            array.push(vertex.position.y);
-            array.push(vertex.position.z);
-            array.push(vertex.uv.x);
-            array.push(vertex.uv.y);
-            array.push(vertex.normal.x);
-            array.push(vertex.normal.y);
-            array.push(vertex.normal.z);
-            for f in vertex.extra_custom.iter() {
-                //info!("f: {}",f);
-                array.push(*f);
+            for f in vertex.data.iter() {
+                array.push(f.clone());
             }
         }
         return array;

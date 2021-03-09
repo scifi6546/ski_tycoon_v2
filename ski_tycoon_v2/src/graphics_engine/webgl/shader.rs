@@ -9,24 +9,23 @@ pub struct ShaderText {
     pub fragment_shader: &'static str,
     pub vertex_shader: &'static str,
     pub uniforms: &'static [&'static str],
-    pub custom_attributes: &'static [Attribute],
+    pub attributes: &'static [Attribute],
+    pub name: &'static str,
 }
 pub mod shader_library {
     use super::{Attribute, ShaderText};
     pub const GUI_SHADER: ShaderText = ShaderText {
+        name: "GUI_SHADER",
         vertex_shader: r#"#version 300 es
         in vec3 position;
         in vec2 uv;
-        in vec3 normal;
         in vec4 vertex_color;
         out vec2 o_uv;
-        out vec3 o_normal;
         out vec4 o_color;
         uniform mat4 camera;
         uniform mat4 model;
         void main() {
             gl_Position = vec4(position,1.0);
-            o_normal = normal;
             o_uv = uv;
             o_color=vertex_color;
         }
@@ -36,7 +35,6 @@ pub mod shader_library {
         
         out vec4 color;
         in vec2 o_uv;
-        in vec3 o_normal;
         in vec4 o_color;
         uniform sampler2D u_texture;
         vec4 onify(vec4 v){
@@ -51,12 +49,23 @@ pub mod shader_library {
         }
     "#,
         uniforms: &[],
-        custom_attributes: &[Attribute {
-            size: 4,
-            name: "vertex_color",
-        }],
+        attributes: &[
+            Attribute {
+                size: 3,
+                name: "position",
+            },
+            Attribute {
+                size: 2,
+                name: "uv",
+            },
+            Attribute {
+                size: 4,
+                name: "vertex_color",
+            },
+        ],
     };
     pub const WORLD_SHADER: ShaderText = ShaderText {
+        name: "WORLD_SHADER",
         vertex_shader: r#"#version 300 es
         in vec3 position;
         in vec2 uv;
@@ -94,20 +103,31 @@ pub mod shader_library {
         }
     "#,
         uniforms: &["camera", "model", "sun_direction", "sun_color"],
-        custom_attributes: &[],
+        attributes: &[
+            Attribute {
+                size: 3,
+                name: "position",
+            },
+            Attribute {
+                size: 2,
+                name: "uv",
+            },
+            Attribute {
+                size: 3,
+                name: "normal",
+            },
+        ],
     };
     pub const SCREEN_SHADER: ShaderText = ShaderText {
+        name: "SCREEN_SHADER",
         vertex_shader: r#"#version 300 es
         in vec3 position;
         in vec2 uv;
-        in vec3 normal;
         out vec2 o_uv;
-        out vec3 o_normal;
         uniform mat4 camera;
         uniform mat4 model;
         void main() {
             gl_Position = camera*model*vec4(position,1.0);
-            o_normal = normal;
             o_uv = uv;
         }
     "#,
@@ -116,29 +136,37 @@ pub mod shader_library {
         
         out vec4 color;
         in vec2 o_uv;
-        in vec3 o_normal;
         uniform sampler2D u_texture;
         void main() {
             color = texture(u_texture,o_uv);
         }
     "#,
         uniforms: &["camera", "model"],
-        custom_attributes: &[],
+        attributes: &[
+            Attribute {
+                size: 3,
+                name: "position",
+            },
+            Attribute {
+                size: 2,
+                name: "uv",
+            },
+        ],
     };
 }
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct RuntimeAttribute {
     pub location: Option<i32>,
     pub size: usize,
 }
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct Shader {
     pub uniforms: HashMap<String, Option<WebGlUniformLocation>>,
-    pub position_attribute_location: Option<i32>,
-    pub uv_attribute_location: Option<i32>,
-    pub normal_attribute_location: Option<i32>,
     pub attributes: HashMap<String, RuntimeAttribute>,
     pub texture_sampler_location: Option<WebGlUniformLocation>,
+    pub fragment_shader_source: &'static str,
+    pub vertex_shader_source: &'static str,
+    pub name: &'static str,
     pub program: WebGlProgram,
 }
 /// safe because threads do not exist on wasm

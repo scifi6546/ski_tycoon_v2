@@ -5,7 +5,6 @@ use super::prelude::{
 use legion::*;
 use log::debug;
 use nalgebra::Vector2;
-use std::cell::RefCell;
 pub struct RuntimeModel {
     pub mesh: RuntimeMesh,
     pub texture: RuntimeTexture,

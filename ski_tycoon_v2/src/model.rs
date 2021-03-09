@@ -1,4 +1,4 @@
-use super::prelude::{Mesh, Texture, Transform, Vertex};
+use super::prelude::{ItemDesc, Mesh, Texture, Transform, Vertex};
 use nalgebra::{Vector2, Vector3, Vector4};
 #[derive(Clone)]
 pub struct Model {
@@ -46,50 +46,83 @@ impl Model {
                 );
                 let triangle0_normal = (x0_y1 - x0_y0).cross(&(x1_y0 - x0_y0)).normalize();
                 let triangle1_normal = (x1_y0 - x1_y1).cross(&(x0_y1 - x1_y1)).normalize();
+
                 //triangle 0
                 vertices.push(Vertex {
-                    position: x0_y0,
-                    uv: Vector2::new(0.0, 0.0),
-                    normal: triangle0_normal,
-                    extra_custom: vec![],
+                    #[rustfmt::skip]
+                    data:vec![
+                        //position:
+                        x0_y0.x,x0_y0.y,x0_y0.z,
+                        //uv
+                        0.0,0.0,
+                        //normal
+                        triangle0_normal.x,triangle0_normal.y,triangle0_normal.z
+
+                    ],
                 });
                 vertices.push(Vertex {
-                    position: x0_y1,
-                    uv: Vector2::new(0.0, 1.0),
-                    normal: triangle0_normal,
-                    extra_custom: vec![],
+                    #[rustfmt::skip]
+                    data:vec![
+                        //position:
+                        x0_y1.x,x0_y1.y,x0_y1.z,
+                        //uv
+                        0.0,1.0,
+                        //normal
+                        triangle0_normal.x,triangle0_normal.y,triangle0_normal.z
+
+                    ],
                 });
                 vertices.push(Vertex {
-                    position: x1_y0,
-                    uv: Vector2::new(1.0, 0.0),
-                    normal: triangle0_normal,
-                    extra_custom: vec![],
+                    #[rustfmt::skip]
+                    data:vec![
+                        //position:
+                        x1_y0.x,x1_y0.y,x1_y0.z,
+                        //uv
+                        1.0,0.0,
+                        //normal
+                        triangle0_normal.x,triangle0_normal.y,triangle0_normal.z
+                    ],
                 });
                 //triangle 1
                 vertices.push(Vertex {
-                    position: x0_y1,
-                    uv: Vector2::new(0.0, 1.0),
-                    normal: triangle1_normal,
-                    extra_custom: vec![],
+                    #[rustfmt::skip]
+                    data:vec![
+                        //position:
+                        x0_y1.x,x0_y1.y,x0_y1.z,
+                        //uv
+                        0.0,1.0,
+                        //normal
+                        triangle1_normal.x,triangle1_normal.y,triangle1_normal.z
+                    ],
                 });
                 vertices.push(Vertex {
-                    position: x1_y1,
-                    uv: Vector2::new(1.0, 1.0),
-                    normal: triangle1_normal,
-                    extra_custom: vec![],
+                    #[rustfmt::skip]
+                    data:vec![
+                        //position:
+                        x1_y1.x,x1_y1.y,x1_y1.z,
+                        //uv
+                        1.0,1.0,
+                        //normal
+                        triangle1_normal.x,triangle1_normal.y,triangle1_normal.z
+                    ],
                 });
                 vertices.push(Vertex {
-                    position: x1_y0,
-                    uv: Vector2::new(1.0, 0.0),
-                    normal: triangle1_normal,
-                    extra_custom: vec![],
+                    #[rustfmt::skip]
+                    data:vec![
+                        //position:
+                        x1_y0.x,x1_y0.y,x1_y0.z,
+                        //uv
+                        1.0,0.0,
+                        //normal
+                        triangle1_normal.x,triangle1_normal.y,triangle1_normal.z
+                    ],
                 });
             }
         }
         Model {
             mesh: Mesh {
                 vertices,
-                description: vec![],
+                description: ItemDesc::default_model(),
             },
             texture: Texture::constant_color(Vector4::new(200, 200, 200, 255), Vector2::new(8, 8)),
             transform,
@@ -98,237 +131,417 @@ impl Model {
     pub fn cube(transform: Transform) -> Model {
         let vertices = vec![
             Vertex {
-                position: Vector3::new(-1.0, -1.0, 1.0),
-                uv: Vector2::new(0.0, 0.0),
-                normal: Vector3::new(-1.0, 0.0, 0.0),
-                extra_custom: vec![],
+                #[rustfmt::skip]
+                data:vec![
+                    //position
+                    -1.0,-1.0,1.0,
+                    //uv
+                    0.0,0.0,
+                    //normal
+                    -1.0,0.0,0.0
+                ],
             },
             Vertex {
-                position: Vector3::new(1.0, 1.0, 1.0),
-                uv: Vector2::new(1.0, 1.0),
-                normal: Vector3::new(-1.0, 0.0, 0.0),
-                extra_custom: vec![],
+                #[rustfmt::skip]
+                data:vec![
+                    //position
+                    1.0,1.0,1.0,
+                    //uv
+                    1.0,1.0,
+                    //normal
+                    -1.0,0.0,0.0
+                ],
             },
             Vertex {
-                position: Vector3::new(1.0, -1.0, 1.0),
-                uv: Vector2::new(1.0, 0.0),
-                normal: Vector3::new(-1.0, 0.0, 0.0),
-                extra_custom: vec![],
+                #[rustfmt::skip]
+                data:vec![
+                    //position
+                    1.0,-1.0,1.0,
+                    //uv
+                    1.0,0.0,
+                    //normal
+                    -1.0,0.0,0.0
+                ],
             },
             //second triangle
             Vertex {
-                position: Vector3::new(-1.0, -1.0, 1.0),
-                uv: Vector2::new(0.0, 0.0),
-                normal: Vector3::new(-1.0, 0.0, 0.0),
-                extra_custom: vec![],
+                #[rustfmt::skip]
+                data:vec![
+                    //position
+                    -1.0,-1.0,1.0,
+                    //uv
+                    0.0,0.0,
+                    //normal
+                    -1.0,0.0,0.0
+                ],
             },
             Vertex {
-                position: Vector3::new(-1.0, 1.0, 1.0),
-                uv: Vector2::new(0.0, 1.0),
-                normal: Vector3::new(-1.0, 0.0, 0.0),
-                extra_custom: vec![],
+                #[rustfmt::skip]
+                data:vec![
+                    //position
+                    -1.0,1.0,1.0,
+                    //uv
+                    0.0,1.0,
+                    //normal
+                    -1.0,0.0,0.0
+                ],
             },
             Vertex {
-                position: Vector3::new(1.0, 1.0, 1.0),
-                uv: Vector2::new(1.0, 1.0),
-                normal: Vector3::new(-1.0, 0.0, 0.0),
-                extra_custom: vec![],
+                #[rustfmt::skip]
+                data:vec![
+                    //position
+                    1.0,1.0,1.0,
+                    //uv
+                    1.0,1.0,
+                    //normal
+                    -1.0,0.0,0.0
+                ],
             },
             //third triangle
             Vertex {
-                position: Vector3::new(1.0, -1.0, 1.0),
-                uv: Vector2::new(0.0, 0.0),
-                normal: Vector3::new(1.0, 0.0, 0.0),
-                extra_custom: vec![],
+                #[rustfmt::skip]
+                data:vec![
+                    //position
+                    1.0,-1.0,1.0,
+                    //uv
+                    0.0,0.0,
+                    //normal
+                    1.0,0.0,0.0
+                ],
             },
             Vertex {
-                position: Vector3::new(1.0, 1.0, -1.0),
-                uv: Vector2::new(0.0, 1.0),
-                normal: Vector3::new(-1.0, 0.0, 0.0),
-                extra_custom: vec![],
+                #[rustfmt::skip]
+                data:vec![
+                    //position
+                    1.0,1.0,-1.0,
+                    //uv
+                    0.0,1.0,
+                    //normal
+                    -1.0,0.0,0.0
+                ],
             },
             Vertex {
-                position: Vector3::new(1.0, -1.0, -1.0),
-                uv: Vector2::new(0.0, 1.0),
-                normal: Vector3::new(-1.0, 0.0, 0.0),
-                extra_custom: vec![],
+                #[rustfmt::skip]
+                data:vec![
+                    //position
+                    1.0,-1.0,-1.0,
+                    //uv
+                    0.0,1.0,
+                    //normal
+                    -1.0,0.0,0.0
+                ],
             },
             //fourth triangle
             Vertex {
-                position: Vector3::new(1.0, -1.0, 1.0),
-                uv: Vector2::new(0.0, 0.0),
-                normal: Vector3::new(-1.0, 0.0, 0.0),
-                extra_custom: vec![],
+                #[rustfmt::skip]
+                data:vec![
+                    //position
+                    1.0,-1.0,1.0,
+                    //uv
+                    0.0,0.0,
+                    //normal
+                    -1.0,0.0,0.0
+                ],
             },
             Vertex {
-                position: Vector3::new(1.0, 1.0, 1.0),
-                uv: Vector2::new(0.0, 1.0),
-                normal: Vector3::new(-1.0, 0.0, 0.0),
-                extra_custom: vec![],
+                #[rustfmt::skip]
+                data:vec![
+                    //position
+                    1.0,1.0,1.0,
+                    //uv
+                    0.0,1.0,
+                    //normal
+                    -1.0,0.0,0.0
+                ],
             },
             Vertex {
-                position: Vector3::new(1.0, 1.0, -1.0),
-                uv: Vector2::new(1.0, 1.0),
-                normal: Vector3::new(-1.0, 0.0, 0.0),
-                extra_custom: vec![],
+                #[rustfmt::skip]
+                data:vec![
+                    //position
+                    1.0,1.0,-1.0,
+                    //uv
+                    1.0,1.0,
+                    //normal
+                    -1.0,0.0,0.0
+                ],
             },
             //fith triangle
             Vertex {
-                position: Vector3::new(1.0, -1.0, -1.0),
-                uv: Vector2::new(0.0, 0.0),
-                normal: Vector3::new(0.0, 0.0, -1.0),
-                extra_custom: vec![],
+                #[rustfmt::skip]
+                data:vec![
+                    //position
+                    1.0,-1.0,-1.0,
+                    //uv
+                    0.0,0.0,
+                    //normal
+                    0.0,0.0,-1.0
+                ],
             },
             Vertex {
-                position: Vector3::new(-1.0, -1.0, -1.0),
-                uv: Vector2::new(1.0, 0.0),
-                normal: Vector3::new(0.0, 0.0, -1.0),
-                extra_custom: vec![],
+                #[rustfmt::skip]
+                data:vec![
+                    //position
+                    -1.0,-1.0,-1.0,
+                    //uv
+                    1.0,0.0,
+                    //normal
+                    0.0,0.0,-1.0
+                ],
             },
             Vertex {
-                position: Vector3::new(1.0, 1.0, -1.0),
-                uv: Vector2::new(0.0, 1.0),
-                normal: Vector3::new(0.0, 0.0, -1.0),
-                extra_custom: vec![],
+                #[rustfmt::skip]
+                data:vec![
+                    //position
+                    1.0,1.0,-1.0,
+                    //uv
+                    0.0,1.0,
+                    //normal
+                    0.0,0.0,-1.0
+                ],
             },
             //sixth triangle
             Vertex {
-                position: Vector3::new(-1.0, -1.0, -1.0),
-                uv: Vector2::new(1.0, 0.0),
-                normal: Vector3::new(0.0, 0.0, -1.0),
-                extra_custom: vec![],
+                #[rustfmt::skip]
+                data:vec![
+                    //position
+                    -1.0,-1.0,-1.0,
+                    //uv
+                    1.0,0.0,
+                    //normal
+                    0.0,0.0,-1.0
+                ],
             },
             Vertex {
-                position: Vector3::new(-1.0, 1.0, -1.0),
-                uv: Vector2::new(1.0, 1.0),
-                normal: Vector3::new(0.0, 0.0, -1.0),
-                extra_custom: vec![],
+                #[rustfmt::skip]
+                data:vec![
+                    //position
+                    -1.0,1.0,-1.0,
+                    //uv
+                    1.0,1.0,
+                    //normal
+                    0.0,0.0,-1.0
+                ],
             },
             Vertex {
-                position: Vector3::new(1.0, 1.0, -1.0),
-                uv: Vector2::new(0.0, 1.0),
-                normal: Vector3::new(0.0, 0.0, -1.0),
-                extra_custom: vec![],
+                #[rustfmt::skip]
+                data:vec![
+                    //position
+                    1.0,1.0,-1.0,
+                    //uv
+                    0.0,1.0,
+                    //normal
+                    0.0,0.0,-1.0
+                ],
             },
             //seventh triangle
             Vertex {
-                position: Vector3::new(-1.0, -1.0, -1.0),
-                uv: Vector2::new(0.0, 0.0),
-                normal: Vector3::new(-1.0, 0.0, 0.0),
-                extra_custom: vec![],
+                #[rustfmt::skip]
+                data:vec![
+                    //position
+                    -1.0,-1.0,-1.0,
+                    //uv
+                    0.0,0.0,
+                    //normal
+                    -1.0,0.0,0.0
+                ],
             },
             Vertex {
-                position: Vector3::new(-1.0, -1.0, 1.0),
-                uv: Vector2::new(1.0, 0.0),
-                normal: Vector3::new(-1.0, 0.0, 0.0),
-                extra_custom: vec![],
+                #[rustfmt::skip]
+                data:vec![
+                    //position
+                    -1.0,-1.0,1.0,
+                    //uv
+                    1.0,0.0,
+                    //normal
+                    -1.0,0.0,0.0
+                ],
             },
             Vertex {
-                position: Vector3::new(-1.0, 1.0, 1.0),
-                uv: Vector2::new(1.0, 1.0),
-                normal: Vector3::new(-1.0, 0.0, 0.0),
-                extra_custom: vec![],
+                #[rustfmt::skip]
+                data:vec![
+                    //position
+                    -1.0,1.0,1.0,
+                    //uv
+                    1.0,1.0,
+                    //normal
+                    -1.0,0.0,0.0
+                ],
             },
             //eighth triangle
             Vertex {
-                position: Vector3::new(-1.0, -1.0, -1.0),
-                uv: Vector2::new(0.0, 0.0),
-                normal: Vector3::new(-1.0, 0.0, 0.0),
-                extra_custom: vec![],
+                #[rustfmt::skip]
+                data:vec![
+                    //position
+                    -1.0,-1.0,-1.0,
+                    //uv
+                    0.0,0.0,
+                    //normal
+                    -1.0,0.0,0.0
+                ],
             },
             Vertex {
-                position: Vector3::new(-1.0, 1.0, 1.0),
-                uv: Vector2::new(1.0, 1.0),
-                normal: Vector3::new(-1.0, 0.0, 0.0),
-                extra_custom: vec![],
+                #[rustfmt::skip]
+                data:vec![
+                    //position
+                    -1.0,1.0,1.0,
+                    //uv
+                    1.0,1.0,
+                    //normal
+                    -1.0,0.0,0.0
+                ],
             },
             Vertex {
-                position: Vector3::new(-1.0, 1.0, -1.0),
-                uv: Vector2::new(0.0, 1.0),
-                normal: Vector3::new(-1.0, 0.0, 0.0),
-                extra_custom: vec![],
+                #[rustfmt::skip]
+                data:vec![
+                    //position
+                    -1.0,1.0,-1.0,
+                    //uv
+                    0.0,1.0,
+                    //normal
+                    -1.0,0.0,0.0
+                ],
             },
             //9th triangle
             Vertex {
-                position: Vector3::new(1.0, 1.0, 1.0),
-                uv: Vector2::new(0.0, 0.0),
-                normal: Vector3::new(0.0, 1.0, 0.0),
-                extra_custom: vec![],
+                #[rustfmt::skip]
+                data:vec![
+                    //position
+                    1.0,1.0,1.0,
+                    //uv
+                    0.0,0.0,
+                    //normal
+                    0.0,1.0,0.0
+                ],
             },
             Vertex {
-                position: Vector3::new(1.0, 1.0, -1.0),
-                uv: Vector2::new(0.0, 1.0),
-                normal: Vector3::new(0.0, 1.0, 0.0),
-                extra_custom: vec![],
+                #[rustfmt::skip]
+                data:vec![
+                    //position
+                    1.0,1.0,-1.0,
+                    //uv
+                    0.0,1.0,
+                    //normal
+                    0.0,1.0,0.0
+                ],
             },
             Vertex {
-                position: Vector3::new(-1.0, 1.0, -1.0),
-                uv: Vector2::new(1.0, 1.0),
-                normal: Vector3::new(0.0, 1.0, 0.0),
-                extra_custom: vec![],
+                #[rustfmt::skip]
+                data:vec![
+                    //position
+                    -1.0,1.0,-1.0,
+                    //uv
+                    0.0,1.0,
+                    //normal
+                    0.0,1.0,0.0
+                ],
             },
             //10th triangle
             Vertex {
-                position: Vector3::new(1.0, 1.0, 1.0),
-                uv: Vector2::new(0.0, 0.0),
-                normal: Vector3::new(0.0, 1.0, 0.0),
-                extra_custom: vec![],
+                #[rustfmt::skip]
+                data:vec![
+                    //position
+                    1.0,1.0,1.0,
+                    //uv
+                    0.0,0.0,
+                    //normal
+                    0.0,1.0,0.0
+                ],
             },
             Vertex {
-                position: Vector3::new(-1.0, 1.0, -1.0),
-                uv: Vector2::new(1.0, 1.0),
-                normal: Vector3::new(0.0, 1.0, 0.0),
-                extra_custom: vec![],
+                #[rustfmt::skip]
+                data:vec![
+                    //position
+                    -1.0,1.0,-1.0,
+                    //uv
+                    1.0,1.0,
+                    //normal
+                    0.0,1.0,0.0
+                ],
             },
             Vertex {
-                position: Vector3::new(-1.0, 1.0, 1.0),
-                uv: Vector2::new(0.0, 1.0),
-                normal: Vector3::new(0.0, 1.0, 0.0),
-                extra_custom: vec![],
+                #[rustfmt::skip]
+                data:vec![
+                    //position
+                    -1.0,1.0,1.0,
+                    //uv
+                    0.0,1.0,
+                    //normal
+                    0.0,1.0,0.0
+                ],
             },
             //11th triangle
             Vertex {
-                position: Vector3::new(1.0, -1.0, 1.0),
-                uv: Vector2::new(0.0, 0.0),
-                normal: Vector3::new(0.0, -1.0, 0.0),
-                extra_custom: vec![],
+                #[rustfmt::skip]
+                data:vec![
+                    //position
+                    1.0,-1.0,1.0,
+                    //uv
+                    0.0,0.0,
+                    //normal
+                    0.0,-1.0,0.0
+                ],
             },
             Vertex {
-                position: Vector3::new(-1.0, -1.0, 1.0),
-                uv: Vector2::new(1.0, 0.0),
-                normal: Vector3::new(0.0, -1.0, 0.0),
-                extra_custom: vec![],
+                #[rustfmt::skip]
+                data:vec![
+                    //position
+                    -1.0,-1.0,1.0,
+                    //uv
+                    1.0,0.0,
+                    //normal
+                    0.0,-1.0,0.0
+                ],
             },
             Vertex {
-                position: Vector3::new(-1.0, -1.0, -1.0),
-                uv: Vector2::new(1.0, 1.0),
-                normal: Vector3::new(0.0, -1.0, 0.0),
-                extra_custom: vec![],
+                #[rustfmt::skip]
+                data:vec![
+                    //position
+                    -1.0,-1.0,-1.0,
+                    //uv
+                    1.0,1.0,
+                    //normal
+                    0.0,-1.0,0.0
+                ],
             },
             //12th triangle
             Vertex {
-                position: Vector3::new(1.0, -1.0, 1.0),
-                uv: Vector2::new(0.0, 0.0),
-                normal: Vector3::new(0.0, -1.0, 0.0),
-                extra_custom: vec![],
+                #[rustfmt::skip]
+                data:vec![
+                    //position
+                    1.0,-1.0,1.0,
+                    //uv
+                    0.0,0.0,
+                    //normal
+                    0.0,-1.0,0.0
+                ],
             },
             Vertex {
-                position: Vector3::new(-1.0, -1.0, -1.0),
-                uv: Vector2::new(1.0, 1.0),
-                normal: Vector3::new(0.0, -1.0, 0.0),
-                extra_custom: vec![],
+                #[rustfmt::skip]
+                data:vec![
+                    //position
+                    -1.0,-1.0,-1.0,
+                    //uv
+                    1.0,1.0,
+                    //normal
+                    0.0,-1.0,0.0
+                ],
             },
             Vertex {
-                position: Vector3::new(1.0, -1.0, -1.0),
-                uv: Vector2::new(0.0, 1.0),
-                normal: Vector3::new(0.0, -1.0, 0.0),
-                extra_custom: vec![],
+                #[rustfmt::skip]
+                data:vec![
+                    //position
+                    1.0,-1.0,-1.0,
+                    //uv
+                    0.0,1.0,
+                    //normal
+                    0.0,-1.0,0.0
+                ],
             },
         ];
         Model {
             mesh: Mesh {
                 vertices,
-                description: vec![],
+                description: ItemDesc::default_model(),
             },
             texture: Texture::constant_color(Vector4::new(255, 0, 0, 255), Vector2::new(8, 8)),
             transform,

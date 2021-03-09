@@ -86,10 +86,6 @@ impl RenderingContext {
         let program = Self::link_program(&self.context, &vertex_shader, &frag_shader)?;
         info!("linked shader");
         self.context.use_program(Some(&program));
-        let position_attribute_location =
-            Some(self.context.get_attrib_location(&program, "position"));
-        let uv_attribute_location = Some(self.context.get_attrib_location(&program, "uv"));
-        let normal_attribute_location = Some(self.context.get_attrib_location(&program, "normal"));
         let texture_sampler_location = self.context.get_uniform_location(&program, "u_texture");
         let mut uniforms = HashMap::new();
         for uniform_name in text.uniforms.iter() {
@@ -102,7 +98,7 @@ impl RenderingContext {
         }
         info!("got all uniforms");
         let attributes = text
-            .custom_attributes
+            .attributes
             .iter()
             .map(|attr| {
                 self.get_error();
@@ -118,12 +114,13 @@ impl RenderingContext {
         info!("built shader");
         Ok(Shader {
             program,
-            position_attribute_location,
-            uv_attribute_location,
-            normal_attribute_location,
             texture_sampler_location,
             attributes,
             uniforms,
+            name: text.name,
+
+            fragment_shader_source: text.fragment_shader,
+            vertex_shader_source: text.vertex_shader,
         })
     }
     pub fn bind_shader(&mut self, shader: &Shader) -> Result<(), JsValue> {
@@ -139,7 +136,7 @@ impl RenderingContext {
             WebGl2RenderingContext::ARRAY_BUFFER,
             (&position_buffer).as_ref(),
         );
-        let data_size = (3 + 2 + 3) * std::mem::size_of::<f32>() as i32 + {
+        let data_size = {
             {
                 let s: usize = mesh
                     .description
@@ -150,15 +147,7 @@ impl RenderingContext {
             }
         };
         for vertex in mesh.vertices.iter() {
-            array.push(vertex.position.x);
-            array.push(vertex.position.y);
-            array.push(vertex.position.z);
-            array.push(vertex.uv.x);
-            array.push(vertex.uv.y);
-            array.push(vertex.normal.x);
-            array.push(vertex.normal.y);
-            array.push(vertex.normal.z);
-            for f in vertex.extra_custom.iter() {
+            for f in vertex.data.iter() {
                 //info!("f: {}",f);
                 array.push(*f);
             }
@@ -179,38 +168,15 @@ impl RenderingContext {
         }
         let vao = self.context.create_vertex_array();
         self.context.bind_vertex_array(vao.as_ref());
-        self.context
-            .enable_vertex_attrib_array(shader.position_attribute_location.unwrap() as u32);
-        self.context
-            .enable_vertex_attrib_array(shader.uv_attribute_location.unwrap() as u32);
-        self.context
-            .enable_vertex_attrib_array(shader.normal_attribute_location.unwrap() as u32);
-        self.context.vertex_attrib_pointer_with_f64(
-            shader.position_attribute_location.unwrap() as u32,
-            3,
-            WebGl2RenderingContext::FLOAT,
-            false,
-            data_size,
-            0.0,
-        );
-        self.context.vertex_attrib_pointer_with_i32(
-            shader.uv_attribute_location.unwrap() as u32,
-            2,
-            WebGl2RenderingContext::FLOAT,
-            false,
-            data_size,
-            3 * std::mem::size_of::<f32>() as i32,
-        );
-        self.context.vertex_attrib_pointer_with_i32(
-            shader.normal_attribute_location.unwrap() as u32,
-            3,
-            WebGl2RenderingContext::FLOAT,
-            false,
-            data_size,
-            5 * std::mem::size_of::<f32>() as i32,
-        );
         let mut addn: usize = 0;
         for desc in mesh.description.iter() {
+            if !shader.attributes.contains_key(&desc.name) {
+                error!("key: {} not found for shader {}", desc.name, shader.name);
+                error!("{}", shader.vertex_shader_source);
+                error!("{}", shader.fragment_shader_source);
+
+                panic!("key: {} not found", desc.name);
+            }
             self.context
                 .enable_vertex_attrib_array(shader.attributes[&desc.name].location.unwrap() as u32);
             //info!("desc name: {}",desc.name);
@@ -221,10 +187,11 @@ impl RenderingContext {
                 WebGl2RenderingContext::FLOAT,
                 false,
                 data_size,
-                (3 + 2 + 3) * std::mem::size_of::<f32>() as i32 + addn as i32,
+                addn as i32,
             );
             addn += desc.number_components * desc.size_component;
         }
+        self.get_error();
         //custom verticies
 
         Ok(WebGlMesh {
@@ -481,6 +448,7 @@ impl RenderingContext {
             .bind_vertex_array(mesh.vertex_array_object.as_ref());
         self.context
             .draw_arrays(WebGl2RenderingContext::TRIANGLES, 0, mesh.count);
+        self.get_error();
     }
     pub fn draw_lines(&mut self, mesh: &RuntimeMesh) {
         debug!("drawing lines");
@@ -498,7 +466,6 @@ impl RenderingContext {
         self.get_error();
     }
     pub fn send_view_matrix(&mut self, matrix: Matrix4<f32>, shader: &Shader) {
-        debug!("sending view matrix");
         self.context.uniform_matrix4fv_with_f32_array(
             shader.uniforms["camera"].as_ref(),
             false,

@@ -169,6 +169,7 @@ impl Game {
         {
             let context = &mut self.resources.get_mut().unwrap();
             gui::insert_ui(context);
+            info!("inserted ui");
         }
         {
             let camera: &mut Camera = &mut self.resources.get_mut().unwrap();
@@ -213,9 +214,12 @@ impl Game {
                         let mut world_depth_texture = gl
                             .build_depth_texture(new_size.clone(), &shader.get_bind())
                             .expect("failed to build depth texture");
+                        shader.bind("world");
                         let fb_mesh = gl
                             .build_mesh(Mesh::plane(), &shader.get_bind())
                             .expect("failed to build mesh");
+
+                        shader.bind("screen");
                         self.world_framebuffer = gl
                             .build_framebuffer(
                                 &mut world_framebuffer_texture,
@@ -249,6 +253,7 @@ impl Game {
             shader.bind("world");
             gl.bind_shader(shader.get_bind()).ok().unwrap();
         }
+        info!("handled sceen resize");
         //game logic
         let mut schedule = Schedule::builder()
             .add_system(skiier::follow_path_system())
@@ -271,6 +276,7 @@ impl Game {
             .add_system(graphics_system::render_debug_system())
             .build();
         schedule.execute(&mut self.world, &mut self.resources);
+        info!("rendered debug sustem");
         {
             //binding to world framebuffer and rendering to it
 
@@ -310,7 +316,9 @@ impl Game {
         let mut gui_schedule = Schedule::builder()
             .add_system(graphics_system::render_gui_system())
             .build();
+
         gui_schedule.execute(&mut self.world, &mut self.resources);
+        info!("rendered gui");
     }
 }
 #[cfg(target_arch = "wasm32")]
@@ -357,6 +365,9 @@ impl ScreenResolution {
 #[wasm_bindgen]
 #[cfg(target_arch = "wasm32")]
 pub fn init_game(resolution: js_sys::Map) -> WebGame {
+    #[cfg(profile = "dev")]
+    console_log::init_with_level(Level::Debug).expect("filed to init console_log");
+    #[cfg(not(profile = "dev"))]
     console_log::init_with_level(Level::Info).expect("filed to init console_log");
     let r = Game::new(
         Vector2::new(

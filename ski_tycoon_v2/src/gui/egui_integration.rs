@@ -88,11 +88,23 @@ pub fn draw_egui(
         let mut runtime_mesh = gl.build_mesh(
             Mesh {
                 vertices,
-                description: vec![ItemDesc {
-                    number_components: 4,
-                    size_component: std::mem::size_of::<f32>(),
-                    name: "vertex_color".to_string(),
-                }],
+                description: vec![
+                    ItemDesc {
+                        number_components: 3,
+                        size_component: std::mem::size_of::<f32>(),
+                        name: "position".to_string(),
+                    },
+                    ItemDesc {
+                        number_components: 2,
+                        size_component: std::mem::size_of::<f32>(),
+                        name: "uv".to_string(),
+                    },
+                    ItemDesc {
+                        number_components: 4,
+                        size_component: std::mem::size_of::<f32>(),
+                        name: "vertex_color".to_string(),
+                    },
+                ],
             },
             shader.get_bind(),
         )?;
@@ -117,12 +129,18 @@ fn to_vertex(vertex_list: &Vec<EguiVertex>, depth: f32, screen_size: &Vector2<u3
         let normal = Vector3::new(0.0, 0.0, 1.0);
         let color: egui::paint::Rgba = vertex.color.into();
         let extra_custom = vec![color.r(), color.g(), color.b(), color.a()];
-        vertices.push(Vertex {
-            position,
-            uv,
-            normal,
-            extra_custom,
-        });
+        let data = vec![
+            position.x,
+            position.y,
+            position.z,
+            uv.x,
+            uv.y,
+            color.r(),
+            color.g(),
+            color.b(),
+            color.a(),
+        ];
+        vertices.push(Vertex { data });
     }
     vertices
 }
