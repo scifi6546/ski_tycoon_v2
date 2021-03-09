@@ -5,7 +5,6 @@ use super::prelude::{
 use legion::*;
 use log::info;
 use nalgebra::{Vector2, Vector3, Vector4};
-use std::{cell::RefCell, sync::RwLock};
 pub fn insert_lift(
     world: &mut World,
     graphics: &mut RenderingContext,

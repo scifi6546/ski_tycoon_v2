@@ -11,7 +11,6 @@ use gfx_hal::{
     device::Device,
     format,
     format::{AsFormat, ChannelType, Rgba8Srgb as ColorFormat, Swizzle},
-    image::{SubresourceRange, ViewKind},
     memory, pass,
     pass::Subpass,
     pool,
@@ -29,9 +28,7 @@ use std::collections::HashMap;
 use std::{cmp::max, io::Cursor, iter, mem, mem::ManuallyDrop, ptr};
 
 use nalgebra::{Matrix4, Vector2, Vector3, Vector4};
-use std::ffi::{CStr, CString};
 mod circular_buffer;
-use circular_buffer::CircularBuffer;
 #[cfg(feature = "dx11")]
 extern crate gfx_backend_dx11 as back;
 #[cfg(feature = "dx12")]
@@ -61,6 +58,7 @@ pub struct RuntimeGfxTexture<B: gfx_hal::Backend> {
     extent: gfx_hal::image::Extent,
 }
 pub type ErrorType = ();
+#[allow(dead_code)]
 pub struct GfxFramebuffer<B: gfx_hal::Backend> {
     framebuffer: B::Framebuffer,
 }
@@ -71,6 +69,7 @@ pub struct RuntimeGfxMesh<B: gfx_hal::Backend> {
     vertex_memory: B::Memory,
 }
 pub type RuntimeDepthTexture = RuntimeGfxDepthTexture<back::Backend>;
+#[allow(dead_code)]
 pub struct RuntimeGfxDepthTexture<B: gfx_hal::Backend> {
     image_logo: B::Image,
     image_buffer: B::Buffer,
@@ -114,6 +113,8 @@ pub struct Window<B: gfx_hal::Backend> {
     pub adapter: gfx_hal::adapter::Adapter<B>,
     pub window_dimensions: window::Extent2D,
 }
+
+#[allow(dead_code)]
 pub struct GfxRenderingContext<B: gfx_hal::Backend> {
     desc_pool: ManuallyDrop<B::DescriptorPool>,
     surface: ManuallyDrop<B::Surface>,
@@ -143,10 +144,12 @@ pub struct GfxRenderingContext<B: gfx_hal::Backend> {
 pub struct Shader {
     index: BindArenaIndex,
 }
+#[allow(dead_code)]
 struct RuntimeUniform<B: gfx_hal::Backend> {
     buffer: B::Buffer,
     memory: B::Memory,
 }
+#[allow(dead_code)]
 pub struct GfxShader<B: gfx_hal::Backend> {
     pipeline: B::GraphicsPipeline,
     fragment_shader_uniform_buffers: HashMap<String, RuntimeUniform<B>>,
@@ -158,6 +161,7 @@ const DIMS: window::Extent2D = window::Extent2D {
     width: 1024,
     height: 768,
 };
+#[allow(dead_code, unused_variables)]
 impl<B: gfx_hal::Backend> GfxRenderingContext<B> {
     pub fn new(mut window: Window<B>) -> Result<Self, ErrorType> {
         let window_dimensions = DIMS;
@@ -183,7 +187,7 @@ impl<B: gfx_hal::Backend> GfxRenderingContext<B> {
                 .open(&[(family, &[1.0])], gfx_hal::Features::empty())
                 .unwrap()
         };
-        let mut queue_group = gpu.queue_groups.pop().unwrap();
+        let queue_group = gpu.queue_groups.pop().unwrap();
         let device = gpu.device;
         let mut command_pool = unsafe {
             device.create_command_pool(queue_group.family, pool::CommandPoolCreateFlags::empty())
@@ -474,11 +478,10 @@ impl<B: gfx_hal::Backend> GfxRenderingContext<B> {
             .expect("failed to create framebuffer"),
         );
         //maximum number of frames that can be computed at the same time
-        let mut submission_complete_semaphore = device
+        let submission_complete_semaphore = device
             .create_semaphore()
             .expect("failed to create semaphore");
-        let mut submission_complete_fence =
-            device.create_fence(false).expect("failed to create fence");
+        let submission_complete_fence = device.create_fence(false).expect("failed to create fence");
         // Note: We don't really need a different command pool per frame in such a simple demo like this,
         // but in a more 'real' application, it's generally seen as optimal to have one command pool per
         // thread per frame. There is a flag that lets a command pool reset individual command buffers
@@ -799,7 +802,7 @@ impl<B: gfx_hal::Backend> GfxRenderingContext<B> {
             )
         }
         .expect("failed to create buffer");
-        let mut memory = unsafe { self.allocate_memory(&buffer) };
+        let mut memory = self.allocate_memory(&buffer);
         let memory_ptr = unsafe {
             self.device.map_memory(
                 &mut memory,

@@ -1,5 +1,3 @@
-use log::info;
-use nalgebra::{Vector2, Vector3};
 use std::io::Cursor;
 use tobj::{load_mtl_buf, load_obj_buf};
 #[derive(Clone, Debug)]
@@ -55,7 +53,7 @@ impl Mesh {
             .map(|d| d.number_components * d.size_component)
             .sum()
     }
-    /// Loads mesh from an obj buff
+    /// Loads mesh from an :bj buff
     pub fn from_obj(obj: &'static [u8], mtl: &'static [u8]) -> Self {
         let mut obj_buff = Cursor::new(obj);
         let loaded_obj =

@@ -130,7 +130,6 @@ impl RenderingContext {
     pub fn build_mesh(&mut self, mesh: Mesh, shader: &Shader) -> Result<RuntimeMesh, ErrorType> {
         debug!("building mesh");
         let position_buffer = self.context.create_buffer();
-        let mut array: Vec<f32> = vec![];
 
         self.context.bind_buffer(
             WebGl2RenderingContext::ARRAY_BUFFER,
@@ -164,8 +163,6 @@ impl RenderingContext {
             }
             self.context
                 .enable_vertex_attrib_array(shader.attributes[&desc.name].location.unwrap() as u32);
-            //info!("desc name: {}",desc.name);
-            //info!("location: {}",shader.attributes[&desc.name].location.unwrap());
             self.context.vertex_attrib_pointer_with_i32(
                 shader.attributes[&desc.name].location.unwrap() as u32,
                 desc.number_components as i32,

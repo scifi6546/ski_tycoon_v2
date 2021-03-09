@@ -17,7 +17,6 @@ pub use graphics_engine::Window;
 use graphics_engine::{
     ErrorType, Framebuffer, InitContext, Mesh, RenderingContext, RuntimeDepthTexture, Transform,
 };
-use js_sys::Array as JsArray;
 use log::{debug, info};
 use nalgebra::{Matrix4, Vector2, Vector3, Vector4};
 use texture::RGBATexture;
@@ -326,6 +325,9 @@ impl Game {
 pub struct WebGame {
     game: Game,
 }
+
+#[cfg(target_arch = "wasm32")]
+use js_sys::Array as JsArray;
 #[cfg(target_arch = "wasm32")]
 #[wasm_bindgen]
 impl WebGame {
@@ -350,7 +352,6 @@ impl WebGame {
 #[cfg(feature = "wee_alloc")]
 #[global_allocator]
 static ALLOC: wee_alloc::WeeAlloc = wee_alloc::WeeAlloc::INIT;
-use log::Level;
 #[wasm_bindgen]
 pub struct ScreenResolution {
     pub x: u32,
@@ -366,9 +367,9 @@ impl ScreenResolution {
 #[cfg(target_arch = "wasm32")]
 pub fn init_game(resolution: js_sys::Map) -> WebGame {
     #[cfg(profile = "dev")]
-    console_log::init_with_level(Level::Debug).expect("filed to init console_log");
+    console_log::init_with_level(log::Level::Debug).expect("filed to init console_log");
     #[cfg(not(profile = "dev"))]
-    console_log::init_with_level(Level::Info).expect("filed to init console_log");
+    console_log::init_with_level(log::Level::Error).expect("filed to init console_log");
     let r = Game::new(
         Vector2::new(
             resolution.get(&("x".into())).as_f64().unwrap() as u32,

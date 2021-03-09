@@ -1,7 +1,9 @@
+#[allow(dead_code)]
 pub struct CircularBuffer<T> {
     pub data: Vec<T>,
     current_index: usize,
 }
+#[allow(dead_code)]
 impl<T> CircularBuffer<T> {
     pub fn new(data: Vec<T>) -> Self {
         Self {

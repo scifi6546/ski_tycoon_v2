@@ -3,10 +3,12 @@ use generational_arena::{Arena, Index};
 pub struct BindArenaIndex {
     index: Index,
 }
+#[allow(dead_code)]
 pub struct BindArena<T> {
     arena: Arena<T>,
     currently_bound: Option<Index>,
 }
+#[allow(dead_code)]
 impl<T> BindArena<T> {
     pub fn insert(&mut self, data: T) -> BindArenaIndex {
         BindArenaIndex {

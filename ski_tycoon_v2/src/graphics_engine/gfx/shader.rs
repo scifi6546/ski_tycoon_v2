@@ -1,9 +1,11 @@
 use gfx_hal::{pso, pso::DescriptorSetLayoutBinding};
 use std::collections::HashMap;
 use std::io::Cursor;
+#[allow(dead_code)]
 pub enum ShaderTypes {
-    WORLD_SHADER = 0,
+    WorldShader = 0,
 }
+#[allow(dead_code)]
 #[derive(Clone)]
 pub enum UniformDataType {
     Vec3,
@@ -32,6 +34,7 @@ pub struct ShaderData {
     pub vertex_uniform_layout: HashMap<String, UniformData>,
     pub fragment_uniform_layout: HashMap<String, UniformData>,
 }
+#[allow(dead_code)]
 fn get_vec(data: &'static [u8]) -> Vec<u32> {
     assert_eq!(data.len() % 4, 0);
     let mut out = vec![];
@@ -191,6 +194,7 @@ pub fn get_screen() -> ShaderData {
         fragment_uniform_layout: HashMap::new(),
     }
 }
+#[allow(dead_code)]
 pub fn get_gui() -> ShaderData {
     ShaderData {
         fragment_shader_data: gfx_auxil::read_spirv(Cursor::new(&include_bytes!(

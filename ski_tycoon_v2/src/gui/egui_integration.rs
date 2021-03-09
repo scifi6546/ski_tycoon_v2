@@ -1,5 +1,5 @@
 use super::prelude::{
-    ErrorType, Event, ItemDesc, Mesh, RenderingContext, ShaderBind, Texture as RGBATexture, Vertex,
+    ErrorType, Event, ItemDesc, Mesh, RenderingContext, ShaderBind, Texture as RGBATexture,
 };
 use egui::{
     math::{Pos2, Rect, Vec2},
