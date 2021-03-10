@@ -7,7 +7,6 @@ use egui::CtxRef;
 use legion::*;
 use log::info;
 use nalgebra::{Vector2, Vector3, Vector4};
-pub struct Lift {}
 pub fn insert_lift(
     world: &mut World,
     graphics: &mut RenderingContext,
@@ -122,26 +121,22 @@ impl BuildLift {
             world.push((runtime_model, LiftPlace::default(), transform));
         }
         if direction != Vector2::new(0, 0) && self.placing_lift {
-            let mut new_pos = Vector2::new(0, 0);
-            let mut changed_pos = false;
+            let mut new_pos = None;
             let mut world_choordinates = Vector3::new(0.0, 0.0, 0.0);
             {
                 let lift = <&LiftPlace>::query().iter(world).next().unwrap();
-                new_pos = lift.position.clone() + direction;
-            }
-            {
                 let terrain = <&Terrain>::query().iter(world).next().unwrap();
-                if let Some(p) = terrain.get_transform(&new_pos) {
+                if let Some(p) = terrain.get_transform(&(lift.position + direction)) {
                     world_choordinates = p;
-                    changed_pos = true;
+                    new_pos = Some(lift.position + direction);
                 }
             }
-            if changed_pos {
+            if let Some(p) = new_pos {
                 let (lift, transform) = <(&mut LiftPlace, &mut Transform)>::query()
                     .iter_mut(world)
                     .next()
                     .unwrap();
-                lift.position = new_pos;
+                lift.position = p.clone();
                 transform.set_translation(world_choordinates);
             }
         }

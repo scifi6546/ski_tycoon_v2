@@ -41,7 +41,7 @@ impl Terrain {
     }
     pub fn get_transform(&self, coordinate: &Vector2<i64>) -> Option<Vector3<f32>> {
         let pos = coordinate.x as usize * self.dimensions.y + coordinate.y as usize;
-        if pos < self.tiles.len() && pos >= 0 {
+        if pos < self.tiles.len() {
             Some(Vector3::new(
                 coordinate.x as f32,
                 self.tiles[pos].height,
