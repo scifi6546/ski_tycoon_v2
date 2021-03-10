@@ -151,6 +151,7 @@ impl Game {
         resources.insert(egui_context);
         resources.insert(egui_adaptor);
         resources.insert(model_manager);
+        resources.insert(lift::BuildLift::default());
         // gui::insert_ui(&mut egui_context);
         info!("context created");
         info!("inserted ui");
@@ -258,6 +259,17 @@ impl Game {
             .add_system(skiier::follow_path_system())
             .build();
         schedule.execute(&mut self.world, &mut self.resources);
+        {
+            let lift: &mut lift::BuildLift = &mut self.resources.get_mut().unwrap();
+            lift.build_lift(
+                &mut self.world,
+                &mut self.resources.get_mut().unwrap(),
+                &mut self.resources.get_mut().unwrap(),
+                &mut self.resources.get_mut().unwrap(),
+                &mut self.resources.get_mut().unwrap(),
+            );
+        }
+        //rendering susten
         let mut schedule = Schedule::builder()
             .add_system(graphics_system::render_object_system())
             .build();

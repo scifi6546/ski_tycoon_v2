@@ -1,5 +1,5 @@
 use super::prelude::{GraphLayer, GraphWeight, Grid, GridNode, Model, Transform};
-use nalgebra::Vector2;
+use nalgebra::{Vector2, Vector3};
 #[derive(Clone, Debug, PartialEq)]
 enum TileType {
     Snow,
@@ -38,6 +38,18 @@ impl Terrain {
     pub fn model(&self) -> Model {
         let heights = self.tiles.iter().map(|t| t.height).collect();
         Model::from_heights(heights, self.dimensions, Transform::default())
+    }
+    pub fn get_transform(&self, coordinate: &Vector2<i64>) -> Option<Vector3<f32>> {
+        let pos = coordinate.x as usize * self.dimensions.y + coordinate.y as usize;
+        if pos < self.tiles.len() && pos >= 0 {
+            Some(Vector3::new(
+                coordinate.x as f32,
+                self.tiles[pos].height,
+                coordinate.y as f32,
+            ))
+        } else {
+            None
+        }
     }
     fn get_weight(&self, start: Vector2<i64>, end: Vector2<i64>) -> GraphWeight {
         if end.x >= self.dimensions.x as i64
