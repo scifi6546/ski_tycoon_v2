@@ -390,6 +390,9 @@ impl FollowPath {
             }
         }
     }
+    pub fn at_end(&self) -> bool {
+        self.t > self.path.len() as f64
+    }
 }
 pub mod graph_debug {
     use super::GraphLayer;

@@ -117,6 +117,15 @@ impl Game {
             &mut webgl,
             &mut model_manager,
             &shader_bind,
+            Vector2::new(3, 3),
+            Vector2::new(17, 3),
+        )?;
+
+        insert_lift(
+            &mut world,
+            &mut webgl,
+            &mut model_manager,
+            &shader_bind,
             Vector2::new(0, 0),
             Vector2::new(10, 10),
         )?;
@@ -137,7 +146,13 @@ impl Game {
         webgl.get_error();
         info!("building skiiers");
         for i in 0..10 {
-            skiier::build_skiier(&mut world, &mut webgl, &shader_bind, Vector2::new(i, 0))?;
+            skiier::build_skiier(
+                &mut world,
+                &mut webgl,
+                &mut model_manager,
+                &shader_bind,
+                Vector2::new(i, 0),
+            )?;
         }
         info!("done building skiiers");
         webgl.get_error();
@@ -255,10 +270,7 @@ impl Game {
         }
         info!("handled sceen resize");
         //game logic
-        let mut schedule = Schedule::builder()
-            .add_system(skiier::follow_path_system())
-            .build();
-        schedule.execute(&mut self.world, &mut self.resources);
+        skiier::follow_path(&mut self.world);
         {
             let lift: &mut lift::BuildLift = &mut self.resources.get_mut().unwrap();
             lift.build_lift(
