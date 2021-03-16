@@ -1,5 +1,30 @@
 use super::prelude::{GraphLayer, GraphWeight, Grid, GridNode, Model, Transform};
+use egui::CtxRef;
 use nalgebra::{Vector2, Vector3};
+struct TerrainLibraryEntry {
+    name: String,
+}
+pub struct TerrainLibrary {
+    entries: Vec<TerrainLibraryEntry>,
+}
+impl Default for TerrainLibrary {
+    fn default() -> Self {
+        Self {
+            entries: vec![TerrainLibraryEntry {
+                name: "Cone World".to_string(),
+            }],
+        }
+    }
+}
+impl TerrainLibrary {
+    pub fn draw_gui(&self, context: &mut CtxRef) {
+        egui::Window::new("Scenarios").show(context, |ui| {
+            for t in self.entries.iter() {
+                ui.label(format!("{}", t.name));
+            }
+        });
+    }
+}
 #[derive(Clone, Debug, PartialEq)]
 enum TileType {
     Snow,

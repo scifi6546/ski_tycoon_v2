@@ -167,6 +167,7 @@ impl Game {
         resources.insert(egui_adaptor);
         resources.insert(model_manager);
         resources.insert(lift::BuildLift::default());
+        resources.insert(terrain::TerrainLibrary::default());
         // gui::insert_ui(&mut egui_context);
         info!("context created");
         info!("inserted ui");
@@ -181,11 +182,6 @@ impl Game {
         Ok(g)
     }
     pub fn run_frame(&mut self, events: Vec<Event>) {
-        {
-            let context = &mut self.resources.get_mut().unwrap();
-            gui::insert_ui(context);
-            info!("inserted ui");
-        }
         {
             let camera: &mut Camera = &mut self.resources.get_mut().unwrap();
             for e in events.iter() {
@@ -269,6 +265,10 @@ impl Game {
             gl.bind_shader(shader.get_bind()).ok().unwrap();
         }
         info!("handled sceen resize");
+        {
+            let library: &terrain::TerrainLibrary = &self.resources.get().unwrap();
+            library.draw_gui(&mut self.resources.get_mut().unwrap());
+        }
         //game logic
         skiier::follow_path(&mut self.world);
         {

@@ -73,8 +73,3 @@ pub fn draw_gui(
     draw_egui(&paint_jobs, &context.texture(), gl, shader, &screen_size)?;
     Ok(())
 }
-pub fn insert_ui(context: &mut CtxRef) {
-    egui::Window::new("dfsadfas").show(context, |ui| {
-        ui.label("Can I Read?");
-    });
-}
