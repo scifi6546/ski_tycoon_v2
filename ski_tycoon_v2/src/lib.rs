@@ -37,6 +37,7 @@ use wasm_bindgen::prelude::*;
 pub mod prelude {
     pub use super::asset_manager::AssetManager;
     pub use super::camera::Camera;
+    pub use super::events::{Event, MouseButton};
     pub use super::graph::{
         dijkstra, FollowPath, GraphLayer, GraphLayerList, GraphWeight, GridNode, LiftLayer, Node,
         NodeFloat, Path,
@@ -46,11 +47,14 @@ pub mod prelude {
         Shader, Transform, Vertex,
     };
     pub type ShaderBind = super::Bindable<Shader>;
-    pub use super::events::{Event, MouseButton};
-    pub use super::graphics_system::{RuntimeDebugMesh, RuntimeModel, RuntimeModelId};
+    pub use super::graphics_system::{
+        insert_terrain, RuntimeDebugMesh, RuntimeModel, RuntimeModelId,
+    };
     pub use super::grid::Grid;
     pub use super::gui::{GuiModel, GuiRuntimeModel, GuiTransform};
+    pub use super::lift::insert_lift;
     pub use super::model::Model;
+    pub use super::skiier::build_skiier;
     pub use super::terrain::Terrain;
     pub use super::texture::RGBATexture as Texture;
     pub use wasm_bindgen::prelude::JsValue;
@@ -267,7 +271,13 @@ impl Game {
         info!("handled sceen resize");
         {
             let library: &terrain::TerrainLibrary = &self.resources.get().unwrap();
-            library.draw_gui(&mut self.resources.get_mut().unwrap());
+            library.draw_gui(
+                &mut self.world,
+                &mut self.resources.get_mut().unwrap(),
+                &mut self.resources.get_mut().unwrap(),
+                &mut self.resources.get_mut().unwrap(),
+                &mut self.resources.get_mut().unwrap(),
+            );
         }
         //game logic
         skiier::follow_path(&mut self.world);
