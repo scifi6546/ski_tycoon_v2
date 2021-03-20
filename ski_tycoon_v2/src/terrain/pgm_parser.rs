@@ -104,9 +104,6 @@ impl<'a> SkipWhitespace<'a> {
         }
     }
 }
-fn is_white_space(c: char) -> bool {
-    c == '\n' || c == ' ' || c == '\t'
-}
 impl<'a> SkipWhitespace<'a> {
     fn is_empty(s: String) -> Option<String> {
         if s == "" {
@@ -115,10 +112,13 @@ impl<'a> SkipWhitespace<'a> {
             None
         }
     }
+    fn is_white_space(c: &char) -> bool {
+        c == &'\n' || c == &' ' || c == &'\t'
+    }
     fn skip_whitespace(&mut self) {
         loop {
             if let Some(c) = self.iter.peek() {
-                if is_white_space(c.clone()) {
+                if Self::is_white_space(c) {
                     self.iter.next();
                 } else {
                     break;
@@ -128,71 +128,56 @@ impl<'a> SkipWhitespace<'a> {
             }
         }
     }
+    fn skip_comment(&mut self) {
+        if let Some(c) = self.iter.peek() {
+            if c == &'#' {
+                loop {
+                    if let Some(c) = self.iter.peek() {
+                        if c == &'\n' {
+                            return;
+                        } else {
+                            self.iter.next();
+                        }
+                    }
+                }
+            }
+        }
+    }
+    fn to_skip(&mut self) -> bool {
+        if let Some(c) = self.iter.peek() {
+            Self::is_white_space(c) || c == &'#'
+        } else {
+            false
+        }
+    }
 }
 impl<'a> Iterator for SkipWhitespace<'a> {
     type Item = String;
     fn next(&mut self) -> Option<String> {
+        loop {
+            if self.to_skip() {
+                self.skip_comment();
+                self.skip_whitespace();
+            } else {
+                break;
+            }
+        }
         let mut string_out = String::new();
         loop {
-            if let Some(c) = self.iter.next() {
-                if is_white_space(c) {
-                    loop {
-                        if let Some(c) = self.iter.peek() {
-                            if is_white_space(c.clone()) {
-                                self.iter.next();
-                            } else if c == &'#' {
-                                loop {
-                                    if let Some(c) = self.iter.peek() {
-                                        if c == &'\n' {
-                                            self.iter.next();
-                                            break;
-                                        } else {
-                                            self.iter.next();
-                                        }
-                                    } else if string_out == "" {
-                                        return None;
-                                    } else {
-                                        return Some(string_out);
-                                    }
-                                }
-                                break;
-                            } else {
-                                break;
-                            }
-                        } else {
-                            if string_out == "" {
-                                return None;
-                            } else {
-                                return Some(string_out);
-                            }
-                        }
-                    }
-                    return Some(string_out);
-                } else if c == '#' {
-                    loop {
-                        if let Some(c) = self.iter.next() {
-                            if c == '\n' {
-                                self.skip_whitespace();
-                                return Self::is_empty(string_out);
-                            }
-                        } else {
-                            if string_out == "" {
-                                return None;
-                            } else {
-                                return Some(string_out);
-                            }
-                        }
-                    }
-                } else {
-                    string_out.push(c);
-                }
+            if self.to_skip() {
+                break;
             } else {
-                if string_out == "" {
-                    return None;
+                if let Some(c) = self.iter.next() {
+                    string_out.push(c);
                 } else {
-                    return Some(string_out);
+                    break;
                 }
             }
+        }
+        if string_out == "" {
+            None
+        } else {
+            Some(string_out)
         }
     }
 }
@@ -232,7 +217,7 @@ mod test {
     10000
             ";
         let s_v: Vec<String> = SkipWhitespace::new(s).collect();
-        assert_eq!(s_v, vec!["P2", "1", "1", "10000", "10"]);
+        assert_eq!(s_v, vec!["P2", "1", "1", "10000", "10000"]);
     }
 
     #[test]

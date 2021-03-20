@@ -18,6 +18,13 @@ impl<T> AssetManager<T> {
             self.data.get(key).unwrap()
         }
     }
+    /// Sets data at key point overwrites if it is already present
+    pub fn overwrite<'a>(&mut self, key: &str, data: T) -> &T {
+        self.data.insert(key.to_string(), data);
+        //must have data at key because it as just inserted
+        self.data.get(key).unwrap()
+    }
+
     pub fn get(&self, key: &str) -> Option<&T> {
         self.data.get(key)
     }
@@ -38,5 +45,8 @@ mod test {
         assert_eq!(manager.get("one"), None);
         assert_eq!(manager.contains("zero"), true);
         assert_eq!(manager.get_or_create("one", 1), &1);
+        assert_eq!(manager.overwrite("zero", 1), &1);
+        assert_eq!(manager.overwrite("zero", 0), &0);
+        assert_eq!(manager.overwrite("three", 3), &3);
     }
 }

@@ -4,6 +4,7 @@ use super::prelude::{
 };
 use egui::CtxRef;
 use legion::World;
+use log::info;
 use nalgebra::{Vector2, Vector3};
 mod pgm_parser;
 struct TerrainLibraryEntry {
@@ -11,67 +12,65 @@ struct TerrainLibraryEntry {
     scenario: Scenario,
 }
 pub struct TerrainLibrary {
-    entries: Vec<TerrainLibraryEntry>,
+    entries: Vec<Scenario>,
 }
 impl Default for TerrainLibrary {
     fn default() -> Self {
         Self {
             entries: vec![
-                TerrainLibraryEntry {
+                Scenario {
                     name: "Cone World".to_string(),
-                    scenario: Scenario {
-                        terrain_ctor: Box::new(|| {
-                            Terrain::new_cone(
-                                Vector2::new(20, 20),
-                                Vector2::new(10.0, 10.0),
-                                10.0,
-                                -1.0,
-                            )
-                        }),
-                        skiier_spawn: (0..10)
-                            .map(|x| (0..10).map(move |y| Vector2::new(x.clone(), y.clone())))
-                            .flatten()
-                            .collect(),
-                        lift_positions: vec![LiftPosition {
-                            start: Vector2::new(0, 0),
-                            end: Vector2::new(3, 3),
-                        }],
-                    },
+                    terrain_ctor: Box::new(|| {
+                        Terrain::new_cone(
+                            Vector2::new(20, 20),
+                            Vector2::new(10.0, 10.0),
+                            10.0,
+                            -1.0,
+                        )
+                    }),
+                    skiier_spawn: (0..10)
+                        .map(|x| (0..10).map(move |y| Vector2::new(x.clone(), y.clone())))
+                        .flatten()
+                        .collect(),
+                    lift_positions: vec![LiftPosition {
+                        start: Vector2::new(0, 0),
+                        end: Vector2::new(3, 3),
+                    }],
                 },
-                TerrainLibraryEntry {
+                Scenario {
+                    name: "Small Cone World".to_string(),
+                    terrain_ctor: Box::new(|| {
+                        Terrain::new_cone(Vector2::new(5, 5), Vector2::new(10.0, 10.0), 10.0, 1.0)
+                    }),
+                    skiier_spawn: vec![],
+                    lift_positions: vec![],
+                },
+                Scenario {
                     name: "Toture Test".to_string(),
-                    scenario: Scenario {
-                        terrain_ctor: Box::new(|| {
-                            Terrain::new_cone(
-                                Vector2::new(100, 100),
-                                Vector2::new(50.0, 50.0),
-                                50.0,
-                                -1.0,
-                            )
-                        }),
-                        skiier_spawn: (0..100)
-                            .map(|x| (0..100).map(move |y| Vector2::new(x, y)))
-                            .flatten()
-                            .collect(),
-                        lift_positions: vec![LiftPosition {
-                            start: Vector2::new(0, 0),
-                            end: Vector2::new(50, 50),
-                        }],
-                    },
+                    terrain_ctor: Box::new(|| {
+                        Terrain::new_cone(
+                            Vector2::new(100, 100),
+                            Vector2::new(50.0, 50.0),
+                            50.0,
+                            -1.0,
+                        )
+                    }),
+                    skiier_spawn: (0..100)
+                        .map(|x| (0..100).map(move |y| Vector2::new(x, y)))
+                        .flatten()
+                        .collect(),
+                    lift_positions: vec![LiftPosition {
+                        start: Vector2::new(0, 0),
+                        end: Vector2::new(50, 50),
+                    }],
                 },
-                TerrainLibraryEntry {
+                Scenario {
                     name: "PGM File".to_string(),
-                    scenario: Scenario {
-                        terrain_ctor: Box::new(|| {
-                            Terrain::from_pgm(include_bytes!("heightmaps/output.pgm").to_vec())
-                                .unwrap()
-                        }),
-                        skiier_spawn: (10..20).map(|x| Vector2::new(x, x)).collect(),
-                        lift_positions: vec![LiftPosition {
-                            start: Vector2::new(0, 0),
-                            end: Vector2::new(20, 20),
-                        }],
-                    },
+                    terrain_ctor: Box::new(|| {
+                        Terrain::from_pgm(include_bytes!("heightmaps/output.pgm").to_vec()).unwrap()
+                    }),
+                    skiier_spawn: vec![],
+                    lift_positions: vec![],
                 },
             ],
         }
@@ -82,6 +81,7 @@ pub struct LiftPosition {
     end: Vector2<i64>,
 }
 pub struct Scenario {
+    pub name: String,
     pub terrain_ctor: Box<dyn Fn() -> Terrain>,
     pub skiier_spawn: Vec<Vector2<i64>>,
     pub lift_positions: Vec<LiftPosition>,
@@ -95,6 +95,7 @@ impl Scenario {
         bound_shader: &ShaderBind,
     ) {
         world.clear();
+        info!("building scene: {}", self.name);
 
         insert_terrain(
             (self.terrain_ctor)(),
@@ -127,8 +128,7 @@ impl TerrainLibrary {
             for t in self.entries.iter() {
                 ui.label(format!("{}", t.name));
                 if ui.button("").clicked {
-                    t.scenario
-                        .build_scenario(world, graphics, asset_manager, bound_shader);
+                    t.build_scenario(world, graphics, asset_manager, bound_shader);
                 }
             }
         });

@@ -55,7 +55,7 @@ pub fn insert_terrain(
 ) -> Result<(), ErrorType> {
     let model = terrain.model();
     let transform = model.transform.clone();
-    asset_manager.get_or_create(
+    asset_manager.overwrite(
         "game_terrain",
         RuntimeModel::new(&model, graphics, bound_shader).expect("created model"),
     );
