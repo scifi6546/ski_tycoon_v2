@@ -57,7 +57,7 @@ pub fn terrain_from_pgm(data: String, default_tile_type: TileType) -> Result<Ter
     } else {
         return Err(ParseError::MissingMaxHeight);
     };
-    let max_height: usize = if let Some(h) = max_height_string.parse().ok() {
+    let _max_height: usize = if let Some(h) = max_height_string.parse().ok() {
         h
     } else {
         return Err(ParseError::InvalidNumber {
@@ -105,13 +105,6 @@ impl<'a> SkipWhitespace<'a> {
     }
 }
 impl<'a> SkipWhitespace<'a> {
-    fn is_empty(s: String) -> Option<String> {
-        if s == "" {
-            Some(s)
-        } else {
-            None
-        }
-    }
     fn is_white_space(c: &char) -> bool {
         c == &'\n' || c == &' ' || c == &'\t'
     }

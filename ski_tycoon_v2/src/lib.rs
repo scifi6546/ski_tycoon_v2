@@ -74,7 +74,7 @@ impl Game {
         let mut world = World::default();
         let mut webgl = RenderingContext::new(init_context)?;
         let mut shader_bind = Bindable::default();
-        let mut model_manager = AssetManager::default();
+        let mut model_manager: AssetManager<RuntimeModel> = AssetManager::default();
         shader_bind.insert("world", webgl.build_world_shader()?);
         shader_bind.bind("world");
         webgl.bind_shader(shader_bind.get_bind()).ok().unwrap();
@@ -109,31 +109,6 @@ impl Game {
             &shader_bind.get_bind(),
         )?;
         webgl.get_error();
-        insert_terrain(
-            Terrain::new_cone(Vector2::new(20, 20), Vector2::new(10.0, 10.0), 5.0, -1.0),
-            &mut world,
-            &mut webgl,
-            &mut model_manager,
-            &shader_bind.get_bind(),
-        )?;
-        insert_lift(
-            &mut world,
-            &mut webgl,
-            &mut model_manager,
-            &shader_bind,
-            Vector2::new(3, 3),
-            Vector2::new(17, 3),
-        )?;
-
-        insert_lift(
-            &mut world,
-            &mut webgl,
-            &mut model_manager,
-            &shader_bind,
-            Vector2::new(0, 0),
-            Vector2::new(10, 10),
-        )?;
-        webgl.get_error();
         let mut world_framebuffer_texture = webgl.build_texture(
             RGBATexture::constant_color(Vector4::new(0, 0, 0, 0), screen_size),
             &shader_bind.get_bind(),
@@ -148,17 +123,6 @@ impl Game {
             texture: world_framebuffer_texture,
         };
         webgl.get_error();
-        info!("building skiiers");
-        for i in 0..10 {
-            skiier::build_skiier(
-                &mut world,
-                &mut webgl,
-                &mut model_manager,
-                &shader_bind,
-                Vector2::new(i, 0),
-            )?;
-        }
-        info!("done building skiiers");
         webgl.get_error();
         resources.insert(webgl);
         resources.insert(shader_bind);

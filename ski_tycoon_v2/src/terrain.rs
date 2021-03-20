@@ -7,10 +7,6 @@ use legion::World;
 use log::info;
 use nalgebra::{Vector2, Vector3};
 mod pgm_parser;
-struct TerrainLibraryEntry {
-    name: String,
-    scenario: Scenario,
-}
 pub struct TerrainLibrary {
     entries: Vec<Scenario>,
 }
