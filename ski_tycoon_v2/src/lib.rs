@@ -21,22 +21,19 @@ use log::{debug, info};
 use nalgebra::{Matrix4, Vector2, Vector3, Vector4};
 use texture::RGBATexture;
 mod events;
-use bindable::Bindable;
-use camera::Camera;
-
 use asset_manager::AssetManager;
+use bindable::Bindable;
+use camera::DeltaCamera;
 use events::{Event, MouseButton};
 use graph::graph_debug;
 //
-use graphics_system::{insert_terrain, GraphicsSettings, RuntimeModel};
+use graphics_system::{GraphicsSettings, RuntimeModel};
 use gui::GuiModel;
 use legion::*;
-use lift::insert_lift;
-use terrain::Terrain;
 use wasm_bindgen::prelude::*;
 pub mod prelude {
     pub use super::asset_manager::AssetManager;
-    pub use super::camera::Camera;
+    pub use super::camera::DeltaCamera;
     pub use super::events::{Event, MouseButton};
     pub use super::graph::{
         dijkstra, FollowPath, GraphLayer, GraphLayerList, GraphWeight, GridNode, LiftLayer, Node,
@@ -74,7 +71,7 @@ impl Game {
         let mut world = World::default();
         let mut webgl = RenderingContext::new(init_context)?;
         let mut shader_bind = Bindable::default();
-        let mut model_manager: AssetManager<RuntimeModel> = AssetManager::default();
+        let model_manager: AssetManager<RuntimeModel> = AssetManager::default();
         shader_bind.insert("world", webgl.build_world_shader()?);
         shader_bind.bind("world");
         webgl.bind_shader(shader_bind.get_bind()).ok().unwrap();
@@ -129,7 +126,12 @@ impl Game {
         resources.insert(GraphicsSettings {
             screen_size: screen_size.clone(),
         });
-        resources.insert(Camera::new(Vector3::new(0.0, 0.0, 0.0), 20.0, 1.0, 1.0));
+        resources.insert(DeltaCamera::new(
+            Vector3::new(0.0, 0.0, 0.0),
+            20.0,
+            1.0,
+            1.0,
+        ));
         let (egui_context, egui_adaptor) = gui::init_gui(screen_size);
         resources.insert(egui_context);
         resources.insert(egui_adaptor);
@@ -151,7 +153,7 @@ impl Game {
     }
     pub fn run_frame(&mut self, events: Vec<Event>) {
         {
-            let camera: &mut Camera = &mut self.resources.get_mut().unwrap();
+            let camera: &mut DeltaCamera = &mut self.resources.get_mut().unwrap();
             for e in events.iter() {
                 match e {
                     Event::MouseMove {
@@ -221,6 +223,7 @@ impl Game {
                     _ => (),
                 }
             }
+            camera.apply();
 
             //binding to world framebuffer and rendering to it
 

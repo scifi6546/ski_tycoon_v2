@@ -1,5 +1,78 @@
 use nalgebra::{Matrix4, Point, Vector2, Vector3};
-pub struct Camera {
+pub struct DeltaCamera {
+    previous: Camera,
+    next: Option<Camera>,
+}
+impl DeltaCamera {
+    //checks if next is used and if not creates next from previous
+    fn new_next(&mut self) {
+        if self.next.is_none() {
+            self.next = Some(self.previous.clone());
+        }
+    }
+    pub fn new(origin: Vector3<f32>, radius: f32, phi: f32, theta: f32) -> Self {
+        Self {
+            previous: Camera {
+                origin,
+                radius,
+                phi,
+                theta,
+            },
+            next: None,
+        }
+    }
+    pub fn rotate_phi(&mut self, delta_phi: f32) {
+        self.new_next();
+        self.next.as_mut().unwrap().phi += delta_phi;
+    }
+    pub fn rotate_theta(&mut self, delta_theta: f32) {
+        self.new_next();
+        self.next.as_mut().unwrap().theta += delta_theta;
+    }
+    /// Increases by value proportional to delta radius
+    pub fn update_radius(&mut self, delta_radius: f32) {
+        self.new_next();
+        let mut next = self.next.as_mut().unwrap();
+        next.radius += delta_radius * next.radius;
+        if next.radius < 0.1 {
+            next.radius = 0.1;
+        }
+    }
+    pub fn translate(&mut self, translation: &Vector3<f32>) {
+        self.new_next();
+        self.next.as_mut().unwrap().origin += translation;
+    }
+    /// applies delta changes to self
+    pub fn apply(&mut self) {
+        if let Some(next) = self.next.as_ref() {
+            self.previous = next.clone();
+        }
+        self.next = None;
+    }
+    pub fn get_matrix(&self, screen_resolution: Vector2<u32>) -> Matrix4<f32> {
+        let delta_position = self.previous.radius
+            * Vector3::new(
+                self.previous.phi.cos() * self.previous.theta.cos(),
+                self.previous.theta.sin(),
+                (self.previous.phi).sin() * self.previous.theta.cos(),
+            );
+        let face = Matrix4::look_at_rh(
+            &Point::from(delta_position + self.previous.origin),
+            &Point::from(self.previous.origin),
+            &Vector3::new(0.0, 1.0, 0.0),
+        );
+        let cam = Matrix4::new_perspective(
+            screen_resolution.x as f32 / screen_resolution.y as f32,
+            3.14 / 3.0,
+            0.1,
+            1000.0,
+        );
+        let mat = cam * face;
+        mat
+    }
+}
+#[derive(Clone, Debug)]
+struct Camera {
     /// Origin about which camera rotates
     origin: Vector3<f32>,
     /// how far away the camera is from its origin
@@ -8,6 +81,7 @@ pub struct Camera {
     phi: f32,
     theta: f32,
 }
+
 impl Camera {
     pub fn new(origin: Vector3<f32>, radius: f32, phi: f32, theta: f32) -> Self {
         Self {

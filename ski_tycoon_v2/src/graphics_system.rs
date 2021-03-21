@@ -1,6 +1,6 @@
 use super::prelude::{
-    AssetManager, Camera, ErrorType, GuiRuntimeModel, GuiTransform, Mesh, Model, RenderingContext,
-    RuntimeMesh, RuntimeTexture, Shader, ShaderBind, Terrain, Transform,
+    AssetManager, DeltaCamera, ErrorType, GuiRuntimeModel, GuiTransform, Mesh, Model,
+    RenderingContext, RuntimeMesh, RuntimeTexture, Shader, ShaderBind, Terrain, Transform,
 };
 use legion::*;
 use log::debug;
@@ -77,7 +77,7 @@ pub fn render_object(
     #[resource] settings: &GraphicsSettings,
     #[resource] webgl: &mut RenderingContext,
     #[resource] shader: &ShaderBind,
-    #[resource] camera: &Camera,
+    #[resource] camera: &DeltaCamera,
     #[resource] asset_manager: &mut AssetManager<RuntimeModel>,
 ) {
     debug!("running render object");
@@ -94,7 +94,7 @@ pub fn render_debug(
     #[resource] settings: &GraphicsSettings,
     #[resource] webgl: &mut RenderingContext,
     #[resource] shader: &ShaderBind,
-    #[resource] camera: &Camera,
+    #[resource] camera: &DeltaCamera,
 ) {
     webgl.send_model_matrix(transform.build().clone(), shader.get_bind());
     webgl.send_view_matrix(camera.get_matrix(settings.screen_size), shader.get_bind());
