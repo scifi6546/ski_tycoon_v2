@@ -17,7 +17,11 @@ pub enum ParseError {
     MissingMaxHeight,
     MissingDatapoint,
 }
-pub fn terrain_from_pgm(data: String, default_tile_type: TileType) -> Result<Terrain, ParseError> {
+pub fn terrain_from_pgm(
+    data: String,
+    default_tile_type: TileType,
+    y_scaling: f32,
+) -> Result<Terrain, ParseError> {
     let mut iter = SkipWhitespace::new(data.as_str());
     if let Some(magic_number) = iter.next() {
         if magic_number != "P2" {
@@ -83,7 +87,7 @@ pub fn terrain_from_pgm(data: String, default_tile_type: TileType) -> Result<Ter
                 });
             };
             tiles.push(Tile {
-                height: height as f32,
+                height: (height as f32) * y_scaling,
                 tile_type: default_tile_type.clone(),
             });
         }

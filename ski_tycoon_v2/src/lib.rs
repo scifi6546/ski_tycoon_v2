@@ -223,7 +223,7 @@ impl Game {
                     _ => (),
                 }
             }
-            camera.apply();
+            camera.apply(&self.world);
 
             //binding to world framebuffer and rendering to it
 

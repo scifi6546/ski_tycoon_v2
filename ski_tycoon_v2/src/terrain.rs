@@ -63,7 +63,8 @@ impl Default for TerrainLibrary {
                 Scenario {
                     name: "PGM File".to_string(),
                     terrain_ctor: Box::new(|| {
-                        Terrain::from_pgm(include_bytes!("heightmaps/output.pgm").to_vec()).unwrap()
+                        Terrain::from_pgm(include_bytes!("heightmaps/output.pgm").to_vec(), 0.01)
+                            .unwrap()
                     }),
                     skiier_spawn: vec![],
                     lift_positions: vec![],
@@ -167,9 +168,9 @@ impl Terrain {
         Self { tiles, dimensions }
     }
 
-    pub fn from_pgm(data: Vec<u8>) -> Option<Self> {
+    pub fn from_pgm(data: Vec<u8>, scaling: f32) -> Option<Self> {
         if let Some(s) = String::from_utf8(data).ok() {
-            if let Some(t) = pgm_parser::terrain_from_pgm(s, TileType::Snow).ok() {
+            if let Some(t) = pgm_parser::terrain_from_pgm(s, TileType::Snow, scaling).ok() {
                 Some(t)
             } else {
                 None
@@ -185,6 +186,24 @@ impl Terrain {
     pub fn model(&self) -> Model {
         let heights = self.tiles.iter().map(|t| t.height).collect();
         Model::from_heights(heights, self.dimensions, Transform::default())
+    }
+    pub fn get_transform_rounded(&self, coordinate: &Vector2<f32>) -> Vector3<f32> {
+        let x: i64 = unsafe { coordinate.x.to_int_unchecked() };
+        let y: i64 = unsafe { coordinate.y.to_int_unchecked() };
+        let convert_dimensions = |i: i64, i_dimensions: i64| {
+            if i >= i_dimensions {
+                i_dimensions - 1
+            } else if i < 0 {
+                0
+            } else {
+                i
+            }
+        };
+        self.get_transform(&Vector2::new(
+            convert_dimensions(x, self.dimensions.x as i64),
+            convert_dimensions(y, self.dimensions.y as i64),
+        ))
+        .unwrap()
     }
     pub fn get_transform(&self, coordinate: &Vector2<i64>) -> Option<Vector3<f32>> {
         let pos = coordinate.x as usize * self.dimensions.y + coordinate.y as usize;
