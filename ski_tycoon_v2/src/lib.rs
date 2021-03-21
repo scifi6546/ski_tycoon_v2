@@ -212,7 +212,9 @@ impl Game {
                             texture: world_framebuffer_texture,
                         };
                     }
-                    Event::CameraMove { direction } => camera.translate(&(0.1 * direction)),
+                    Event::CameraMove { direction } => {
+                        camera.translate(&(0.1 * direction * camera.get_radius()))
+                    }
                     Event::Scroll {
                         delta_y,
                         delta_time_ms,

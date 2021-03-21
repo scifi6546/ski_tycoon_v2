@@ -66,8 +66,26 @@ impl Default for TerrainLibrary {
                         Terrain::from_pgm(include_bytes!("heightmaps/output.pgm").to_vec(), 0.01)
                             .unwrap()
                     }),
+                    skiier_spawn: (0..5)
+                        .map(|x| (0..1).map(move |y| Vector2::new(x.clone(), y.clone())))
+                        .flatten()
+                        .collect(),
+                    lift_positions: vec![LiftPosition {
+                        start: Vector2::new(0, 0),
+                        end: Vector2::new(7, 3),
+                    }],
+                },
+                Scenario {
+                    name: "PGM File No Skiiers".to_string(),
+                    terrain_ctor: Box::new(|| {
+                        Terrain::from_pgm(include_bytes!("heightmaps/output.pgm").to_vec(), 0.01)
+                            .unwrap()
+                    }),
                     skiier_spawn: vec![],
-                    lift_positions: vec![],
+                    lift_positions: vec![LiftPosition {
+                        start: Vector2::new(0, 0),
+                        end: Vector2::new(7, 3),
+                    }],
                 },
             ],
         }
