@@ -127,12 +127,12 @@ impl Event {
     fn get_mouse_button(mouse: i32) -> Vec<MouseButton> {
         match mouse {
             0 => vec![],
-            1 => vec![MouseButton::LeftClick],
-            2 => vec![MouseButton::RightClick],
+            1 => vec![MouseButton::RightClick],
+            2 => vec![MouseButton::LeftClick],
             3 => vec![MouseButton::LeftClick, MouseButton::RightClick],
             4 => vec![MouseButton::MiddleClick],
-            5 => vec![MouseButton::LeftClick, MouseButton::MiddleClick],
-            6 => vec![MouseButton::MiddleClick, MouseButton::RightClick],
+            5 => vec![MouseButton::RightClick, MouseButton::MiddleClick],
+            6 => vec![MouseButton::MiddleClick, MouseButton::LeftClick],
             7 => vec![
                 MouseButton::LeftClick,
                 MouseButton::MiddleClick,

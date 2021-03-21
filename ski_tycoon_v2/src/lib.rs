@@ -219,7 +219,7 @@ impl Game {
                         delta_y,
                         delta_time_ms,
                     } => {
-                        camera.update_radius(0.0000001 * delta_y * delta_time_ms);
+                        camera.update_radius(0.000001 * delta_y * delta_time_ms);
                         debug!("zoomed");
                     }
                     _ => (),
