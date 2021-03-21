@@ -1,4 +1,3 @@
-Currently requires nightly rust
 # What will This Be? 
 Summit Surveyor is a ski resort building game akin to Roller Coaster Tycoon. Build a sucessful enterprise while skillfully balancing the 
 wants of pros and novices alike. Sculpt your terrain to appease customers. 
@@ -15,7 +14,7 @@ cargo,
 wasm-pack,
 npm
 ```
-## Instructions
+## Build Instructions
 To run the game fist install the rust toolchain by following the directions at https://www.rust-lang.org/. Make sure that the nightly toolchain is used with the following command.
 ```
 rustup default nightly
