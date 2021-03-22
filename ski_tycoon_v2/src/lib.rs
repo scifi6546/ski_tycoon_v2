@@ -36,8 +36,8 @@ pub mod prelude {
     pub use super::camera::DeltaCamera;
     pub use super::events::{Event, MouseButton};
     pub use super::graph::{
-        dijkstra, FollowPath, GraphLayer, GraphLayerList, GraphWeight, GridNode, LiftLayer, Node,
-        NodeFloat, Path,
+        a_star, dijkstra, FollowPath, GraphLayer, GraphLayerList, GraphWeight, GridNode, LiftLayer,
+        Node, NodeFloat, Path,
     };
     pub use super::graphics_engine::{
         ErrorType, Framebuffer, ItemDesc, Mesh, RenderingContext, RuntimeMesh, RuntimeTexture,

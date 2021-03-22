@@ -3,8 +3,8 @@ use log::info;
 use nalgebra::Vector2;
 use priority_queue::PriorityQueue;
 use std::cmp::Reverse;
-use std::collections::HashMap;
-#[derive(Clone, Debug, PartialEq, Eq)]
+use std::collections::{HashMap, HashSet};
+#[derive(Clone, Hash, Debug, PartialEq, Eq)]
 pub enum GraphWeight {
     Some(i32),
     Infinity,
@@ -343,6 +343,101 @@ pub fn dijkstra<'a, G: Graph>(source: &Node, destination: &Node, graph: &G) -> P
             };
         }
     }
+}
+/// Uses a* to get the shortest distance between a source and destination node
+/// heuristic is a function that thaes in (source,destination,graph) and returns an estimated
+/// weight
+pub fn a_star<'a, G: Graph>(
+    source: &Node,
+    destination: &Node,
+    graph: &G,
+    heuristic: Box<dyn Fn(&Node, &Node, &G) -> GraphWeight>,
+) -> Path {
+    let null_node = Node {
+        node: Vector2::new(0, 0),
+    };
+    #[derive(Clone, Hash, PartialEq, Eq)]
+    struct ListEntry {
+        node: Node,
+        f: GraphWeight,
+        g: GraphWeight,
+        h: GraphWeight,
+        parent: Node,
+    }
+    let mut open: PriorityQueue<ListEntry, Reverse<GraphWeight>> = PriorityQueue::new();
+    let mut closed: HashMap<Node, ListEntry> = HashMap::new();
+    let mut visited: HashSet<Node> = HashSet::new();
+    {
+        let h = heuristic(source, destination, graph);
+        open.push(
+            ListEntry {
+                node: source.clone(),
+                g: GraphWeight::Some(0),
+
+                f: h.clone(),
+                h: h.clone(),
+                parent: null_node.clone(),
+            },
+            Reverse(h),
+        );
+    }
+    while open.is_empty() == false {
+        let (parent, _) = open.pop().unwrap();
+        closed.insert(parent.node.clone(), parent.clone());
+        for (child, child_distance) in graph.get_children(&parent.node).iter() {
+            let child = child.clone();
+            let child_distance = child_distance.clone();
+
+            if visited.contains(&child) == false {
+                visited.insert(child.clone());
+                if &child == destination {
+                    let g = child_distance.clone() + parent.g.clone();
+                    let h = heuristic(&child, destination, graph);
+                    let f = g.clone() + h.clone();
+                    closed.insert(
+                        child.clone(),
+                        ListEntry {
+                            node: child.clone(),
+                            f: f.clone(),
+                            g,
+                            h,
+                            parent: parent.node.clone(),
+                        },
+                    );
+                    let mut path: Vec<(Node, GraphWeight)> = vec![(child, child_distance)];
+                    loop {
+                        let (current, _) = path.last().unwrap();
+
+                        let next = closed[current].clone();
+                        if &next.parent == source {
+                            path.push((next.parent, GraphWeight::Some(0)));
+                            return Path {
+                                path: (path.iter()).rev().cloned().collect(),
+                            };
+                        } else {
+                            path.push((next.parent, next.g));
+                        }
+                    }
+                } else {
+                    let g = child_distance.clone() + parent.g.clone();
+                    let h = heuristic(&child, destination, graph);
+                    let f = g.clone() + h.clone();
+                    open.push(
+                        ListEntry {
+                            node: child.clone(),
+                            f: f.clone(),
+                            g,
+                            h,
+                            parent: parent.node.clone(),
+                        },
+                        Reverse(f),
+                    );
+                }
+            }
+        }
+    }
+
+    panic!("node not reachable");
 }
 /// Path used to follow
 #[derive(Clone, Debug, PartialEq)]

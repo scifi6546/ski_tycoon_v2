@@ -1,6 +1,7 @@
 use super::prelude::Terrain;
 use legion::*;
 use nalgebra::{Matrix4, Point, Vector2, Vector3};
+use std::cmp::{max, min};
 pub struct DeltaCamera {
     previous: Camera,
     next: Option<Camera>,
@@ -36,6 +37,9 @@ impl DeltaCamera {
         self.new_next();
         let mut next = self.next.as_mut().unwrap();
         next.radius += delta_radius * next.radius;
+        if next.radius > Camera::FAR_CLIP {
+            next.radius = Camera::FAR_CLIP;
+        }
         if next.radius < 0.1 {
             next.radius = 0.1;
         }
@@ -93,4 +97,7 @@ struct Camera {
     //angle
     phi: f32,
     theta: f32,
+}
+impl Camera {
+    const FAR_CLIP: f32 = 1000.0;
 }

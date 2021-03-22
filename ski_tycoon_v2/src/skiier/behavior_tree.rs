@@ -1,5 +1,5 @@
 use super::{
-    super::prelude::{dijkstra, GraphWeight, Path},
+    super::prelude::{a_star, GraphWeight, Path},
     FollowPath, GraphLayerList, Node,
 };
 use log::error;
@@ -134,6 +134,13 @@ impl TreeNode for Up {
     }
 }
 pub struct Down {}
+impl Down {
+    fn heuristic(start: &Node, end: &Node, _graph: &GraphLayerList) -> GraphWeight {
+        GraphWeight::Some(
+            ((end.node.x - start.node.x).abs() + (end.node.y - start.node.y).abs()) as i32,
+        )
+    }
+}
 impl TreeNode for Down {
     fn name(&self) -> String {
         "Down".to_string()
@@ -143,7 +150,8 @@ impl TreeNode for Down {
         let (cost, best_path) = lift_list
             .iter()
             .map(|lift| {
-                let path_to_lift = dijkstra(&position, &lift.start, layers);
+                let path_to_lift =
+                    a_star(&position, &lift.start, layers, Box::new(Self::heuristic));
                 let path_cost: GraphWeight = path_to_lift
                     .path
                     .iter()
