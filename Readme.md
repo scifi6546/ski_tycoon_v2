@@ -3,7 +3,7 @@ Summit Surveyor is a ski resort building game akin to Roller Coaster Tycoon. Bui
 wants of pros and novices alike. Sculpt your terrain to appease customers. 
 # Screenshots
 ![](/screenshots/screenshot.png)
-# Marketing Bullshit aside, What does the Game do Now?
+# Marketing aside, What does the Game do Now?
 Currently the game allows you to build lifts and simulates skiers skiing down slopes. The game runs on the web in a custom engine. Support for PC platforms is planned. 
 # Playable Link
 https://scifi6546.github.io/ski_tycoon_web_export/index.html
