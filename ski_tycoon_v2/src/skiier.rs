@@ -1,6 +1,6 @@
 use super::prelude::{
     AssetManager, ErrorType, FollowPath, GraphLayer, GraphLayerList, Model, Node, Path,
-    RenderingContext, RuntimeModel, RuntimeModelId, ShaderBind, Transform,
+    RenderingContext, RuntimeModel, RuntimeModelId, ShaderBind, Terrain, Transform,
 };
 mod behavior_tree;
 use behavior_tree::{Number, SearchStart, TreeNode};
@@ -17,6 +17,7 @@ pub struct DecisionDebugInfo {
 fn run_skiier_ai(
     layers: &Vec<&GraphLayer>,
     start_position: Vector2<i64>,
+    terrain: &Terrain,
 ) -> (FollowPath, Vec<DecisionDebugInfo>) {
     let tree_start: Box<dyn TreeNode> = Box::new(SearchStart::default());
     let decisions = tree_start.best_path(
@@ -25,10 +26,11 @@ fn run_skiier_ai(
         Node {
             node: start_position,
         },
+        terrain,
     );
     let follow = decisions
         .iter()
-        .fold(FollowPath::new(Path::default()), |acc, x| {
+        .fold(FollowPath::new(Path::default(), terrain), |acc, x| {
             acc.append(&x.path)
         });
 
@@ -57,7 +59,8 @@ pub fn build_skiier(
     position: Vector2<i64>,
 ) -> Result<(), ErrorType> {
     let layers: Vec<&GraphLayer> = <&GraphLayer>::query().iter(world).collect();
-    let (follow, decision_debug_info) = run_skiier_ai(&layers, position);
+    let terrain = <&Terrain>::query().iter(world).next().unwrap();
+    let (follow, decision_debug_info) = run_skiier_ai(&layers, position, terrain);
     let mut transform = Transform::default();
     transform.set_scale(Vector3::new(0.1, 0.1, 0.1));
     if !asset_manager.contains("skiier") {
@@ -105,15 +108,22 @@ pub fn follow_path(world: &mut World) {
         .iter(world)
         .map(|l| l.clone())
         .collect();
+    //bad hack inorder to avoid copying terrain more then needed
+    let terrain_iter = <&Terrain>::query().iter(world).next();
+    if terrain_iter.is_none() {
+        return;
+    }
+    let terrain: *const Terrain = &*terrain_iter.unwrap();
     let borrow_graph_layer = layers.iter().map(|l| l).collect();
     let mut query = <(&mut Transform, &mut FollowPath, &mut Vec<DecisionDebugInfo>)>::query();
     for (transform, path, debug_info) in query.iter_mut(world) {
         if path.at_end() {
             if let Some(endpoint) = path.path.endpoint() {
-                let (t_path, t_debug_info) = run_skiier_ai(&borrow_graph_layer, endpoint.node);
+                let (t_path, t_debug_info) =
+                    run_skiier_ai(&borrow_graph_layer, endpoint.node, unsafe { &*terrain });
                 if t_path.len() > 0 {
                     let t = path.get();
-                    transform.set_translation(Vector3::new(t.node.x as f32, 0.0, t.node.y as f32));
+                    transform.set_translation(t);
                 }
                 *path = t_path;
                 *debug_info = t_debug_info;
@@ -122,7 +132,7 @@ pub fn follow_path(world: &mut World) {
             path.incr(0.1);
             if path.len() > 0 {
                 let t = path.get();
-                transform.set_translation(Vector3::new(t.node.x as f32, 0.0, t.node.y as f32));
+                transform.set_translation(t);
             }
         }
     }

@@ -1,6 +1,6 @@
 use super::{
     super::prelude::{a_star, GraphWeight, Path},
-    FollowPath, GraphLayerList, Node,
+    FollowPath, GraphLayerList, Node, Terrain,
 };
 use log::error;
 #[derive(Clone, Debug, PartialEq)]
@@ -50,7 +50,7 @@ impl<T: std::cmp::PartialOrd> std::cmp::PartialOrd for Number<T> {
     }
 }
 pub trait TreeNode {
-    fn cost(&self, layers: &GraphLayerList, position: Node) -> Decision;
+    fn cost(&self, layers: &GraphLayerList, position: Node, terrain: &Terrain) -> Decision;
     fn children(&self) -> Vec<Box<dyn TreeNode>>;
     fn name(&self) -> String;
     fn best_path(
@@ -58,11 +58,12 @@ pub trait TreeNode {
         search_length: usize,
         layers: &GraphLayerList,
         position: Node,
+        terrain: &Terrain,
     ) -> Vec<Decision> {
         if search_length == 0 {
-            vec![self.cost(layers, position)]
+            vec![self.cost(layers, position, terrain)]
         } else {
-            let self_cost = self.cost(layers, position);
+            let self_cost = self.cost(layers, position, terrain);
             let mut best_weight = Number::Infinite;
             let mut best_path = vec![];
             for child in self.children().iter() {
@@ -70,6 +71,7 @@ pub trait TreeNode {
                     search_length - 1,
                     layers,
                     self_cost.clone().endpoint.clone(),
+                    terrain,
                 );
 
                 let child_weight = child_path
@@ -92,7 +94,7 @@ impl TreeNode for Up {
     fn name(&self) -> String {
         "Up".to_string()
     }
-    fn cost(&self, layers: &GraphLayerList, position: Node) -> Decision {
+    fn cost(&self, layers: &GraphLayerList, position: Node, terrain: &Terrain) -> Decision {
         let lift_list = layers.find_lifts();
         let (cost, best_path) = lift_list
             .iter()
@@ -125,7 +127,7 @@ impl TreeNode for Up {
             } else {
                 position
             },
-            path: FollowPath::new(best_path),
+            path: FollowPath::new(best_path, terrain),
             name: self.name(),
         }
     }
@@ -145,7 +147,7 @@ impl TreeNode for Down {
     fn name(&self) -> String {
         "Down".to_string()
     }
-    fn cost(&self, layers: &GraphLayerList, position: Node) -> Decision {
+    fn cost(&self, layers: &GraphLayerList, position: Node, terrain: &Terrain) -> Decision {
         let lift_list = layers.find_lifts();
         let (cost, best_path) = lift_list
             .iter()
@@ -187,7 +189,7 @@ impl TreeNode for Down {
             } else {
                 position
             },
-            path: FollowPath::new(best_path),
+            path: FollowPath::new(best_path, terrain),
             name: self.name(),
         }
     }
@@ -205,11 +207,11 @@ impl TreeNode for SearchStart {
     fn name(&self) -> String {
         "Search Start".to_string()
     }
-    fn cost(&self, _layers: &GraphLayerList, position: Node) -> Decision {
+    fn cost(&self, _layers: &GraphLayerList, position: Node, terrain: &Terrain) -> Decision {
         Decision {
             cost: Number::Finite(0.0),
             endpoint: position,
-            path: FollowPath::new(Path::default()),
+            path: FollowPath::new(Path::default(), terrain),
             name: self.name(),
         }
     }

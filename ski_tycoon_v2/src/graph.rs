@@ -1,6 +1,6 @@
-use super::prelude::Grid;
+use super::prelude::{Grid, Terrain};
 use log::info;
-use nalgebra::Vector2;
+use nalgebra::{Vector2, Vector3};
 use priority_queue::PriorityQueue;
 use std::cmp::Reverse;
 use std::collections::{HashMap, HashSet};
@@ -442,12 +442,21 @@ pub fn a_star<'a, G: Graph>(
 /// Path used to follow
 #[derive(Clone, Debug, PartialEq)]
 pub struct FollowPath {
+    nodes: Vec<Vector3<f32>>,
     pub path: Path,
     t: f64,
 }
 impl FollowPath {
-    pub fn new(path: Path) -> Self {
-        Self { path, t: 0.0 }
+    pub fn new(path: Path, terrain: &Terrain) -> Self {
+        Self {
+            path: path.clone(),
+            t: 0.0,
+            nodes: path
+                .path
+                .iter()
+                .map(|n| terrain.get_transform(&n.0.node).unwrap())
+                .collect(),
+        }
     }
     pub fn incr(&mut self, incr: f64) {
         self.t += incr
@@ -461,27 +470,33 @@ impl FollowPath {
     }
     pub fn append(&self, other: &Self) -> Self {
         let t = self.t;
+        let mut nodes = self.nodes.clone();
+        for i in other.nodes.iter() {
+            nodes.push(i.clone());
+        }
+
         Self {
             t,
             path: self.path.clone().append(&other.path),
+            nodes,
         }
     }
     pub fn len(&self) -> usize {
         self.path.len()
     }
-    pub fn get(&self) -> NodeFloat {
+    pub fn get(&self) -> Vector3<f32> {
         let t0: usize = self.t.floor() as usize;
         if t0 >= self.path.path.len() {
-            self.path.path[self.path.path.len() - 1].0.to_node_float()
+            self.nodes[self.path.path.len() - 1]
         } else {
             if t0 + 1 < self.path.path.len() {
-                let x0 = self.path.path[t0].0.clone();
-                let x1 = self.path.path[t0 + 1].0.clone();
+                let x0 = self.nodes[t0].clone();
+                let x1 = self.nodes[t0 + 1].clone();
                 let t1 = t0 as f64 + 1.0;
-                ((x1 - x0.clone()).to_node_float() / (t1 - t0 as f64)) * (self.t - t0 as f64)
-                    + (x0.clone()).to_node_float()
+                ((x1 - x0.clone()) / (t1 as f32 - t0 as f32)) * (self.t as f32 - t0 as f32)
+                    + (x0.clone())
             } else {
-                (self.path.path[t0].clone()).0.to_node_float()
+                self.nodes[t0].clone()
             }
         }
     }
