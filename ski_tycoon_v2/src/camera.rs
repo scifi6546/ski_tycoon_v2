@@ -1,7 +1,6 @@
 use super::prelude::Terrain;
 use legion::*;
 use nalgebra::{Matrix4, Point, Vector2, Vector3};
-use std::cmp::{max, min};
 pub struct DeltaCamera {
     previous: Camera,
     next: Option<Camera>,
