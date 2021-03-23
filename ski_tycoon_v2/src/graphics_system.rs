@@ -62,7 +62,7 @@ pub fn insert_terrain(
     world.push((
         terrain.build_graph(),
         terrain,
-        transform.clone(),
+        transform,
         RuntimeModelId {
             id: "game_terrain".to_string(),
         },
@@ -84,7 +84,7 @@ pub fn render_object(
     let model = asset_manager.get(&model.id).unwrap();
     webgl.bind_texture(&model.texture, shader.get_bind());
     webgl.send_view_matrix(camera.get_matrix(settings.screen_size), shader.get_bind());
-    webgl.send_model_matrix(transform.build().clone(), shader.get_bind());
+    webgl.send_model_matrix(transform.build(), shader.get_bind());
     webgl.draw_mesh(&model.mesh);
 }
 #[system(for_each)]
@@ -96,7 +96,7 @@ pub fn render_debug(
     #[resource] shader: &ShaderBind,
     #[resource] camera: &DeltaCamera,
 ) {
-    webgl.send_model_matrix(transform.build().clone(), shader.get_bind());
+    webgl.send_model_matrix(transform.build(), shader.get_bind());
     webgl.send_view_matrix(camera.get_matrix(settings.screen_size), shader.get_bind());
     webgl.draw_lines(&model.mesh);
 }
@@ -109,6 +109,6 @@ pub fn render_gui(
 ) {
     debug!("running render object");
     webgl.bind_texture(&model.model.texture, shader.get_bind());
-    webgl.send_model_matrix(transform.transform.build().clone(), shader.get_bind());
+    webgl.send_model_matrix(transform.transform.build(), shader.get_bind());
     webgl.draw_mesh(&model.model.mesh);
 }

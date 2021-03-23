@@ -187,7 +187,7 @@ impl BuildLift {
                     .iter_mut(world)
                     .next()
                     .unwrap();
-                lift.position = p.clone();
+                lift.position = p;
                 transform.set_translation(world_choordinates);
             }
         }
@@ -207,13 +207,13 @@ impl BuildLift {
                     .iter_mut(world)
                     .next()
                     .unwrap();
-                lift.position = p.clone();
+                lift.position = p;
                 transform.set_translation(world_choordinates);
             }
         }
         if self.placing_lift == LiftStage::Done {
             let lift = <&SecondLiftPlace>::query().iter(world).next().unwrap();
-            let bottom_position = lift.bottom_position.clone();
+            let bottom_position = lift.bottom_position;
             let top_position = lift.position;
             insert_lift(
                 world,

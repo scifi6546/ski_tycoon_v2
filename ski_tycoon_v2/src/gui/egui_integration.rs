@@ -6,7 +6,6 @@ use egui::{
     paint::tessellator::Vertex as EguiVertex,
     PaintJobs, RawInput, Texture,
 };
-use log::info;
 use nalgebra::{Vector2, Vector3, Vector4};
 use std::sync::Arc;
 /// Struct used to get state
@@ -17,37 +16,34 @@ pub struct EguiRawInputAdaptor {
     frame_scroll: f32,
 }
 impl EguiRawInputAdaptor {
+    #[allow(clippy::ptr_arg)]
     pub fn process_events(&mut self, events: &Vec<Event>, screen_size: Vector2<u32>) -> RawInput {
         self.frame_scroll = 0.0;
         for e in events.iter() {
             match e {
                 Event::MouseDown { .. } => {
-                    info!("mouse down");
                     self.is_rightclick_down = true;
-                    info!("right click down: {}", self.is_rightclick_down);
                 }
                 Event::MouseUp { .. } => {
-                    info!("mouse up ujjj");
-                    info!("before??");
                     self.is_rightclick_down = false;
-                    info!("right click down: {}", self.is_rightclick_down);
                 }
-                Event::MouseMove { x, y, .. } => {
-                    self.last_cursor_pos = Vector2::new(x.clone(), y.clone())
-                }
+                Event::MouseMove { x, y, .. } => self.last_cursor_pos = Vector2::new(*x, *y),
                 Event::Scroll { delta_y, .. } => self.frame_scroll += delta_y,
                 _ => (),
             }
         }
-        let mut input = RawInput::default();
-        input.mouse_down = self.is_rightclick_down;
-        input.mouse_pos = Some(Pos2::new(self.last_cursor_pos.x, self.last_cursor_pos.y));
-        input.scroll_delta = Vec2::new(0.0, self.frame_scroll);
-        input.screen_rect = Some(Rect {
-            min: Pos2::new(0.0, 0.0),
-            max: Pos2::new(screen_size.x as f32, screen_size.y as f32),
-        });
-        return input;
+        #[allow(clippy::field_reassign_with_default)]
+        {
+            let mut input = RawInput::default();
+            input.mouse_down = self.is_rightclick_down;
+            input.mouse_pos = Some(Pos2::new(self.last_cursor_pos.x, self.last_cursor_pos.y));
+            input.scroll_delta = Vec2::new(0.0, self.frame_scroll);
+            input.screen_rect = Some(Rect {
+                min: Pos2::new(0.0, 0.0),
+                max: Pos2::new(screen_size.x as f32, screen_size.y as f32),
+            });
+            input
+        }
     }
 }
 impl Default for EguiRawInputAdaptor {
@@ -59,6 +55,7 @@ impl Default for EguiRawInputAdaptor {
         }
     }
 }
+#[allow(clippy::ptr_arg)]
 pub fn draw_egui(
     paint_jobs: &PaintJobs,
     texture: &Arc<Texture>,
@@ -71,7 +68,7 @@ pub fn draw_egui(
         .map(|p| Vector4::new(p.r(), p.g(), p.b(), p.a()))
         .collect();
     let dimensions = Vector2::new(texture.width as u32, texture.height as u32);
-    let texture = RGBATexture { pixels, dimensions };
+    let texture = RGBATexture { dimensions, pixels };
     let mut render_texture = gl.build_texture(texture, shader.get_bind())?;
     gl.bind_texture(&render_texture, shader.get_bind());
     let mut depth = -0.8;
@@ -115,6 +112,7 @@ pub fn draw_egui(
     gl.delete_texture(&mut render_texture);
     Ok(())
 }
+#[allow(clippy::ptr_arg)]
 fn to_vertex(vertex_list: &Vec<EguiVertex>, depth: f32, screen_size: &Vector2<u32>) -> Vec<f32> {
     let mut vertices = vec![];
     let screen_x = screen_size.x as f32 / 2.0;

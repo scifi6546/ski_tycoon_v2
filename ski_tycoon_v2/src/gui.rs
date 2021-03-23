@@ -59,6 +59,7 @@ pub fn init_gui(screen_size: Vector2<u32>) -> (CtxRef, EguiRawInputAdaptor) {
     ctx.end_frame();
     (ctx, adaptor)
 }
+#[allow(clippy::ptr_arg)]
 pub fn draw_gui(
     context: &mut CtxRef,
     input: &Vec<Event>,
