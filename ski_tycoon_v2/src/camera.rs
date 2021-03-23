@@ -44,7 +44,7 @@ impl DeltaCamera {
         }
     }
     pub fn get_radius(&self) -> f32 {
-        self.previous.radius.clone()
+        self.previous.radius
     }
     pub fn translate(&mut self, translation: &Vector3<f32>) {
         self.new_next();
@@ -83,8 +83,7 @@ impl DeltaCamera {
             0.1,
             1000.0,
         );
-        let mat = cam * face;
-        mat
+        cam * face
     }
 }
 #[derive(Clone, Debug)]

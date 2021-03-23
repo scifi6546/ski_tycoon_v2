@@ -10,7 +10,7 @@ impl<T> Default for AssetManager<T> {
     }
 }
 impl<T> AssetManager<T> {
-    pub fn get_or_create<'a>(&mut self, key: &str, data: T) -> &T {
+    pub fn get_or_create(&mut self, key: &str, data: T) -> &T {
         if self.data.contains_key(key) {
             self.data.get(key).unwrap()
         } else {
@@ -19,7 +19,7 @@ impl<T> AssetManager<T> {
         }
     }
     /// Sets data at key point overwrites if it is already present
-    pub fn overwrite<'a>(&mut self, key: &str, data: T) -> &T {
+    pub fn overwrite(&mut self, key: &str, data: T) -> &T {
         self.data.insert(key.to_string(), data);
         //must have data at key because it as just inserted
         self.data.get(key).unwrap()
@@ -29,7 +29,7 @@ impl<T> AssetManager<T> {
         self.data.get(key)
     }
     pub fn contains(&self, key: &str) -> bool {
-        return self.data.contains_key(key);
+        self.data.contains_key(key)
     }
 }
 #[cfg(test)]

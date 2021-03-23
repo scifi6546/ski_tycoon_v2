@@ -159,12 +159,10 @@ impl<'a> Iterator for SkipWhitespace<'a> {
         loop {
             if self.is_next_skippable() {
                 break;
+            } else if let Some(c) = self.iter.next() {
+                string_out.push(c);
             } else {
-                if let Some(c) = self.iter.next() {
-                    string_out.push(c);
-                } else {
-                    break;
-                }
+                break;
             }
         }
         if string_out.is_empty() {

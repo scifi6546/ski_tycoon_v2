@@ -181,7 +181,7 @@ impl GraphLayer {
                     ]
                     .iter()
                     .filter(|(_, weight)| weight.is_finite())
-                    .map(|v| v.clone())
+                    .cloned()
                     .collect()
                 } else {
                     vec![]
@@ -244,7 +244,7 @@ impl<'a> Graph for GraphLayerList<'a> {
         for layer in self.layers.iter() {
             out.append(&mut layer.get_children(node));
         }
-        return out;
+        out
     }
 }
 impl<'a> Graph for &GraphLayerList<'a> {
@@ -253,7 +253,7 @@ impl<'a> Graph for &GraphLayerList<'a> {
         for layer in self.layers.iter() {
             out.append(&mut layer.get_children(node));
         }
-        return out;
+        out
     }
 }
 pub trait Graph {
@@ -278,11 +278,14 @@ impl Path {
         }
         Self { path }
     }
+    pub fn is_empty(&self) -> bool {
+        self.path.is_empty()
+    }
     pub fn len(&self) -> usize {
         self.path.len()
     }
     pub fn endpoint(&self) -> Option<&Node> {
-        if self.path.len() > 0 {
+        if !self.path.is_empty() {
             Some(&self.path[self.path.len() - 1].0)
         } else {
             None
@@ -299,7 +302,7 @@ impl Default for Path {
 /// # Preconditions:
 /// Graph Weights are greater than zero. If any of the graph weights are less then zero then
 /// the alorythm panics
-pub fn dijkstra<'a, G: Graph>(source: &Node, destination: &Node, graph: &G) -> Path {
+pub fn dijkstra<G: Graph>(source: &Node, destination: &Node, graph: &G) -> Path {
     //queue used to priortize searching
     let mut queue = PriorityQueue::new();
     //annotates previous node in shortest path tree. If item is not preseant then previous is marked as infinite.
@@ -309,7 +312,7 @@ pub fn dijkstra<'a, G: Graph>(source: &Node, destination: &Node, graph: &G) -> P
     //inserting first node
     queue.push(source.clone(), Reverse(GraphWeight::Some(0)));
     distance.insert(source.clone(), GraphWeight::Some(0));
-    while queue.is_empty() == false {
+    while !queue.is_empty() {
         let (best_vertex, parent_distance) = queue.pop().unwrap();
         //getting neighbors
         for (child, child_distance) in graph.get_children(&best_vertex).iter() {
@@ -326,7 +329,7 @@ pub fn dijkstra<'a, G: Graph>(source: &Node, destination: &Node, graph: &G) -> P
                 distance.insert(child.clone(), total_distance.clone());
                 previous.insert(child.clone(), (best_vertex.clone(), child_distance.clone()));
 
-                queue.push(child.clone(), Reverse(total_distance.into()));
+                queue.push(child.clone(), Reverse(total_distance));
             }
         }
     }
@@ -339,7 +342,7 @@ pub fn dijkstra<'a, G: Graph>(source: &Node, destination: &Node, graph: &G) -> P
             current = (node.clone(), weight.clone().clone());
         } else {
             return Path {
-                path: path.iter().rev().map(|p| p.clone()).collect(),
+                path: path.iter().rev().cloned().collect(),
             };
         }
     }
