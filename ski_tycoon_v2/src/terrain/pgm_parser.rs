@@ -40,7 +40,7 @@ pub fn terrain_from_pgm(
     } else {
         return Err(ParseError::MissingYDimension);
     };
-    let x_dimensions: usize = if let Some(x) = x_dimension_string.parse().ok() {
+    let x_dimensions: usize = if let Ok(x) = x_dimension_string.parse() {
         x
     } else {
         return Err(ParseError::InvalidNumber {
@@ -48,7 +48,7 @@ pub fn terrain_from_pgm(
             error: x_dimension_string,
         });
     };
-    let y_dimensions: usize = if let Some(y) = y_dimension_string.parse().ok() {
+    let y_dimensions: usize = if let Ok(y) = y_dimension_string.parse() {
         y
     } else {
         return Err(ParseError::InvalidNumber {
@@ -61,7 +61,7 @@ pub fn terrain_from_pgm(
     } else {
         return Err(ParseError::MissingMaxHeight);
     };
-    let _max_height: usize = if let Some(h) = max_height_string.parse().ok() {
+    let _max_height: usize = if let Ok(h) = max_height_string.parse() {
         h
     } else {
         return Err(ParseError::InvalidNumber {
@@ -78,7 +78,7 @@ pub fn terrain_from_pgm(
             } else {
                 return Err(ParseError::MissingDatapoint);
             };
-            let height: usize = if let Some(i) = height_string.parse().ok() {
+            let height: usize = if let Ok(i) = height_string.parse() {
                 i
             } else {
                 return Err(ParseError::InvalidNumber {
@@ -113,13 +113,9 @@ impl<'a> SkipWhitespace<'a> {
         c == &'\n' || c == &' ' || c == &'\t'
     }
     fn skip_whitespace(&mut self) {
-        loop {
-            if let Some(c) = self.iter.peek() {
-                if Self::is_white_space(c) {
-                    self.iter.next();
-                } else {
-                    break;
-                }
+        while let Some(c) = self.iter.peek() {
+            if Self::is_white_space(c) {
+                self.iter.next();
             } else {
                 break;
             }
@@ -140,7 +136,7 @@ impl<'a> SkipWhitespace<'a> {
             }
         }
     }
-    fn to_skip(&mut self) -> bool {
+    fn is_next_skippable(&mut self) -> bool {
         if let Some(c) = self.iter.peek() {
             Self::is_white_space(c) || c == &'#'
         } else {
@@ -152,7 +148,7 @@ impl<'a> Iterator for SkipWhitespace<'a> {
     type Item = String;
     fn next(&mut self) -> Option<String> {
         loop {
-            if self.to_skip() {
+            if self.is_next_skippable() {
                 self.skip_comment();
                 self.skip_whitespace();
             } else {
@@ -161,7 +157,7 @@ impl<'a> Iterator for SkipWhitespace<'a> {
         }
         let mut string_out = String::new();
         loop {
-            if self.to_skip() {
+            if self.is_next_skippable() {
                 break;
             } else {
                 if let Some(c) = self.iter.next() {
@@ -171,7 +167,7 @@ impl<'a> Iterator for SkipWhitespace<'a> {
                 }
             }
         }
-        if string_out == "" {
+        if string_out.is_empty() {
             None
         } else {
             Some(string_out)
