@@ -120,7 +120,7 @@ impl TreeNode for Up {
                 },
             );
         Decision {
-            cost: cost,
+            cost,
             endpoint: if let Some(point) = best_path.endpoint() {
                 point.clone()
             } else {

@@ -2,7 +2,7 @@ use super::prelude::{
     AssetManager, ErrorType, GraphLayer, GraphWeight, LiftLayer, Model, Node, RenderingContext,
     RuntimeModel, RuntimeModelId, ShaderBind, Terrain, Texture, Transform,
 };
-const SKI_LIFT: &'static [u8] = include_bytes!["../../assets/obj/skilift.obj"];
+const SKI_LIFT: &[u8] = include_bytes!["../../assets/obj/skilift.obj"];
 use egui::CtxRef;
 use legion::*;
 use nalgebra::{Vector2, Vector3, Vector4};

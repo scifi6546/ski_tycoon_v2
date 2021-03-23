@@ -494,15 +494,13 @@ impl FollowPath {
         let t0: usize = self.t.floor() as usize;
         if t0 >= self.path.path.len() {
             self.nodes[self.path.path.len() - 1]
+        } else if t0 + 1 < self.path.path.len() {
+            let x0 = self.nodes[t0];
+            let x1 = self.nodes[t0 + 1];
+            let t1 = t0 as f64 + 1.0;
+            ((x1 - x0) / (t1 as f32 - t0 as f32)) * (self.t as f32 - t0 as f32) + (x0)
         } else {
-            if t0 + 1 < self.path.path.len() {
-                let x0 = self.nodes[t0];
-                let x1 = self.nodes[t0 + 1];
-                let t1 = t0 as f64 + 1.0;
-                ((x1 - x0) / (t1 as f32 - t0 as f32)) * (self.t as f32 - t0 as f32) + (x0)
-            } else {
-                self.nodes[t0]
-            }
+            self.nodes[t0]
         }
     }
     pub fn at_end(&self) -> bool {
