@@ -25,7 +25,7 @@ impl Default for TerrainLibrary {
                         )
                     }),
                     skiier_spawn: (0..10)
-                        .map(|x| (0..10).map(move |y| Vector2::new(x.clone(), y.clone())))
+                        .map(|x| (0..10).map(move |y| Vector2::new(x, y)))
                         .flatten()
                         .collect(),
                     lift_positions: vec![LiftPosition {
@@ -67,7 +67,7 @@ impl Default for TerrainLibrary {
                             .unwrap()
                     }),
                     skiier_spawn: (0..5)
-                        .map(|x| (0..1).map(move |y| Vector2::new(x.clone(), y.clone())))
+                        .map(|x| (0..1).map(move |y| Vector2::new(x, y)))
                         .flatten()
                         .collect(),
                     lift_positions: vec![LiftPosition {
@@ -94,7 +94,7 @@ impl Default for TerrainLibrary {
                             .unwrap()
                     }),
                     skiier_spawn: (0..20)
-                        .map(|x| (0..20).map(move |y| Vector2::new(x.clone(), y.clone())))
+                        .map(|x| (0..20).map(move |y| Vector2::new(x, y)))
                         .flatten()
                         .collect(),
                     lift_positions: vec![LiftPosition {
@@ -140,7 +140,7 @@ impl Scenario {
                 .expect("failed to build skiier");
         }
         for s in self.skiier_spawn.iter() {
-            build_skiier(world, graphics, asset_manager, bound_shader, s.clone())
+            build_skiier(world, graphics, asset_manager, bound_shader, *s)
                 .expect("failed to build skiier");
         }
     }
@@ -156,7 +156,7 @@ impl TerrainLibrary {
     ) {
         egui::Window::new("Scenarios").show(context, |ui| {
             for t in self.entries.iter() {
-                ui.label(format!("{}", t.name));
+                ui.label(t.name.to_string());
                 if ui.button("").clicked {
                     t.build_scenario(world, graphics, asset_manager, bound_shader);
                 }
@@ -202,8 +202,8 @@ impl Terrain {
     }
 
     pub fn from_pgm(data: Vec<u8>, scaling: f32) -> Option<Self> {
-        if let Some(s) = String::from_utf8(data).ok() {
-            if let Some(t) = pgm_parser::terrain_from_pgm(s, TileType::Snow, scaling).ok() {
+        if let Ok(s) = String::from_utf8(data) {
+            if let Ok(t) = pgm_parser::terrain_from_pgm(s, TileType::Snow, scaling) {
                 Some(t)
             } else {
                 None
