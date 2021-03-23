@@ -347,7 +347,7 @@ pub fn dijkstra<'a, G: Graph>(source: &Node, destination: &Node, graph: &G) -> P
 /// Uses a* to get the shortest distance between a source and destination node
 /// heuristic is a function that thaes in (source,destination,graph) and returns an estimated
 /// weight
-pub fn a_star<'a, G: Graph>(
+pub fn a_star<G: Graph>(
     source: &Node,
     destination: &Node,
     graph: &G,
@@ -376,7 +376,7 @@ pub fn a_star<'a, G: Graph>(
 
                 f: h.clone(),
                 h: h.clone(),
-                parent: null_node.clone(),
+                parent: null_node,
             },
             Reverse(h),
         );
@@ -398,7 +398,7 @@ pub fn a_star<'a, G: Graph>(
                         child.clone(),
                         ListEntry {
                             node: child.clone(),
-                            f: f.clone(),
+                            f,
                             g,
                             h,
                             parent: parent.node.clone(),
