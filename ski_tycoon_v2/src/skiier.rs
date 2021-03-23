@@ -83,8 +83,8 @@ pub fn draw_skiiers(world: &World, context: &mut CtxRef) {
         let mut query = <&FollowPath>::query();
         for path in query.iter(world) {
             ui.collapsing("skiier", |ui| {
-                for (node, weight) in path.path.path.iter() {
-                    ui.label(format!("{}: {}", node, weight));
+                for node in path.nodes.iter() {
+                    ui.label(format!("{}", node));
                 }
             });
             ui.label("skiier");
@@ -116,7 +116,7 @@ pub fn follow_path(world: &mut World) {
     let mut query = <(&mut Transform, &mut FollowPath, &mut Vec<DecisionDebugInfo>)>::query();
     for (transform, path, debug_info) in query.iter_mut(world) {
         if path.at_end() {
-            if let Some(endpoint) = path.path.endpoint() {
+            if let Some(endpoint) = path.endpoint() {
                 let (t_path, t_debug_info) =
                     run_skiier_ai(&borrow_graph_layer, endpoint.node, unsafe { &*terrain });
                 if !t_path.is_empty() {

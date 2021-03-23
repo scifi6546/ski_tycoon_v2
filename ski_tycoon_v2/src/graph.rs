@@ -445,15 +445,27 @@ pub fn a_star<G: Graph>(
 /// Path used to follow
 #[derive(Clone, Debug, PartialEq)]
 pub struct FollowPath {
-    nodes: Vec<Vector3<f32>>,
-    pub path: Path,
+    pub nodes: Vec<Vector3<f32>>,
+    start: Option<Node>,
+    endpoint: Option<Node>,
     t: f64,
 }
 impl FollowPath {
     pub fn new(path: Path, terrain: &Terrain) -> Self {
+        let start = if let Some((node, _)) = path.path.get(0) {
+            Some(node.clone())
+        } else {
+            None
+        };
+        let endpoint = if let Some((node, _)) = path.path.last() {
+            Some(node.clone())
+        } else {
+            None
+        };
         Self {
-            path: path.clone(),
             t: 0.0,
+            start,
+            endpoint,
             nodes: path
                 .path
                 .iter()
@@ -465,11 +477,7 @@ impl FollowPath {
         self.t += incr
     }
     pub fn start(&self) -> Option<&Node> {
-        if !self.path.path.is_empty() {
-            Some(&self.path.path[0].0)
-        } else {
-            None
-        }
+        self.start.as_ref()
     }
     pub fn append(&self, other: &Self) -> Self {
         let t = self.t;
@@ -480,21 +488,31 @@ impl FollowPath {
 
         Self {
             t,
-            path: self.path.clone().append(&other.path),
             nodes,
+            start: self.start.clone(),
+            endpoint: if other.endpoint.is_some() {
+                other.endpoint.clone()
+            } else if self.endpoint.is_some() {
+                self.endpoint.clone()
+            } else {
+                None
+            },
         }
     }
     pub fn len(&self) -> usize {
-        self.path.len()
+        self.nodes.len()
     }
     pub fn is_empty(&self) -> bool {
         self.nodes.is_empty()
     }
+    pub fn endpoint(&self) -> Option<&Node> {
+        self.endpoint.as_ref()
+    }
     pub fn get(&self) -> Vector3<f32> {
         let t0: usize = self.t.floor() as usize;
-        if t0 >= self.path.path.len() {
-            self.nodes[self.path.path.len() - 1]
-        } else if t0 + 1 < self.path.path.len() {
+        if t0 >= self.nodes.len() {
+            self.nodes[self.nodes.len() - 1]
+        } else if t0 + 1 < self.nodes.len() {
             let x0 = self.nodes[t0];
             let x1 = self.nodes[t0 + 1];
             let t1 = t0 as f64 + 1.0;
@@ -504,7 +522,7 @@ impl FollowPath {
         }
     }
     pub fn at_end(&self) -> bool {
-        self.t > self.path.len() as f64
+        self.t > self.nodes.len() as f64
     }
 }
 pub mod graph_debug {
