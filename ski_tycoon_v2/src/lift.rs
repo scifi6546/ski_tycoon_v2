@@ -5,7 +5,6 @@ use super::prelude::{
 const SKI_LIFT: &'static [u8] = include_bytes!["../../assets/obj/skilift.obj"];
 use egui::CtxRef;
 use legion::*;
-use log::info;
 use nalgebra::{Vector2, Vector3, Vector4};
 pub fn insert_lift(
     world: &mut World,
@@ -52,7 +51,6 @@ pub fn insert_lift(
         }),
     ));
     world.push((end_transform, runtime_model));
-    info!("built path");
     Ok(())
 }
 
@@ -216,7 +214,7 @@ impl BuildLift {
         if self.placing_lift == LiftStage::Done {
             let lift = <&SecondLiftPlace>::query().iter(world).next().unwrap();
             let bottom_position = lift.bottom_position.clone();
-            let top_position = lift.position.clone();
+            let top_position = lift.position;
             insert_lift(
                 world,
                 graphics,

@@ -14,6 +14,7 @@ pub struct DecisionDebugInfo {
     end: Node,
     path_len: usize,
 }
+#[allow(clippy::ptr_arg)]
 fn run_skiier_ai(
     layers: &Vec<&GraphLayer>,
     start_position: Vector2<i64>,
@@ -104,17 +105,14 @@ pub fn draw_skiiers(world: &World, context: &mut CtxRef) {
     });
 }
 pub fn follow_path(world: &mut World) {
-    let layers: Vec<GraphLayer> = <&GraphLayer>::query()
-        .iter(world)
-        .map(|l| l.clone())
-        .collect();
+    let layers: Vec<GraphLayer> = <&GraphLayer>::query().iter(world).cloned().collect();
     //bad hack inorder to avoid copying terrain more then needed
     let terrain_iter = <&Terrain>::query().iter(world).next();
     if terrain_iter.is_none() {
         return;
     }
     let terrain: *const Terrain = &*terrain_iter.unwrap();
-    let borrow_graph_layer = layers.iter().map(|l| l).collect();
+    let borrow_graph_layer = layers.iter().collect();
     let mut query = <(&mut Transform, &mut FollowPath, &mut Vec<DecisionDebugInfo>)>::query();
     for (transform, path, debug_info) in query.iter_mut(world) {
         if path.at_end() {

@@ -79,8 +79,7 @@ pub trait TreeNode {
                     .fold(Number::Finite(0.0), |acc, d| acc + d.cost.clone());
 
                 if child_weight <= best_weight {
-                    best_path = vec![];
-                    best_path.push(self_cost.clone());
+                    best_path = vec![self_cost.clone()];
                     best_path.append(&mut child_path);
                     best_weight = child_weight;
                 }
