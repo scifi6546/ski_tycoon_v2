@@ -423,7 +423,7 @@ impl<B: gfx_hal::Backend> GfxRenderingContext<B> {
                     formats
                         .iter()
                         .find(|format| format.base_format().1 == ChannelType::Srgb)
-                        .map(|format| *format)
+                        .copied()
                         .unwrap_or(formats[0])
                 });
         let swap_config = window::SwapchainConfig::from_caps(&caps, format, window_dimensions);
@@ -610,7 +610,7 @@ impl<B: gfx_hal::Backend> GfxRenderingContext<B> {
             desc_pool,
             format,
             instance: window.instance,
-            dimensions: window_dimensions.clone(),
+            dimensions: window_dimensions,
             viewport,
             framebuffer,
             pipeline: ManuallyDrop::new(pipeline),
@@ -1098,7 +1098,6 @@ impl<B: gfx_hal::Backend> GfxRenderingContext<B> {
                 .device
                 .get_fence_status(&self.submission_complete_fence)
                 .expect("failed to get fence")
-                != false
             {
                 panic!("fence not reset at submission of command queue");
             } else {
@@ -1202,7 +1201,7 @@ impl<B: gfx_hal::Backend> GfxRenderingContext<B> {
         assert_eq!(
             unsafe {
                 self.device
-                    .get_fence_status(&mut self.submission_complete_fence)
+                    .get_fence_status(&self.submission_complete_fence)
             }
             .expect("failed to get fence status"),
             false

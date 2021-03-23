@@ -95,7 +95,7 @@ pub fn get_world() -> ShaderData {
             ),
         ]
         .iter()
-        .map(|i| i.clone())
+        .cloned()
         .collect(),
         fragment_uniform_layout: [
             (
@@ -136,7 +136,7 @@ pub fn get_world() -> ShaderData {
             ),
         ]
         .iter()
-        .map(|i| i.clone())
+        .cloned()
         .collect(),
     }
 }
@@ -189,7 +189,7 @@ pub fn get_screen() -> ShaderData {
             ),
         ]
         .iter()
-        .map(|i| i.clone())
+        .cloned()
         .collect(),
         fragment_uniform_layout: HashMap::new(),
     }
@@ -244,7 +244,7 @@ pub fn get_gui() -> ShaderData {
             ),
         ]
         .iter()
-        .map(|i| i.clone())
+        .cloned()
         .collect(),
         fragment_uniform_layout: HashMap::new(),
     }

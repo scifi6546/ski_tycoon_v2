@@ -119,7 +119,7 @@ pub fn follow_path(world: &mut World) {
             if let Some(endpoint) = path.path.endpoint() {
                 let (t_path, t_debug_info) =
                     run_skiier_ai(&borrow_graph_layer, endpoint.node, unsafe { &*terrain });
-                if t_path.len() > 0 {
+                if !t_path.is_empty() {
                     let t = path.get();
                     transform.set_translation(t);
                 }
@@ -128,7 +128,7 @@ pub fn follow_path(world: &mut World) {
             }
         } else {
             path.incr(0.1);
-            if path.len() > 0 {
+            if !path.is_empty() {
                 let t = path.get();
                 transform.set_translation(t);
             }

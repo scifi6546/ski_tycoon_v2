@@ -381,14 +381,14 @@ pub fn a_star<'a, G: Graph>(
             Reverse(h),
         );
     }
-    while open.is_empty() == false {
+    while !open.is_empty() {
         let (parent, _) = open.pop().unwrap();
         closed.insert(parent.node.clone(), parent.clone());
         for (child, child_distance) in graph.get_children(&parent.node).iter() {
             let child = child.clone();
             let child_distance = child_distance.clone();
 
-            if visited.contains(&child) == false {
+            if !visited.contains(&child) {
                 visited.insert(child.clone());
                 if &child == destination {
                     let g = child_distance.clone() + parent.g.clone();
@@ -462,7 +462,7 @@ impl FollowPath {
         self.t += incr
     }
     pub fn start(&self) -> Option<&Node> {
-        if self.path.path.len() >= 1 {
+        if !self.path.path.is_empty() {
             Some(&self.path.path[0].0)
         } else {
             None
@@ -472,7 +472,7 @@ impl FollowPath {
         let t = self.t;
         let mut nodes = self.nodes.clone();
         for i in other.nodes.iter() {
-            nodes.push(i.clone());
+            nodes.push(*i);
         }
 
         Self {
@@ -484,19 +484,21 @@ impl FollowPath {
     pub fn len(&self) -> usize {
         self.path.len()
     }
+    pub fn is_empty(&self) -> bool {
+        self.nodes.is_empty()
+    }
     pub fn get(&self) -> Vector3<f32> {
         let t0: usize = self.t.floor() as usize;
         if t0 >= self.path.path.len() {
             self.nodes[self.path.path.len() - 1]
         } else {
             if t0 + 1 < self.path.path.len() {
-                let x0 = self.nodes[t0].clone();
-                let x1 = self.nodes[t0 + 1].clone();
+                let x0 = self.nodes[t0];
+                let x1 = self.nodes[t0 + 1];
                 let t1 = t0 as f64 + 1.0;
-                ((x1 - x0.clone()) / (t1 as f32 - t0 as f32)) * (self.t as f32 - t0 as f32)
-                    + (x0.clone())
+                ((x1 - x0) / (t1 as f32 - t0 as f32)) * (self.t as f32 - t0 as f32) + (x0)
             } else {
-                self.nodes[t0].clone()
+                self.nodes[t0]
             }
         }
     }
