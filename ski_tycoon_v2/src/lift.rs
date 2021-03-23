@@ -214,11 +214,7 @@ impl BuildLift {
             }
         }
         if self.placing_lift == LiftStage::Done {
-            let lift = <&SecondLiftPlace>::query()
-                .iter(world)
-                .next()
-                .unwrap()
-                .clone();
+            let lift = <&SecondLiftPlace>::query().iter(world).next().unwrap();
             let bottom_position = lift.bottom_position.clone();
             let top_position = lift.position.clone();
             insert_lift(

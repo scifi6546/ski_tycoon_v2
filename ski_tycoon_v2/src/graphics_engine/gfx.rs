@@ -57,7 +57,8 @@ pub struct RuntimeGfxTexture<B: gfx_hal::Backend> {
     image_logo: B::Image,
     extent: gfx_hal::image::Extent,
 }
-pub type ErrorType = ();
+#[derive(Debug)]
+pub enum ErrorType {}
 #[allow(dead_code)]
 pub struct GfxFramebuffer<B: gfx_hal::Backend> {
     framebuffer: B::Framebuffer,

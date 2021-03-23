@@ -123,9 +123,7 @@ impl Game {
         webgl.get_error();
         resources.insert(webgl);
         resources.insert(shader_bind);
-        resources.insert(GraphicsSettings {
-            screen_size: screen_size.clone(),
-        });
+        resources.insert(GraphicsSettings { screen_size });
         resources.insert(DeltaCamera::new(
             Vector3::new(0.0, 0.0, 0.0),
             20.0,
@@ -139,16 +137,13 @@ impl Game {
         resources.insert(lift::BuildLift::default());
         resources.insert(terrain::TerrainLibrary::default());
         // gui::insert_ui(&mut egui_context);
-        info!("context created");
-        info!("inserted ui");
         let g = Game {
             world,
             resources,
+            world_depth_texture,
             world_framebuffer,
             world_render_surface,
-            world_depth_texture,
         };
-        info!("built game successfully");
         Ok(g)
     }
     pub fn run_frame(&mut self, events: Vec<Event>) {
@@ -175,7 +170,7 @@ impl Game {
                         gl.change_viewport(new_size).expect("screen updated");
                         let settings: &mut GraphicsSettings =
                             &mut self.resources.get_mut().unwrap();
-                        settings.screen_size = new_size.clone();
+                        settings.screen_size = *new_size;
                         gl.delete_depth_buffer(&mut self.world_depth_texture)
                             .expect("deleted old texture");
                         gl.delete_texture(&mut self.world_render_surface.texture);
@@ -185,15 +180,12 @@ impl Game {
                             .expect("deleted old framebuffer");
                         let mut world_framebuffer_texture = gl
                             .build_texture(
-                                RGBATexture::constant_color(
-                                    Vector4::new(0, 0, 0, 0),
-                                    new_size.clone(),
-                                ),
+                                RGBATexture::constant_color(Vector4::new(0, 0, 0, 0), *new_size),
                                 &shader.get_bind(),
                             )
                             .expect("failed to build new texture");
                         let mut world_depth_texture = gl
-                            .build_depth_texture(new_size.clone(), &shader.get_bind())
+                            .build_depth_texture(*new_size, &shader.get_bind())
                             .expect("failed to build depth texture");
                         shader.bind("world");
                         let fb_mesh = gl
@@ -245,7 +237,7 @@ impl Game {
                 &mut self.resources.get_mut().unwrap(),
                 &mut self.resources.get_mut().unwrap(),
                 &mut self.resources.get_mut().unwrap(),
-                &mut self.resources.get_mut().unwrap(),
+                &self.resources.get().unwrap(),
             );
         }
         //game logic
@@ -257,7 +249,7 @@ impl Game {
                 &mut self.resources.get_mut().unwrap(),
                 &mut self.resources.get_mut().unwrap(),
                 &mut self.resources.get_mut().unwrap(),
-                &mut self.resources.get_mut().unwrap(),
+                &self.resources.get().unwrap(),
             );
         }
         //rendering susten

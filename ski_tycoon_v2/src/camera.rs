@@ -79,7 +79,7 @@ impl DeltaCamera {
         );
         let cam = Matrix4::new_perspective(
             screen_resolution.x as f32 / screen_resolution.y as f32,
-            3.14 / 3.0,
+            std::f32::consts::PI / 3.0,
             0.1,
             1000.0,
         );

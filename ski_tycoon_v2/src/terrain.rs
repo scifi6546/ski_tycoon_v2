@@ -87,6 +87,21 @@ impl Default for TerrainLibrary {
                         end: Vector2::new(7, 3),
                     }],
                 },
+                Scenario {
+                    name: "Volcano".to_string(),
+                    terrain_ctor: Box::new(|| {
+                        Terrain::from_pgm(include_bytes!("heightmaps/cone.pgm").to_vec(), 0.001)
+                            .unwrap()
+                    }),
+                    skiier_spawn: (0..20)
+                        .map(|x| (0..20).map(move |y| Vector2::new(x.clone(), y.clone())))
+                        .flatten()
+                        .collect(),
+                    lift_positions: vec![LiftPosition {
+                        start: Vector2::new(0, 0),
+                        end: Vector2::new(50, 50),
+                    }],
+                },
             ],
         }
     }
@@ -240,9 +255,7 @@ impl Terrain {
             || end.x < 0
             || end.y >= self.dimensions.y as i64
             || end.y < 0
-        {
-            GraphWeight::Infinity
-        } else if start.x >= self.dimensions.x as i64
+            || start.x >= self.dimensions.x as i64
             || start.x < 0
             || start.y >= self.dimensions.y as i64
             || start.y < 0

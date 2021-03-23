@@ -66,9 +66,8 @@ impl Event {
     }
     fn from_mousedown(map: JsMap) -> Option<Self> {
         let button_i32 = map.get(&JsValue::from_str("buttons")).as_f64().unwrap();
-        info!("button: {}", button_i32);
         let button_vec = Self::get_mouse_button(button_i32 as i32);
-        if button_vec.len() == 0 {
+        if button_vec.is_empty() {
             None
         } else {
             let button = button_vec[0].clone();
@@ -79,11 +78,9 @@ impl Event {
         }
     }
     fn from_mouseup(map: JsMap) -> Option<Self> {
-        info!("processing mouse up");
         let button_i32 = map.get(&JsValue::from_str("buttons")).as_f64().unwrap();
-        info!("mouseup button: {}", button_i32);
         let button_vec = Self::get_mouse_button(button_i32 as i32);
-        if button_vec.len() == 0 {
+        if button_vec.is_empty() {
             let x = map.get(&JsValue::from_str("x")).as_f64().unwrap() as f32;
             let y = map.get(&JsValue::from_str("y")).as_f64().unwrap() as f32;
             Some(Self::MouseUp { x, y })
