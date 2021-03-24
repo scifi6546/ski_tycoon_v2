@@ -79,17 +79,6 @@ pub fn build_skiier(
 }
 
 pub fn draw_skiiers(world: &World, context: &mut CtxRef) {
-    egui::Window::new("skiiers").show(context, |ui| {
-        let mut query = <&FollowPath>::query();
-        for path in query.iter(world) {
-            ui.collapsing("skiier", |ui| {
-                for node in path.nodes.iter() {
-                    ui.label(format!("{}", node));
-                }
-            });
-            ui.label("skiier");
-        }
-    });
     egui::Window::new("skiier decisions").show(context, |ui| {
         let mut query = <&Vec<DecisionDebugInfo>>::query();
         for skiier in query.iter(world) {

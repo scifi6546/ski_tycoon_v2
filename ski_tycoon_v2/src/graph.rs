@@ -376,7 +376,6 @@ pub fn a_star<G: Graph>(
             ListEntry {
                 node: source.clone(),
                 g: GraphWeight::Some(0),
-
                 f: h.clone(),
                 h: h.clone(),
                 parent: null_node,
