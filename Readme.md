@@ -15,11 +15,10 @@ wasm-pack,
 npm
 ```
 ## Build Instructions
-To run the game fist install the rust toolchain by following the directions at https://www.rust-lang.org/. Make sure that the nightly toolchain is used with the following command.
-```
-rustup default nightly
-```
-Next install wasm-pack using the instructions at https://rustwasm.github.io/wasm-pack/installer/.
+To run the game fist install the rust toolchain by following the directions at https://www.rust-lang.org/. Next install wasm-pack using the instructions at https://rustwasm.github.io/wasm-pack/installer/.
+
+
+
 Next clone this repo with
 ```
 git clone https://github.com/scifi6546/ski_tycoon_v2.git
