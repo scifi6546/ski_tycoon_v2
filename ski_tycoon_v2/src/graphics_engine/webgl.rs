@@ -54,6 +54,11 @@ impl RenderingContext {
             .unwrap()
             .dyn_into::<WebGl2RenderingContext>()?;
         context.enable(WebGl2RenderingContext::DEPTH_TEST);
+        context.enable(WebGl2RenderingContext::BLEND);
+        context.blend_func(
+            WebGl2RenderingContext::ONE,
+            WebGl2RenderingContext::ONE_MINUS_SRC_ALPHA,
+        );
         Ok(Self { context })
     }
     pub fn change_viewport(&self, screen_size: &Vector2<u32>) -> Result<(), ErrorType> {
