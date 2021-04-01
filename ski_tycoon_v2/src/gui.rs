@@ -70,7 +70,7 @@ pub fn draw_gui(
 ) -> Result<(), ErrorType> {
     context.begin_frame(adaptor.process_events(input, screen_size));
     let (_, commands) = context.end_frame();
-    let paint_jobs = context.tesselate(commands);
+    let paint_jobs = context.tessellate(commands);
     draw_egui(&paint_jobs, &context.texture(), gl, shader, &screen_size)?;
     Ok(())
 }
